@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LetterLinx</title>
+<meta name="description" content="LetterLinx: a one-minute word hunt. Link neighbouring letters to spell words and beat the clock.">
+<meta name="theme-color" content="#0C6B7A">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23F2A900'/%3E%3Ctext x='16' y='23' font-family='Arial' font-weight='900' font-size='20' text-anchor='middle' fill='%232B1E00'%3EL%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&family=Unbounded:wght@600;800&display=swap">
+<style>
+/* Layout: one-screen phone app. A header strip (time / word / score), a 7x11 tile board
+   that fills what is left, and a four-tab bar pinned to the bottom. */
+:root {
+  --bg: #E7EFF2; --surface: #FFFFFF; --surface-2: #D9E5EA; --ink: #10303B; --muted: #55717C;
+  --line: #C5D4DA; --brand: #0C6B7A; --accent: #F2A900; --accent-ink: #2B1E00;
+  --good: #128A58; --bad: #CF3B2A; --on-state: #FFFFFF; --tile: #FFFFFF; --tile-edge: #BCCDD4;
+  --shade: rgba(16, 48, 59, .45);
+  --display: "Unbounded", "Rubik", system-ui, sans-serif;
+  --body: "Rubik", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0B1C22; --surface: #132B33; --surface-2: #1C3944; --ink: #E8F2F4; --muted: #8DA9B2;
+  --line: #29495397; --brand: #5CC7D6; --accent: #FFBE2E; --accent-ink: #2B1E00;
+  --good: #2FBF82; --bad: #FF6B57; --on-state: #06161B; --tile: #1A3742; --tile-edge: #071317;
+  --shade: rgba(0, 0, 0, .6); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0B1C22; --surface: #132B33; --surface-2: #1C3944; --ink: #E8F2F4; --muted: #8DA9B2;
+  --line: #29495397; --brand: #5CC7D6; --accent: #FFBE2E; --accent-ink: #2B1E00;
+  --good: #2FBF82; --bad: #FF6B57; --on-state: #06161B; --tile: #1A3742; --tile-edge: #071317;
+  --shade: rgba(0, 0, 0, .6); color-scheme: dark }
+
+html, body { height: 100%; margin: 0; }
+[hidden] { display: none !important; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px;
+  overflow: hidden; -webkit-tap-highlight-color: transparent;
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+h1, h2, h3, p { margin: 0; }
+h2 { font-family: var(--display); font-size: 1.15rem; font-weight: 600; text-wrap: balance; }
+.eyebrow { font-size: .72rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.num { font-family: var(--display); font-variant-numeric: tabular-nums; }
+
+#app { height: 100%; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; }
+.screen { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; padding-block: 12px; }
+.screen.scroll { overflow-y: auto; }
+
+/* Buttons */
+.btn { border: 0; border-radius: 14px; padding: 14px 20px; font-weight: 600; font-size: 1rem;
+  background: var(--surface-2); color: var(--ink); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 60%, #000); }
+.btn.primary:active { transform: translateY(2px); box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 60%, #000); }
+.btn.danger { background: transparent; color: var(--bad); box-shadow: inset 0 0 0 2px var(--bad); }
+.btn.danger.solid { background: var(--bad); color: var(--on-state); }
+.btn.block { width: 100%; }
+.btn:disabled { opacity: .5; cursor: default; }
+
+/* Game header */
+.hud { display: flex; align-items: center; gap: 10px; }
+.hud .stat { min-width: 64px; }
+.hud .stat .num { font-size: 1.35rem; font-weight: 800; line-height: 1.1; }
+.hud .stat.right { text-align: right; }
+#word { flex: 1; min-width: 0; text-align: center; font-weight: 700; font-size: 1.15rem; letter-spacing: .08em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 8px 6px; border-radius: 10px; background: var(--surface); }
+#word.hint { font-weight: 500; font-size: .85rem; letter-spacing: 0; color: var(--muted); }
+#word.good { background: var(--good); color: var(--on-state); }
+#word.bad { background: var(--bad); color: var(--on-state); }
+#time.low { color: var(--bad); animation: pulse 1s ease-in-out infinite; }
+#endBtn { border: 0; background: var(--surface-2); border-radius: 10px; padding: 8px 10px; font-size: .8rem; font-weight: 600; }
+.bar { height: 5px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.bar i { display: block; height: 100%; width: 100%; background: var(--brand); transform-origin: left; }
+.bar.low i { background: var(--bad); }
+
+/* Board */
+.boardwrap { flex: 1; min-height: 0; container-type: size; display: flex; align-items: center; justify-content: center; position: relative; }
+#board { width: min(100cqw, calc(100cqh * 7 / 11)); aspect-ratio: 7 / 11; position: relative; isolation: isolate;
+  display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(11, 1fr);
+  touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer; }
+.tile { position: relative; display: grid; place-items: center; container-type: size; }
+.tile::before { content: ""; position: absolute; inset: 5%; border-radius: 18%; z-index: 0;
+  background: var(--tile); box-shadow: 0 2px 0 var(--tile-edge); }
+.tile span { position: relative; z-index: 2; font-weight: 700; font-size: 52cqw; line-height: 1; }
+.tile.sel::before { background: var(--accent); box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 60%, #000); animation: pop .16s ease-out; }
+.tile.sel span { color: var(--accent-ink); }
+.tile.good::before { background: var(--good); box-shadow: none; animation: pop .25s ease-out; }
+.tile.bad::before { background: var(--bad); box-shadow: none; }
+.tile.good span, .tile.bad span { color: var(--on-state); }
+.tile.bad::before, .tile.bad span { animation: shake .3s linear; }
+.tile.fresh::before, .tile.fresh span { animation: flip .3s ease-out; }
+.tile.blank::before { opacity: .55; }
+#trail { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; overflow: visible; }
+#trail polyline { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+#trail .base { stroke: var(--brand); stroke-width: .16; }
+#trail .dash { stroke: var(--surface); stroke-width: .06; stroke-dasharray: .12 .22; animation: march .5s linear infinite; }
+#trail.good .base { stroke: color-mix(in srgb, var(--good) 70%, #000); }
+#trail.bad .base { stroke: color-mix(in srgb, var(--bad) 70%, #000); }
+#trail.good .dash, #trail.bad .dash { animation: none; opacity: 0; }
+@keyframes march { to { stroke-dashoffset: -.34; } }
+@keyframes pop { 50% { transform: scale(1.12); } }
+@keyframes shake { 25% { transform: translateX(-8%); } 75% { transform: translateX(8%); } }
+@keyframes flip { from { transform: scaleY(0); } }
+@keyframes pulse { 50% { opacity: .45; } }
+
+#go { position: absolute; z-index: 5; width: min(46cqw, 190px); aspect-ratio: 1; border-radius: 50%; border: 0;
+  background: var(--accent); color: var(--accent-ink); font-family: var(--display); font-weight: 800; font-size: clamp(2rem, 13cqw, 3.4rem);
+  box-shadow: 0 6px 0 color-mix(in srgb, var(--accent) 60%, #000), 0 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent); }
+#go:active { transform: translateY(4px); box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 60%, #000), 0 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent); }
+
+/* Results */
+#results { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; text-align: center; }
+#finalScore { font-size: clamp(4rem, 26vw, 7rem); font-weight: 800; line-height: 1; color: var(--brand); }
+.badge { align-self: center; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: .8rem; padding: 5px 12px; border-radius: 99px; }
+.wordlist { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-content: flex-start; }
+.wordlist li { background: var(--surface); border-radius: 10px; padding: 6px 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+.wordlist li b { color: var(--good); margin-left: 6px; font-variant-numeric: tabular-nums; }
+.grow { flex: 1; min-height: 0; overflow-y: auto; }
+.empty { color: var(--muted); padding: 14px 4px; }
+
+/* Panels (settings, leaderboard, account) */
+.panel { background: var(--surface); border-radius: 16px; padding: 4px 16px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; }
+.row + .row { border-top: 1px solid var(--line); }
+.seg { display: inline-flex; background: var(--surface-2); border-radius: 12px; padding: 3px; }
+.seg button { border: 0; background: transparent; padding: 8px 16px; border-radius: 9px; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px var(--shade); }
+.note { font-size: .85rem; color: var(--muted); }
+.scorebtn { width: 100%; border: 0; background: transparent; text-align: left; display: flex; align-items: center; gap: 12px; padding: 12px 0; }
+.scorebtn .rank, td.rank { width: 1.6em; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+.scorebtn .num { font-size: 1.15rem; font-weight: 800; min-width: 3ch; }
+.scorebtn .meta { flex: 1; min-width: 0; color: var(--muted); font-size: .85rem; }
+.scorebtn .chev { color: var(--muted); }
+li + li > .scorebtn { border-top: 1px solid var(--line); }
+ol.plain { list-style: none; margin: 0; padding: 0; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 12px 0 6px; }
+td { padding: 10px 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+th:last-child, td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+tr.me td { color: var(--brand); font-weight: 700; }
+form { display: flex; flex-direction: column; gap: 14px; }
+label { display: flex; flex-direction: column; gap: 6px; font-size: .85rem; font-weight: 600; color: var(--muted); }
+input[type="text"], input[type="email"] { background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; font-size: 1rem; color: var(--ink); width: 100%; }
+input:read-only { background: var(--surface-2); color: var(--muted); }
+.msg { font-size: .9rem; font-weight: 500; min-height: 1.2em; }
+.msg.err { color: var(--bad); } .msg.ok { color: var(--good); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.two > * { min-width: 0; }
+.confirm { border: 2px solid var(--bad); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+
+/* Tab bar */
+nav { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); padding-block: 6px; }
+nav button { border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 6px 0; font-size: .7rem; font-weight: 600; color: var(--muted); border-radius: 12px; }
+nav svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+nav button[aria-current="page"] { color: var(--brand); }
+nav.locked button:not([aria-current="page"]) { opacity: .35; }
+
+/* Modal */
+.overlay { position: fixed; inset: 0; z-index: 40; background: var(--shade); display: grid; place-items: center; padding: 24px; }
+.modal { background: var(--bg); border-radius: 18px; padding: 20px; width: min(100%, 420px); max-height: 80%; display: flex; flex-direction: column; gap: 14px; }
+.modal header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.x { border: 0; background: var(--surface-2); border-radius: 50%; width: 36px; height: 36px; font-size: 1.1rem; line-height: 1; }
+
+/* Tour */
+#tour { position: fixed; inset: 0; z-index: 30; background: var(--bg); display: flex; flex-direction: column;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 0 calc(env(safe-area-inset-bottom, 0px) + 16px); }
+#slides { flex: 1; min-height: 0; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+#slides::-webkit-scrollbar { display: none; }
+.slide { flex: 0 0 100%; scroll-snap-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px; text-align: center; padding: 12px max(24px, env(safe-area-inset-right, 0px)) 12px max(24px, env(safe-area-inset-left, 0px)); overflow-y: auto; }
+.slide p { max-width: 32ch; color: var(--muted); line-height: 1.5; text-wrap: pretty; }
+.slide h2 { font-size: 1.4rem; max-width: 16ch; }
+.logo { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.logo .top { font-family: var(--display); font-weight: 600; font-size: 1.5rem; letter-spacing: .3em; margin-right: -.3em; }
+.linx { display: flex; gap: 14px; position: relative; }
+.linx::before { content: ""; position: absolute; left: 30px; right: 30px; top: 50%; height: 6px; margin-top: -3px; background: var(--brand); border-radius: 3px; }
+.linx span { position: relative; width: 58px; height: 58px; border-radius: 12px; background: var(--accent); color: var(--accent-ink);
+  display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 1.7rem;
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 60%, #000); }
+.linx span:nth-child(even) { transform: translateY(8px); }
+.tagline { font-family: var(--display); font-weight: 600; font-size: 1.05rem; color: var(--brand); }
+.demo { position: relative; display: grid; grid-template-columns: repeat(4, 54px); grid-template-rows: repeat(3, 54px); isolation: isolate; }
+.demo svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+.demo svg polyline { fill: none; stroke: var(--brand); stroke-width: .16; stroke-linecap: round; stroke-linejoin: round; }
+.points { display: grid; grid-template-columns: repeat(2, auto); gap: 6px 22px; text-align: left; }
+.points div { display: flex; justify-content: space-between; gap: 16px; background: var(--surface); border-radius: 10px; padding: 7px 12px; font-weight: 500; }
+.points b { font-family: var(--display); color: var(--brand); font-variant-numeric: tabular-nums; }
+.clock { width: 150px; height: 150px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 2.2rem;
+  background: conic-gradient(var(--bad) 0 16.6%, var(--brand) 0); position: relative; isolation: isolate; }
+.clock::before { content: ""; position: absolute; inset: 12px; border-radius: 50%; background: var(--bg); z-index: -1; }
+#dots { display: flex; justify-content: center; gap: 8px; padding: 14px 0; }
+#dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); transition: width .2s, background .2s; }
+#dots i.on { width: 22px; border-radius: 4px; background: var(--brand); }
+.tourbtns { display: flex; gap: 10px; width: 100%; max-width: 480px; margin: 0 auto;
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); }
+.tourbtns .primary { flex: 1; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- GAME -->
+  <section class="screen" id="s-game">
+    <div class="hud">
+      <div class="stat"><div class="eyebrow">Time</div><div class="num" id="time">1:00</div></div>
+      <div id="word" class="hint" aria-live="polite">Best score: 0</div>
+      <div class="stat right"><div class="eyebrow">Score</div><div class="num" id="score">0</div></div>
+      <button id="endBtn" type="button" hidden>End</button>
+    </div>
+    <div class="bar" id="bar"><i></i></div>
+    <div class="boardwrap" id="boardwrap">
+      <div id="board" aria-label="Letter grid, 7 by 11">
+        <svg id="trail" viewBox="0 0 7 11" preserveAspectRatio="none" aria-hidden="true"><polyline class="base" points=""/><polyline class="dash" points=""/></svg>
+      </div>
+      <button id="go" type="button">GO</button>
+    </div>
+    <div id="results" hidden>
+      <div class="eyebrow">Time's up · your score</div>
+      <div class="num" id="finalScore">0</div>
+      <div class="badge" id="newHigh" hidden>New high score</div>
+      <div class="eyebrow" id="wordCount">Words</div>
+      <div class="grow"><ul class="wordlist" id="finalWords"></ul></div>
+      <button class="btn primary block" id="again" type="button">Play Again</button>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="screen scroll" id="s-settings" hidden>
+    <h2>Settings</h2>
+    <div class="panel">
+      <div class="row"><span>Theme</span>
+        <div class="seg" id="themeSeg"><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button></div></div>
+      <div class="row"><span>Audio</span>
+        <div class="seg" id="audioSeg"><button type="button" data-v="on">On</button><button type="button" data-v="off">Off</button></div></div>
+    </div>
+    <button class="btn" id="replayTour" type="button">Replay the welcome tour</button>
+  </section>
+
+  <!-- LEADERBOARD -->
+  <section class="screen scroll" id="s-leaderboard" hidden>
+    <h2>Your top 5</h2>
+    <div class="panel"><ol class="plain" id="top5"></ol></div>
+    <h2>Leaderboard</h2>
+    <div class="panel">
+      <table><thead><tr><th class="rank">#</th><th>Screen name</th><th>Score</th></tr></thead><tbody id="players"></tbody></table>
+      <p class="empty" id="playersEmpty" hidden></p>
+    </div>
+    <p class="note" id="lbNote"></p>
+  </section>
+
+  <!-- ACCOUNT -->
+  <section class="screen scroll" id="s-account" hidden>
+    <h2 id="acctTitle">Create your account</h2>
+    <p class="note" id="acctIntro">Pick a screen name to appear on the leaderboard. It can't be changed later.</p>
+    <form id="acctForm" novalidate>
+      <div class="two">
+        <label>First name<input type="text" id="fFirst" maxlength="40" autocomplete="given-name"></label>
+        <label>Last name<input type="text" id="fLast" maxlength="40" autocomplete="family-name"></label>
+      </div>
+      <label>Email<input type="email" id="fEmail" maxlength="120" autocomplete="email"></label>
+      <label>Screen name<input type="text" id="fScreen" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <div class="msg" id="acctMsg" role="status"></div>
+      <button class="btn primary" type="submit" id="acctSave">Create account</button>
+    </form>
+    <button class="btn danger" id="delBtn" type="button" hidden>Delete account</button>
+    <div class="confirm" id="delConfirm" hidden>
+      <p><strong>Delete your account?</strong> Your profile, saved scores and leaderboard entry are removed for good.</p>
+      <div class="two"><button class="btn" id="delNo" type="button">Keep account</button><button class="btn danger solid" id="delYes" type="button">Delete</button></div>
+    </div>
+  </section>
+
+  <nav id="nav" aria-label="Main">
+    <button type="button" data-go="game" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z"/></svg>Game</button>
+    <button type="button" data-go="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
+    <button type="button" data-go="leaderboard"><svg viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 14v4M8 20h8"/></svg>Leaderboard</button>
+    <button type="button" data-go="account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.500 2 8 6"/></svg>Account</button>
+  </nav>
+</div>
+
+<!-- TOUR -->
+<div id="tour" hidden>
+  <div id="slides">
+    <div class="slide">
+      <div class="logo" aria-label="LetterLinx"><div class="top">LETTER</div><div class="linx"><span>L</span><span>I</span><span>N</span><span>X</span></div></div>
+      <div class="tagline">Link letters. Beat the clock.</div>
+      <p>A one-minute word hunt. Trace through neighbouring tiles to spell as many words as you can before time runs out.</p>
+    </div>
+    <div class="slide">
+      <div class="demo" aria-hidden="true">
+        <div class="tile"><span>P</span></div><div class="tile sel"><span>L</span></div><div class="tile"><span>E</span></div><div class="tile"><span>T</span></div>
+        <div class="tile sel"><span>I</span></div><div class="tile"><span>A</span></div><div class="tile sel"><span>N</span></div><div class="tile"><span>S</span></div>
+        <div class="tile"><span>R</span></div><div class="tile"><span>O</span></div><div class="tile"><span>M</span></div><div class="tile sel"><span>K</span></div>
+        <svg viewBox="0 0 4 3"><polyline points="1.5,.5 .5,1.5 2.5,1.5 3.5,2.5"/></svg>
+      </div>
+      <h2>Drag to link letters</h2>
+      <p>Press a tile and drag to the next one: across, up, down or diagonally. Lift your finger to play the word. Words need at least 2 letters.</p>
+    </div>
+    <div class="slide">
+      <h2>Longer words score big</h2>
+      <div class="points">
+        <div>2 letters <b>1</b></div><div>6 letters <b>15</b></div>
+        <div>3 letters <b>3</b></div><div>7 letters <b>25</b></div>
+        <div>4 letters <b>5</b></div><div>8 letters <b>35</b></div>
+        <div>5 letters <b>10</b></div><div>9 or more <b>50</b></div>
+      </div>
+      <p>A real word flashes green with a ding. Anything else flashes red with a buzz.</p>
+    </div>
+    <div class="slide">
+      <div class="clock" aria-hidden="true">0:10</div>
+      <h2>Sixty seconds per round</h2>
+      <p>The clock starts ticking out loud for the last 10 seconds. Your five best rounds are saved, and your high score goes on the leaderboard.</p>
+    </div>
+  </div>
+  <div id="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></div>
+  <div class="tourbtns">
+    <button class="btn" id="tourNext" type="button">Next</button>
+    <button class="btn primary" id="playNow" type="button">Play Now</button>
+  </div>
+</div>
+
+<div class="overlay" id="modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <header><h2 id="modalTitle"></h2><button class="x" id="modalClose" type="button" aria-label="Close">✕</button></header>
+    <div class="grow"><ul class="wordlist" id="modalWords"></ul></div>
+  </div>
+</div>
+
+<script src="words.js"></script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const COLS = 7, ROWS = 11, N = COLS * ROWS, ROUND_MS = 60000;
+  const DICT = new Set((window.LLX_WORDS || "").split("|"));
+  const WEIGHTS = { E: 12, A: 9, I: 8, O: 8, U: 4, S: 7, T: 7, N: 6, R: 6, C: 4, H: 4, M: 4, P: 4, L: 4, D: 4,
+    G: 3, B: 2, F: 2, Y: 2, W: 2, K: 1.5, V: 1, X: .5, J: .5, Z: .5, Q: .3 };
+  const BAG = Object.entries(WEIGHTS), BAG_TOTAL = BAG.reduce((s, [, w]) => s + w, 0);
+  const randLetter = () => { let r = Math.random() * BAG_TOTAL; for (const [l, w] of BAG) { if ((r -= w) < 0) return l; } return "E"; };
+  const POINTS = [0, 0, 1, 3, 5, 10, 15, 25, 35];
+  const pointsFor = (len) => len >= 9 ? 50 : POINTS[len] || 0;
+
+  /* ---------- saved state ---------- */
+  const KEY = "letterlinx.v1";
+  const S = { tourSeen: false, audio: true, theme: null, account: null, top: [] };
+  try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
+  if (!Array.isArray(S.top)) S.top = [];
+  const saveLocal = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+
+  /* shared leaderboard: /api/players (Vercel function). Without it, everything stays on this device. */
+  const API = "/api/players";
+  let online = false, syncFailed = false, lastPub = "", chain = Promise.resolve();
+  let players = null, lbState = "loading";
+  const best = () => S.top[0]?.score || 0;
+  const rid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/-/g, "");
+  if (!S.pid) { S.pid = rid(); S.secret = rid() + rid(); saveLocal(); }
+  const mergeTop = (a, b) => {
+    const seen = new Set(), out = [];
+    for (const g of [...a, ...b]) {
+      if (!g || typeof g.score !== "number" || !Array.isArray(g.words) || seen.has(g.at)) continue;
+      seen.add(g.at); out.push({ score: g.score, words: g.words.map(String), at: g.at });
+    }
+    return out.sort((x, y) => y.score - x.score || y.at - x.at).slice(0, 5);
+  };
+  async function call(method, body) {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
+    try {
+      const r = await fetch(API, { method, signal: ctl.signal, headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined });
+      const data = await r.json().catch(() => null);
+      return { ok: r.ok, status: r.status, data };
+    } finally { clearTimeout(t); }
+  }
+  async function loadPlayers() {
+    try {
+      const r = await call("GET");
+      if (!r.ok || !Array.isArray(r.data?.players)) throw 0;
+      players = r.data.players.filter((p) => typeof p.screenName === "string" && typeof p.best === "number");
+      online = true; lbState = "live";
+    } catch (e) { online = false; lbState = "local"; }
+    renderLeaderboard();
+  }
+  /* Send this player's screen name and best score to the shared leaderboard. */
+  function pushCloud() {
+    if (!online || !S.account) return;
+    const pub = { id: S.pid, secret: S.secret, screenName: S.account.screenName, best: best() };
+    if (JSON.stringify(pub) === lastPub) return;
+    chain = chain.then(async () => {
+      const r = await call("POST", pub);
+      if (!r.ok) throw 0;
+      lastPub = JSON.stringify(pub); syncFailed = false;
+    }).catch(() => { syncFailed = true; }).then(loadPlayers);
+  }
+  const save = () => { saveLocal(); pushCloud(); };
+  const initCloud = () => loadPlayers().then(pushCloud);
+
+  /* ---------- audio ---------- */
+  let actx = null;
+  function wake() {
+    if (!S.audio) return;
+    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); } catch (e) {}
+  }
+  function tone(freq, dur, type = "sine", vol = .2, delay = 0) {
+    if (!S.audio || !actx) return;
+    const t = actx.currentTime + delay, o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .008); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur + .02);
+  }
+  const ding = () => { tone(1318.5, .35, "sine", .22); tone(1975.5, .5, "sine", .14, .07); };
+  const buzz = () => { tone(110, .28, "sawtooth", .16); tone(116, .28, "square", .08); };
+  const tick = () => tone(1100, .05, "square", .12);
+
+  /* ---------- game ---------- */
+  const board = $("board"), trail = $("trail"), [lineA, lineB] = trail.querySelectorAll("polyline");
+  const tiles = [];
+  for (let i = 0; i < N; i++) {
+    const t = document.createElement("div"); t.className = "tile blank";
+    t.appendChild(document.createElement("span")); board.appendChild(t); tiles.push(t);
+  }
+  let phase = "idle", letters = [], path = [], score = 0, words = [], found = new Set();
+  let endAt = 0, timerId = 0, lastSec = 0, roundId = 0, pointerId = null;
+  const mark = new Map(); // tile index -> "good" | "bad" while feedback shows
+  let fb = null;          // { text, kind, pts: [indices] } latest feedback
+
+  const fmt = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
+  const pts = (arr) => arr.map((i) => (i % COLS + .5) + "," + (Math.floor(i / COLS) + .5)).join(" ");
+
+  function paint() {
+    for (let i = 0; i < N; i++) {
+      const t = tiles[i], st = mark.get(i);
+      t.classList.toggle("sel", !st && path.includes(i));
+      t.classList.toggle("good", st === "good"); t.classList.toggle("bad", st === "bad");
+    }
+    const live = path.length ? path : fb ? fb.pts : [];
+    const p = pts(live); lineA.setAttribute("points", p); lineB.setAttribute("points", p);
+    trail.setAttribute("class", path.length ? "" : fb ? fb.kind : "");
+    const w = $("word");
+    if (path.length) { w.className = ""; w.textContent = path.map((i) => letters[i]).join(""); }
+    else if (fb) { w.className = fb.kind; w.textContent = fb.text; }
+    else if (phase === "playing") { w.className = "hint"; w.textContent = "Drag across letters"; }
+    else { w.className = "hint"; w.textContent = "Best score: " + best(); }
+    $("score").textContent = score;
+  }
+
+  function setLetter(i, l, fresh) {
+    letters[i] = l; const t = tiles[i]; t.firstChild.textContent = l; t.classList.remove("blank");
+    if (fresh) { t.classList.remove("fresh"); void t.offsetWidth; t.classList.add("fresh"); }
+  }
+
+  function start() {
+    wake(); roundId++; phase = "playing"; score = 0; words = []; found = new Set(); path = []; fb = null; mark.clear();
+    for (let i = 0; i < N; i++) setLetter(i, randLetter(), true);
+    $("go").hidden = true; $("results").hidden = true; $("boardwrap").hidden = false; $("endBtn").hidden = false;
+    $("nav").classList.add("locked");
+    endAt = performance.now() + ROUND_MS; lastSec = 60;
+    clearInterval(timerId); timerId = setInterval(clock, 100); clock(); paint();
+  }
+
+  function clock() {
+    const left = endAt - performance.now(), sec = Math.max(0, Math.ceil(left / 1000));
+    $("time").textContent = fmt(left);
+    $("bar").firstElementChild.style.transform = "scaleX(" + Math.max(0, left / ROUND_MS) + ")";
+    const low = sec <= 10; $("time").classList.toggle("low", low); $("bar").classList.toggle("low", low);
+    if (sec !== lastSec) { lastSec = sec; if (low && sec > 0) tick(); }
+    if (left <= 0) end();
+  }
+
+  function end() {
+    if (phase !== "playing") return;
+    clearInterval(timerId); phase = "over"; roundId++; path = []; fb = null; mark.clear(); pointerId = null;
+    tone(660, .18, "triangle", .18); tone(440, .4, "triangle", .18, .16);
+    const isHigh = score > 0 && score > best();
+    if (score > 0) { S.top = mergeTop(S.top, [{ score, words: words.slice(), at: Date.now() }]); save(); }
+    $("time").textContent = "0:00"; $("time").classList.remove("low"); $("endBtn").hidden = true;
+    $("nav").classList.remove("locked");
+    $("boardwrap").hidden = true; $("results").hidden = false;
+    $("finalScore").textContent = score; $("newHigh").hidden = !isHigh;
+    $("wordCount").textContent = words.length === 1 ? "1 word" : words.length + " words";
+    fillWords($("finalWords"), words, "No words this round. Try short ones first: two letters still score.");
+    paint(); renderLeaderboard();
+  }
+
+  function fillWords(ul, list, emptyText) {
+    ul.textContent = "";
+    if (!list.length) { const li = document.createElement("li"); li.className = "empty"; li.style.background = "none"; li.style.textTransform = "none"; li.style.letterSpacing = "0"; li.style.fontWeight = "400"; li.textContent = emptyText; ul.appendChild(li); return; }
+    for (const w of list) {
+      const li = document.createElement("li"), b = document.createElement("b");
+      li.textContent = w; b.textContent = "+" + pointsFor(w.length); li.appendChild(b); ul.appendChild(li);
+    }
+  }
+
+  function tileAt(e, strict) {
+    const r = board.getBoundingClientRect(), size = r.width / COLS;
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    const c = Math.floor(x / size), row = Math.floor(y / size);
+    if (c < 0 || c >= COLS || row < 0 || row >= ROWS) return -1;
+    if (strict && Math.hypot(x - (c + .5) * size, y - (row + .5) * size) > size * .4) return -1;
+    return row * COLS + c;
+  }
+  const adjacent = (a, b) => Math.abs(a % COLS - b % COLS) <= 1 && Math.abs(Math.floor(a / COLS) - Math.floor(b / COLS)) <= 1;
+
+  board.addEventListener("pointerdown", (e) => {
+    if (phase !== "playing" || pointerId !== null) return;
+    const i = tileAt(e, false); if (i < 0 || mark.has(i)) return;
+    e.preventDefault(); wake(); pointerId = e.pointerId;
+    try { board.setPointerCapture(e.pointerId); } catch (err) {}
+    path = [i]; paint();
+  });
+  board.addEventListener("pointermove", (e) => {
+    if (e.pointerId !== pointerId || !path.length) return;
+    const i = tileAt(e, true); if (i < 0) return;
+    const last = path[path.length - 1];
+    if (i === last) return;
+    if (path.length > 1 && i === path[path.length - 2]) { path.pop(); paint(); return; }
+    if (path.includes(i) || mark.has(i) || !adjacent(last, i)) return;
+    path.push(i); paint();
+  });
+  const release = (e) => { if (e.pointerId !== pointerId) return; pointerId = null; submit(); };
+  board.addEventListener("pointerup", release);
+  board.addEventListener("pointercancel", release);
+
+  function submit() {
+    const p = path; path = [];
+    if (phase !== "playing" || p.length < 2) { paint(); return; }
+    const word = p.map((i) => letters[i]).join(""), key = word.toLowerCase();
+    const valid = DICT.has(key), dup = valid && found.has(key), ok = valid && !dup, rid = roundId;
+    let text = word;
+    if (ok) { const n = pointsFor(word.length); score += n; found.add(key); words.push(key); text = word + "  +" + n; ding(); }
+    else { if (dup) text = word + " · already found"; buzz(); }
+    const mine = fb = { text, kind: ok ? "good" : "bad", pts: p };
+    p.forEach((i) => mark.set(i, mine.kind)); paint();
+    setTimeout(() => {
+      if (rid !== roundId) return;
+      p.forEach((i) => { mark.delete(i); if (ok) setLetter(i, randLetter(), true); });
+      if (fb === mine) fb = null;
+      paint();
+    }, ok ? 420 : 380);
+  }
+
+  $("go").addEventListener("click", start);
+  $("again").addEventListener("click", start);
+  $("endBtn").addEventListener("click", end);
+
+  /* ---------- navigation ---------- */
+  function show(name) {
+    if (phase === "playing" && name !== "game") return;
+    for (const s of ["game", "settings", "leaderboard", "account"]) $("s-" + s).hidden = s !== name;
+    document.querySelectorAll("#nav button").forEach((b) => b.dataset.go === name ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+    if (name === "account") renderAccount();
+    if (name === "leaderboard") { renderLeaderboard(); loadPlayers(); }
+  }
+  $("nav").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) show(b.dataset.go); });
+
+  /* ---------- settings ---------- */
+  const sysDark = () => window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
+  function renderSettings() {
+    if (S.theme) document.documentElement.dataset.theme = S.theme;
+    const eff = S.theme || document.documentElement.dataset.theme || (sysDark() ? "dark" : "light");
+    document.querySelectorAll("#themeSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === eff)));
+    document.querySelectorAll("#audioSeg button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.v === "on") === !!S.audio)));
+  }
+  $("themeSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.theme = b.dataset.v; saveLocal(); renderSettings(); });
+  $("audioSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.audio = b.dataset.v === "on"; saveLocal(); renderSettings(); if (S.audio) { wake(); ding(); } });
+  $("replayTour").addEventListener("click", () => openTour());
+
+  /* ---------- leaderboard ---------- */
+  const dateFmt = (at) => { try { return new Date(at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); } catch (e) { return ""; } };
+  function renderLeaderboard() {
+    const ol = $("top5"); ol.textContent = "";
+    if (!S.top.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = "No scores yet. Finish a round and it shows up here."; ol.appendChild(li); }
+    S.top.forEach((g, i) => {
+      const li = document.createElement("li"), b = document.createElement("button");
+      b.type = "button"; b.className = "scorebtn";
+      const mk = (cls, txt) => { const s = document.createElement("span"); s.className = cls; s.textContent = txt; b.appendChild(s); };
+      mk("rank", i + 1); mk("num", g.score); mk("meta", (g.words.length === 1 ? "1 word" : g.words.length + " words") + " · " + dateFmt(g.at)); mk("chev", "›");
+      b.addEventListener("click", () => openModal(g.score + " points", g.words));
+      li.appendChild(b); ol.appendChild(li);
+    });
+
+    let list = players;
+    if (lbState !== "live") list = S.account ? [{ id: "me", screenName: S.account.screenName, best: best() }] : [];
+    const myId = lbState === "live" ? S.pid : "me";
+    const tb = $("players"); tb.textContent = "";
+    [...(list || [])].sort((a, b) => b.best - a.best).forEach((p, i) => {
+      const tr = document.createElement("tr"); if (p.id === myId) tr.className = "me";
+      [i + 1, p.screenName.slice(0, 24) + (p.id === myId ? " (you)" : ""), p.best].forEach((v, k) => {
+        const td = document.createElement("td"); if (k === 0) td.className = "rank"; td.textContent = v; tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    const empty = $("playersEmpty"); empty.hidden = !!(list && list.length);
+    empty.textContent = lbState === "loading" ? "Loading players…" : "No registered players yet.";
+    $("lbNote").textContent =
+      lbState === "local" ? "The shared leaderboard can't be reached right now, so only this device's player is listed."
+      : syncFailed ? "Your score couldn't be sent to the shared leaderboard. It is kept on this device and sent again after your next round."
+      : !S.account ? "Create an account on the Account tab to put your high score on the leaderboard." : "";
+  }
+
+  function openModal(title, list) {
+    $("modalTitle").textContent = title; fillWords($("modalWords"), list, "No words recorded."); $("modal").hidden = false; $("modalClose").focus();
+  }
+  const closeModal = () => { $("modal").hidden = true; };
+  $("modalClose").addEventListener("click", closeModal);
+  $("modal").addEventListener("click", (e) => { if (e.target === $("modal")) closeModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+
+  /* ---------- account ---------- */
+  const msg = (text, cls) => { const m = $("acctMsg"); m.textContent = text; m.className = "msg " + (cls || ""); };
+  function renderAccount() {
+    const a = S.account;
+    $("acctTitle").textContent = a ? "Your account" : "Create your account";
+    $("acctIntro").hidden = !!a;
+    $("fFirst").value = a?.first || ""; $("fLast").value = a?.last || ""; $("fEmail").value = a?.email || "";
+    $("fScreen").value = a?.screenName || ""; $("fScreen").readOnly = !!a;
+    $("acctSave").textContent = a ? "Save changes" : "Create account";
+    $("delBtn").hidden = !a; $("delConfirm").hidden = true; msg("");
+  }
+  $("acctForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const first = $("fFirst").value.trim(), last = $("fLast").value.trim(), email = $("fEmail").value.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return msg("That email doesn't look right. Check for a missing @ or domain.", "err");
+    if (S.account) { Object.assign(S.account, { first, last, email }); save(); return msg("Saved.", "ok"); }
+    const screenName = $("fScreen").value.trim();
+    if (!/^[A-Za-z0-9_.-]{3,16}$/.test(screenName)) return msg("Screen name needs 3 to 16 letters, numbers, dots, dashes or underscores.", "err");
+    $("acctSave").disabled = true;
+    try {
+      if (online) {
+        const pub = { id: S.pid, secret: S.secret, screenName, best: best() };
+        const r = await call("POST", pub);
+        if (r.status === 409) { msg("That screen name is taken. Try another.", "err"); return; }
+        if (r.ok) lastPub = JSON.stringify(pub);
+      }
+    } catch (err) {} finally { $("acctSave").disabled = false; }
+    S.account = { first, last, email, screenName }; save(); loadPlayers(); renderAccount(); renderLeaderboard(); msg("Account created.", "ok");
+  });
+  $("delBtn").addEventListener("click", () => { $("delConfirm").hidden = false; $("delBtn").hidden = true; });
+  $("delNo").addEventListener("click", () => { $("delConfirm").hidden = true; $("delBtn").hidden = false; });
+  $("delYes").addEventListener("click", () => {
+    const gone = { id: S.pid, secret: S.secret };
+    S.account = null; S.top = []; S.pid = rid(); S.secret = rid() + rid(); saveLocal(); lastPub = "";
+    if (online) chain = chain.then(() => call("DELETE", gone)).catch(() => {}).then(loadPlayers);
+    renderAll(); msg("Account deleted.", "ok");
+  });
+
+  /* ---------- tour ---------- */
+  const slides = $("slides");
+  let slideIx = 0;
+  function setDots() {
+    slideIx = Math.round(slides.scrollLeft / Math.max(1, slides.clientWidth));
+    document.querySelectorAll("#dots i").forEach((d, i) => d.classList.toggle("on", i === slideIx));
+    $("tourNext").hidden = slideIx >= 3;
+  }
+  slides.addEventListener("scroll", setDots, { passive: true });
+  $("tourNext").addEventListener("click", () => slides.scrollTo({ left: (slideIx + 1) * slides.clientWidth, behavior: "smooth" }));
+  function openTour() { $("tour").hidden = false; slides.scrollLeft = 0; setDots(); }
+  $("playNow").addEventListener("click", () => { $("tour").hidden = true; S.tourSeen = true; saveLocal(); show("game"); });
+
+  /* ---------- boot ---------- */
+  function renderAll() { renderSettings(); renderLeaderboard(); renderAccount(); paint(); }
+  renderAll();
+  if (!S.tourSeen) openTour();
+  if (DICT.size < 1000) { $("go").disabled = true; $("word").textContent = "Word list failed to load. Reload the page."; }
+  initCloud();
+})();
+</script>
+</body>
+</html>
