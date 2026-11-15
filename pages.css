@@ -1,0 +1,48 @@
+/* Shared styles for the About, Contact and Privacy pages. Colours match the game. */
+:root {
+  --bg: #E7EFF2; --surface: #FFFFFF; --ink: #10303B; --muted: #4B6772; --line: #C5D4DA;
+  --brand: #0C6B7A; --accent: #F2A900; --accent-ink: #2B1E00; --accent-edge: #916500;
+  --font: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0B1C22; --surface: #132B33; --ink: #E8F2F4; --muted: #9DB6BE; --line: #29495397;
+  --brand: #5CC7D6; --accent: #FFBE2E; --accent-ink: #2B1E00; --accent-edge: #99721C; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0B1C22; --surface: #132B33; --ink: #E8F2F4; --muted: #9DB6BE; --line: #29495397;
+  --brand: #5CC7D6; --accent: #FFBE2E; --accent-ink: #2B1E00; --accent-edge: #99721C; color-scheme: dark }
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 17px; line-height: 1.6; }
+.wrap { max-width: 720px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+a { color: var(--brand); font-weight: 700; text-underline-offset: 2px; }
+:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+
+/* header: game name on the left, way back to the game on the right */
+.top { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top, 0px); }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 10px; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-weight: 900; font-size: 1.2rem; letter-spacing: .01em; min-width: 0; }
+.mark { display: grid; grid-template-columns: repeat(2, 15px); gap: 2px; flex: none; }
+.mark i { display: grid; place-items: center; width: 15px; height: 15px; border-radius: 4px; background: var(--accent); color: var(--accent-ink);
+  font-style: normal; font-size: 10px; font-weight: 900; line-height: 1; }
+.play { flex: none; background: var(--accent); color: var(--accent-ink); text-decoration: none; font-weight: 800; padding: 9px 16px; border-radius: 12px;
+  box-shadow: 0 3px 0 var(--accent-edge); white-space: nowrap; }
+.play:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--accent-edge); }
+
+main { padding-block: 28px 40px; }
+h1 { font-size: 2rem; font-weight: 900; line-height: 1.15; margin: 0 0 6px; text-wrap: balance; }
+h2 { font-size: 1.3rem; font-weight: 800; margin: 32px 0 6px; text-wrap: balance; }
+h3 { font-size: 1.05rem; font-weight: 800; margin: 20px 0 4px; }
+p { margin: 0 0 12px; max-width: 65ch; }
+.lead { font-size: 1.1rem; color: var(--muted); }
+.meta { color: var(--muted); font-size: .95rem; }
+ul { margin: 0 0 12px; padding-left: 1.2em; max-width: 65ch; }
+li { margin-bottom: 8px; }
+.contacts { list-style: none; padding: 0; background: var(--surface); border-radius: 16px; }
+.contacts li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin: 0; padding: 14px 18px; }
+.contacts li + li { border-top: 1px solid var(--line); }
+.contacts a { overflow-wrap: anywhere; }
+
+footer { border-top: 1px solid var(--line); padding-block: 20px calc(24px + env(safe-area-inset-bottom, 0px)); color: var(--muted); font-size: .95rem; }
+footer nav { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-bottom: 8px; }
+footer p { margin: 0; }

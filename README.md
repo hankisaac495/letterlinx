@@ -8,6 +8,7 @@ A one-minute word hunt for phones and desktops. Drag across neighbouring tiles t
 - `modes.js` – the game versions: grid size, timer, scoring. Shared by the page and the API
 - `build-pages.js` – generates the search tags and `es/index.html`
 - `i18n.js` – interface text in English and Spanish
+- `about/`, `contact/`, `privacy/` – the About, Contact and Privacy Policy pages, styled by `pages.css`
 - `words.js` – English dictionary (about 270,000 words, 2–15 letters)
 - `words-es.js` – Spanish dictionary (about 366,000 words, 2–10 letters, no accents, Ñ kept)
 - `api/` – Vercel functions: accounts, score history, leaderboard (Postgres)

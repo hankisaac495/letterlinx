@@ -1,3 +1,8 @@
 {
-  "redirects": [{ "source": "/es", "destination": "/es/", "permanent": true }]
+  "redirects": [
+    { "source": "/es", "destination": "/es/", "permanent": true },
+    { "source": "/about", "destination": "/about/", "permanent": true },
+    { "source": "/contact", "destination": "/contact/", "permanent": true },
+    { "source": "/privacy", "destination": "/privacy/", "permanent": true }
+  ]
 }

@@ -175,6 +175,8 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .about { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; color: var(--muted); font-size: .9rem; line-height: 1.5; }
 .about h2 { color: var(--ink); }
 .about h3 { font-size: .95rem; font-weight: 800; color: var(--ink); margin-top: 6px; }
+.sitelinks a { color: var(--ink); font-weight: 600; text-decoration: none; }
+.sitelinks a span:last-child { color: var(--muted); }
 .note { font-size: .85rem; color: var(--muted); }
 .scorebtn { width: 100%; border: 0; background: transparent; text-align: left; display: flex; align-items: center; gap: 12px; padding: 12px 0; }
 .scorebtn .rank, td.rank { width: 1.6em; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -299,6 +301,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     </div>
     <p class="note" data-t="set.note">Language changes the letters, the dictionary and the text. Each language has its own scores and leaderboard.</p>
     <button class="btn" id="replayTour" type="button" data-t="set.tour">Replay the welcome tour</button>
+    <div class="panel sitelinks" role="navigation" data-t-label="links.label" aria-label="More about LetterLinx">
+      <a class="row" href="/about/"><span data-t="links.about">About</span><span aria-hidden="true">›</span></a>
+      <a class="row" href="/contact/"><span data-t="links.contact">Contact</span><span aria-hidden="true">›</span></a>
+      <a class="row" href="/privacy/"><span data-t="links.privacy">Privacy Policy</span><span aria-hidden="true">›</span></a>
+    </div>
     <article class="about">
       <h2 data-t="about.title">About LetterLinx</h2>
       <p data-t="about.text">LetterLinx is a free word game you play in your browser, on a phone or a computer. Link neighbouring letter tiles to spell words, score more for longer words, and see how many points you can make in 60 seconds. Play in English or Spanish, save your best rounds and climb the leaderboard.</p>
