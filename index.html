@@ -79,8 +79,8 @@ h2 { font-family: var(--display); font-size: 1.15rem; font-weight: 600; text-wra
 
 /* Board */
 .boardwrap { flex: 1; min-height: 0; container-type: size; display: flex; align-items: center; justify-content: center; position: relative; }
-#board { width: min(100cqw, calc(100cqh * 7 / 11)); aspect-ratio: 7 / 11; position: relative; isolation: isolate;
-  display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(11, 1fr);
+#board { --cols: 7; --rows: 11; width: min(100cqw, calc(100cqh * var(--cols) / var(--rows))); aspect-ratio: var(--cols) / var(--rows); position: relative; isolation: isolate;
+  display: grid; grid-template-columns: repeat(var(--cols), 1fr); grid-template-rows: repeat(var(--rows), 1fr);
   touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer; }
 .tile { position: relative; display: grid; place-items: center; container-type: size; }
 .tile::before { content: ""; position: absolute; inset: 5%; border-radius: 18%; z-index: 0;
@@ -129,6 +129,8 @@ h2 { font-family: var(--display); font-size: 1.15rem; font-weight: 600; text-wra
 .seg { display: inline-flex; background: var(--surface-2); border-radius: 12px; padding: 3px; }
 .seg button { border: 0; background: transparent; padding: 8px 16px; border-radius: 9px; font-weight: 600; color: var(--muted); }
 .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px var(--shade); }
+.seg.center { align-self: center; }
+.wordlist li.none { background: none; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--muted); }
 .note { font-size: .85rem; color: var(--muted); }
 .scorebtn { width: 100%; border: 0; background: transparent; text-align: left; display: flex; align-items: center; gap: 12px; padding: 12px 0; }
 .scorebtn .rank, td.rank { width: 1.6em; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -144,7 +146,7 @@ th:last-child, td:last-child { text-align: right; font-variant-numeric: tabular-
 tr.me td { color: var(--brand); font-weight: 700; }
 form { display: flex; flex-direction: column; gap: 14px; }
 label { display: flex; flex-direction: column; gap: 6px; font-size: .85rem; font-weight: 600; color: var(--muted); }
-input[type="text"], input[type="email"] { background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; font-size: 1rem; color: var(--ink); width: 100%; }
+input[type="text"], input[type="email"], input[type="password"] { background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; font-size: 1rem; color: var(--ink); width: 100%; }
 input:read-only { background: var(--surface-2); color: var(--muted); }
 .msg { font-size: .9rem; font-weight: 500; min-height: 1.2em; }
 .msg.err { color: var(--bad); } .msg.ok { color: var(--good); }
@@ -215,8 +217,9 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <button id="endBtn" type="button" hidden>End</button>
     </div>
     <div class="bar" id="bar"><i></i></div>
+    <div class="seg center" id="modeSeg" aria-label="Game version" hidden></div>
     <div class="boardwrap" id="boardwrap">
-      <div id="board" aria-label="Letter grid, 7 by 11">
+      <div id="board">
         <svg id="trail" viewBox="0 0 7 11" preserveAspectRatio="none" aria-hidden="true"><polyline class="base" points=""/><polyline class="dash" points=""/></svg>
       </div>
       <button id="go" type="button">GO</button>
@@ -245,6 +248,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   <!-- LEADERBOARD -->
   <section class="screen scroll" id="s-leaderboard" hidden>
+    <p class="eyebrow" id="lbMode" hidden></p>
     <h2>Your top 5</h2>
     <div class="panel"><ol class="plain" id="top5"></ol></div>
     <h2>Leaderboard</h2>
@@ -258,20 +262,23 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   <!-- ACCOUNT -->
   <section class="screen scroll" id="s-account" hidden>
     <h2 id="acctTitle">Create your account</h2>
-    <p class="note" id="acctIntro">Pick a screen name to appear on the leaderboard. It can't be changed later.</p>
+    <div class="seg center" id="acctSeg"><button type="button" data-v="register">Create account</button><button type="button" data-v="login">Sign in</button></div>
+    <p class="note" id="acctIntro">An account saves your score history and puts you on the leaderboard. Your screen name can't be changed later.</p>
     <form id="acctForm" novalidate>
-      <div class="two">
+      <div class="two" id="nameRow">
         <label>First name<input type="text" id="fFirst" maxlength="40" autocomplete="given-name"></label>
         <label>Last name<input type="text" id="fLast" maxlength="40" autocomplete="family-name"></label>
       </div>
       <label>Email<input type="email" id="fEmail" maxlength="120" autocomplete="email"></label>
-      <label>Screen name<input type="text" id="fScreen" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <label id="screenRow">Screen name<input type="text" id="fScreen" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <label id="passRow">Password<input type="password" id="fPass" maxlength="200" autocomplete="new-password"></label>
       <div class="msg" id="acctMsg" role="status"></div>
       <button class="btn primary" type="submit" id="acctSave">Create account</button>
     </form>
+    <button class="btn" id="signOut" type="button" hidden>Sign out</button>
     <button class="btn danger" id="delBtn" type="button" hidden>Delete account</button>
     <div class="confirm" id="delConfirm" hidden>
-      <p><strong>Delete your account?</strong> Your profile, saved scores and leaderboard entry are removed for good.</p>
+      <p><strong>Delete your account?</strong> Your profile, score history and leaderboard entry are removed for good.</p>
       <div class="two"><button class="btn" id="delNo" type="button">Keep account</button><button class="btn danger solid" id="delYes" type="button">Delete</button></div>
     </div>
   </section>
@@ -332,71 +339,93 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   </div>
 </div>
 
+<script src="modes.js"></script>
 <script src="words.js"></script>
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
-  const COLS = 7, ROWS = 11, N = COLS * ROWS, ROUND_MS = 60000;
+  const M = window.LLX_MODES;
   const DICT = new Set((window.LLX_WORDS || "").split("|"));
   const WEIGHTS = { E: 12, A: 9, I: 8, O: 8, U: 4, S: 7, T: 7, N: 6, R: 6, C: 4, H: 4, M: 4, P: 4, L: 4, D: 4,
     G: 3, B: 2, F: 2, Y: 2, W: 2, K: 1.5, V: 1, X: .5, J: .5, Z: .5, Q: .3 };
   const BAG = Object.entries(WEIGHTS), BAG_TOTAL = BAG.reduce((s, [, w]) => s + w, 0);
   const randLetter = () => { let r = Math.random() * BAG_TOTAL; for (const [l, w] of BAG) { if ((r -= w) < 0) return l; } return "E"; };
-  const POINTS = [0, 0, 1, 3, 5, 10, 15, 25, 35];
-  const pointsFor = (len) => len >= 9 ? 50 : POINTS[len] || 0;
 
-  /* ---------- saved state ---------- */
+  /* ---------- saved state (this device) ---------- */
   const KEY = "letterlinx.v1";
-  const S = { tourSeen: false, audio: true, theme: null, account: null, top: [] };
+  const S = { tourSeen: false, audio: true, theme: null, mode: null, account: null, tops: {}, pending: [] };
   try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
-  if (!Array.isArray(S.top)) S.top = [];
+  if (!S.tops || typeof S.tops !== "object") S.tops = {};
+  if (Array.isArray(S.top)) { if (!S.tops.classic) S.tops.classic = S.top; delete S.top; }
+  if (!Array.isArray(S.pending)) S.pending = [];
   const saveLocal = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 
-  /* shared leaderboard: /api/players (Vercel function). Without it, everything stays on this device. */
-  const API = "/api/players";
-  let online = false, syncFailed = false, lastPub = "", chain = Promise.resolve();
-  let players = null, lbState = "loading";
-  const best = () => S.top[0]?.score || 0;
-  const rid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/-/g, "");
-  if (!S.pid) { S.pid = rid(); S.secret = rid() + rid(); saveLocal(); }
+  /* ---------- game version ---------- */
+  let modeId = M.modes[S.mode] ? S.mode : M.defaultMode, mode = M.modes[modeId];
+  let COLS = mode.cols, ROWS = mode.rows, N = COLS * ROWS;
+  const pointsFor = (len) => M.pointsFor(modeId, len);
+  const top = () => S.tops[modeId] || [];
+  const best = () => top()[0]?.score || 0;
   const mergeTop = (a, b) => {
     const seen = new Set(), out = [];
-    for (const g of [...a, ...b]) {
+    for (const g of [...(a || []), ...(b || [])]) {
       if (!g || typeof g.score !== "number" || !Array.isArray(g.words) || seen.has(g.at)) continue;
       seen.add(g.at); out.push({ score: g.score, words: g.words.map(String), at: g.at });
     }
     return out.sort((x, y) => y.score - x.score || y.at - x.at).slice(0, 5);
   };
-  async function call(method, body) {
-    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
+
+  /* ---------- server: accounts, score history, leaderboard ---------- */
+  let online = false, players = null, lbState = "loading", syncFailed = false;
+  async function call(path, method, body) {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 10000);
     try {
-      const r = await fetch(API, { method, signal: ctl.signal, headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined });
+      const r = await fetch(path, { method, signal: ctl.signal, credentials: "same-origin",
+        headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined });
       const data = await r.json().catch(() => null);
       return { ok: r.ok, status: r.status, data };
     } finally { clearTimeout(t); }
   }
+  /* take the server's view of the signed-in player; keep rounds not uploaded yet */
+  function adopt(data) {
+    S.account = data.account;
+    const waiting = {};
+    for (const g of S.pending) (waiting[g.mode] = waiting[g.mode] || []).push({ score: g.words.reduce((s, w) => s + M.pointsFor(g.mode, w.length), 0), words: g.words, at: g.at });
+    const tops = {};
+    for (const m of new Set([...Object.keys(data.tops || {}), ...Object.keys(waiting)])) tops[m] = mergeTop(data.tops?.[m], waiting[m]);
+    S.tops = tops; saveLocal(); renderAll();
+  }
+  const localGames = () => Object.entries(S.tops).flatMap(([m, list]) => (list || []).map((g) => ({ mode: m, words: g.words, at: g.at })));
+  async function flushPending() {
+    while (online && S.account && S.pending.length) {
+      const g = S.pending[0];
+      try {
+        const r = await call("/api/games", "POST", g);
+        if (r.status === 401) { signedOutLocally(); return; }
+        if (!r.ok) throw 0;
+        S.pending.shift(); syncFailed = false; adopt(r.data);
+      } catch (e) { syncFailed = true; saveLocal(); break; }
+    }
+    renderLeaderboard();
+  }
   async function loadPlayers() {
     try {
-      const r = await call("GET");
+      const r = await call("/api/leaderboard?mode=" + encodeURIComponent(modeId), "GET");
       if (!r.ok || !Array.isArray(r.data?.players)) throw 0;
       players = r.data.players.filter((p) => typeof p.screenName === "string" && typeof p.best === "number");
       online = true; lbState = "live";
-    } catch (e) { online = false; lbState = "local"; }
+    } catch (e) { lbState = "local"; }
     renderLeaderboard();
   }
-  /* Send this player's screen name and best score to the shared leaderboard. */
-  function pushCloud() {
-    if (!online || !S.account) return;
-    const pub = { id: S.pid, secret: S.secret, screenName: S.account.screenName, best: best() };
-    if (JSON.stringify(pub) === lastPub) return;
-    chain = chain.then(async () => {
-      const r = await call("POST", pub);
-      if (!r.ok) throw 0;
-      lastPub = JSON.stringify(pub); syncFailed = false;
-    }).catch(() => { syncFailed = true; }).then(loadPlayers);
+  function signedOutLocally() { S.account = null; S.tops = {}; S.pending = []; saveLocal(); renderAll(); }
+  async function initCloud() {
+    try {
+      const r = await call("/api/me", "GET");
+      if (r.status === 200) { online = true; adopt(r.data); await flushPending(); }
+      else if (r.status === 401) { online = true; if (S.account) signedOutLocally(); }
+    } catch (e) {}
+    renderAccount(); loadPlayers();
   }
-  const save = () => { saveLocal(); pushCloud(); };
-  const initCloud = () => loadPlayers().then(pushCloud);
 
   /* ---------- audio ---------- */
   let actx = null;
@@ -417,15 +446,39 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   /* ---------- game ---------- */
   const board = $("board"), trail = $("trail"), [lineA, lineB] = trail.querySelectorAll("polyline");
-  const tiles = [];
-  for (let i = 0; i < N; i++) {
-    const t = document.createElement("div"); t.className = "tile blank";
-    t.appendChild(document.createElement("span")); board.appendChild(t); tiles.push(t);
-  }
+  let tiles = [];
   let phase = "idle", letters = [], path = [], score = 0, words = [], found = new Set();
   let endAt = 0, timerId = 0, lastSec = 0, roundId = 0, pointerId = null;
   const mark = new Map(); // tile index -> "good" | "bad" while feedback shows
   let fb = null;          // { text, kind, pts: [indices] } latest feedback
+
+  function buildBoard() {
+    mode = M.modes[modeId]; COLS = mode.cols; ROWS = mode.rows; N = COLS * ROWS;
+    board.style.setProperty("--cols", COLS); board.style.setProperty("--rows", ROWS);
+    board.setAttribute("aria-label", "Letter grid, " + COLS + " by " + ROWS);
+    trail.setAttribute("viewBox", "0 0 " + COLS + " " + ROWS);
+    tiles.forEach((t) => t.remove()); tiles = []; letters = [];
+    for (let i = 0; i < N; i++) {
+      const t = document.createElement("div"); t.className = "tile blank";
+      t.appendChild(document.createElement("span")); board.appendChild(t); tiles.push(t);
+    }
+    $("time").textContent = fmt(mode.seconds * 1000);
+  }
+  function renderModes() {
+    const seg = $("modeSeg"), ids = Object.keys(M.modes);
+    seg.hidden = ids.length < 2 || phase === "playing";
+    seg.textContent = "";
+    for (const id of ids) {
+      const b = document.createElement("button"); b.type = "button"; b.dataset.v = id; b.textContent = M.modes[id].name;
+      b.setAttribute("aria-pressed", String(id === modeId)); seg.appendChild(b);
+    }
+  }
+  $("modeSeg").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b || phase === "playing" || b.dataset.v === modeId) return;
+    modeId = S.mode = b.dataset.v; saveLocal(); phase = "idle"; score = 0;
+    $("results").hidden = true; $("boardwrap").hidden = false; $("go").hidden = false;
+    buildBoard(); renderModes(); paint(); renderLeaderboard(); loadPlayers();
+  });
 
   const fmt = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
   const pts = (arr) => arr.map((i) => (i % COLS + .5) + "," + (Math.floor(i / COLS) + .5)).join(" ");
@@ -456,16 +509,16 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     wake(); roundId++; phase = "playing"; score = 0; words = []; found = new Set(); path = []; fb = null; mark.clear();
     for (let i = 0; i < N; i++) setLetter(i, randLetter(), true);
     $("go").hidden = true; $("results").hidden = true; $("boardwrap").hidden = false; $("endBtn").hidden = false;
-    $("nav").classList.add("locked");
-    endAt = performance.now() + ROUND_MS; lastSec = 60;
+    $("nav").classList.add("locked"); renderModes();
+    endAt = performance.now() + mode.seconds * 1000; lastSec = mode.seconds;
     clearInterval(timerId); timerId = setInterval(clock, 100); clock(); paint();
   }
 
   function clock() {
     const left = endAt - performance.now(), sec = Math.max(0, Math.ceil(left / 1000));
     $("time").textContent = fmt(left);
-    $("bar").firstElementChild.style.transform = "scaleX(" + Math.max(0, left / ROUND_MS) + ")";
-    const low = sec <= 10; $("time").classList.toggle("low", low); $("bar").classList.toggle("low", low);
+    $("bar").firstElementChild.style.transform = "scaleX(" + Math.max(0, left / (mode.seconds * 1000)) + ")";
+    const low = sec <= mode.tickFrom; $("time").classList.toggle("low", low); $("bar").classList.toggle("low", low);
     if (sec !== lastSec) { lastSec = sec; if (low && sec > 0) tick(); }
     if (left <= 0) end();
   }
@@ -475,9 +528,14 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     clearInterval(timerId); phase = "over"; roundId++; path = []; fb = null; mark.clear(); pointerId = null;
     tone(660, .18, "triangle", .18); tone(440, .4, "triangle", .18, .16);
     const isHigh = score > 0 && score > best();
-    if (score > 0) { S.top = mergeTop(S.top, [{ score, words: words.slice(), at: Date.now() }]); save(); }
+    if (score > 0) {
+      const g = { score, words: words.slice(), at: Date.now() };
+      S.tops[modeId] = mergeTop(top(), [g]);
+      if (S.account) { S.pending.push({ mode: modeId, words: g.words, at: g.at }); S.pending = S.pending.slice(-25); }
+      saveLocal(); flushPending().then(loadPlayers);
+    }
     $("time").textContent = "0:00"; $("time").classList.remove("low"); $("endBtn").hidden = true;
-    $("nav").classList.remove("locked");
+    $("nav").classList.remove("locked"); renderModes();
     $("boardwrap").hidden = true; $("results").hidden = false;
     $("finalScore").textContent = score; $("newHigh").hidden = !isHigh;
     $("wordCount").textContent = words.length === 1 ? "1 word" : words.length + " words";
@@ -487,7 +545,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   function fillWords(ul, list, emptyText) {
     ul.textContent = "";
-    if (!list.length) { const li = document.createElement("li"); li.className = "empty"; li.style.background = "none"; li.style.textTransform = "none"; li.style.letterSpacing = "0"; li.style.fontWeight = "400"; li.textContent = emptyText; ul.appendChild(li); return; }
+    if (!list.length) { const li = document.createElement("li"); li.className = "none"; li.textContent = emptyText; ul.appendChild(li); return; }
     for (const w of list) {
       const li = document.createElement("li"), b = document.createElement("b");
       li.textContent = w; b.textContent = "+" + pointsFor(w.length); li.appendChild(b); ul.appendChild(li);
@@ -526,16 +584,16 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   function submit() {
     const p = path; path = [];
-    if (phase !== "playing" || p.length < 2) { paint(); return; }
+    if (phase !== "playing" || p.length < mode.minLength) { paint(); return; }
     const word = p.map((i) => letters[i]).join(""), key = word.toLowerCase();
-    const valid = DICT.has(key), dup = valid && found.has(key), ok = valid && !dup, rid = roundId;
+    const valid = DICT.has(key), dup = valid && found.has(key), ok = valid && !dup, round = roundId;
     let text = word;
     if (ok) { const n = pointsFor(word.length); score += n; found.add(key); words.push(key); text = word + "  +" + n; ding(); }
     else { if (dup) text = word + " · already found"; buzz(); }
     const mine = fb = { text, kind: ok ? "good" : "bad", pts: p };
     p.forEach((i) => mark.set(i, mine.kind)); paint();
     setTimeout(() => {
-      if (rid !== roundId) return;
+      if (round !== roundId) return;
       p.forEach((i) => { mark.delete(i); if (ok) setLetter(i, randLetter(), true); });
       if (fb === mine) fb = null;
       paint();
@@ -560,7 +618,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const sysDark = () => window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
   function renderSettings() {
     if (S.theme) document.documentElement.dataset.theme = S.theme;
-    const eff = S.theme || document.documentElement.dataset.theme || (sysDark() ? "dark" : "light");
+    const eff = S.theme || (sysDark() ? "dark" : "light");
     document.querySelectorAll("#themeSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === eff)));
     document.querySelectorAll("#audioSeg button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.v === "on") === !!S.audio)));
   }
@@ -571,9 +629,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   /* ---------- leaderboard ---------- */
   const dateFmt = (at) => { try { return new Date(at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); } catch (e) { return ""; } };
   function renderLeaderboard() {
+    const many = Object.keys(M.modes).length > 1;
+    $("lbMode").hidden = !many; $("lbMode").textContent = mode.name + " version";
     const ol = $("top5"); ol.textContent = "";
-    if (!S.top.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = "No scores yet. Finish a round and it shows up here."; ol.appendChild(li); }
-    S.top.forEach((g, i) => {
+    if (!top().length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = "No scores yet. Finish a round and it shows up here."; ol.appendChild(li); }
+    top().forEach((g, i) => {
       const li = document.createElement("li"), b = document.createElement("button");
       b.type = "button"; b.className = "scorebtn";
       const mk = (cls, txt) => { const s = document.createElement("span"); s.className = cls; s.textContent = txt; b.appendChild(s); };
@@ -582,13 +642,12 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       li.appendChild(b); ol.appendChild(li);
     });
 
-    let list = players;
-    if (lbState !== "live") list = S.account ? [{ id: "me", screenName: S.account.screenName, best: best() }] : [];
-    const myId = lbState === "live" ? S.pid : "me";
+    const me = S.account?.screenName;
+    let list = lbState === "live" ? players : me ? [{ screenName: me, best: best() }] : [];
     const tb = $("players"); tb.textContent = "";
-    [...(list || [])].sort((a, b) => b.best - a.best).forEach((p, i) => {
-      const tr = document.createElement("tr"); if (p.id === myId) tr.className = "me";
-      [i + 1, p.screenName.slice(0, 24) + (p.id === myId ? " (you)" : ""), p.best].forEach((v, k) => {
+    (list || []).forEach((p, i) => {
+      const tr = document.createElement("tr"); if (p.screenName === me) tr.className = "me";
+      [i + 1, p.screenName.slice(0, 24) + (p.screenName === me ? " (you)" : ""), p.best].forEach((v, k) => {
         const td = document.createElement("td"); if (k === 0) td.className = "rank"; td.textContent = v; tr.appendChild(td);
       });
       tb.appendChild(tr);
@@ -596,9 +655,9 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     const empty = $("playersEmpty"); empty.hidden = !!(list && list.length);
     empty.textContent = lbState === "loading" ? "Loading players…" : "No registered players yet.";
     $("lbNote").textContent =
-      lbState === "local" ? "The shared leaderboard can't be reached right now, so only this device's player is listed."
-      : syncFailed ? "Your score couldn't be sent to the shared leaderboard. It is kept on this device and sent again after your next round."
-      : !S.account ? "Create an account on the Account tab to put your high score on the leaderboard." : "";
+      lbState === "local" ? "The leaderboard can't be reached right now. Your scores are kept on this device."
+      : syncFailed ? "Your last round couldn't be saved to your account. It is kept on this device and sent again next time."
+      : !S.account ? "Create an account on the Account tab to save your score history and appear on the leaderboard." : "";
   }
 
   function openModal(title, list) {
@@ -610,41 +669,67 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
 
   /* ---------- account ---------- */
+  let acctView = "register"; // while signed out: "register" | "login"
+  const ERR = {
+    email_taken: "An account with that email already exists. Sign in instead.",
+    name_taken: "That screen name is taken. Try another.",
+    bad_credentials: "Email or password is wrong.",
+    bad_email: "That email doesn't look right. Check for a missing @ or domain.",
+    bad_name: "Screen name needs 3 to 16 letters, numbers, dots, dashes or underscores.",
+    bad_password: "Password needs at least 8 characters.",
+    not_configured: "Accounts aren't set up on this site yet.",
+    signed_out: "You've been signed out. Sign in again.",
+  };
   const msg = (text, cls) => { const m = $("acctMsg"); m.textContent = text; m.className = "msg " + (cls || ""); };
+  const fail = (r) => msg(r ? ERR[r.data?.error] || "Something went wrong. Try again." : "Can't reach the server. Check your connection and try again.", "err");
   function renderAccount() {
-    const a = S.account;
-    $("acctTitle").textContent = a ? "Your account" : "Create your account";
-    $("acctIntro").hidden = !!a;
-    $("fFirst").value = a?.first || ""; $("fLast").value = a?.last || ""; $("fEmail").value = a?.email || "";
-    $("fScreen").value = a?.screenName || ""; $("fScreen").readOnly = !!a;
-    $("acctSave").textContent = a ? "Save changes" : "Create account";
-    $("delBtn").hidden = !a; $("delConfirm").hidden = true; msg("");
+    const a = S.account, login = !a && acctView === "login";
+    $("acctTitle").textContent = a ? "Your account" : login ? "Sign in" : "Create your account";
+    $("acctSeg").hidden = !!a;
+    document.querySelectorAll("#acctSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === acctView)));
+    $("acctIntro").hidden = !!a || login;
+    $("nameRow").hidden = login; $("screenRow").hidden = login; $("passRow").hidden = !!a;
+    $("fPass").autocomplete = login ? "current-password" : "new-password";
+    $("fFirst").value = a?.first || ""; $("fLast").value = a?.last || ""; $("fEmail").value = a?.email || $("fEmail").value;
+    $("fScreen").value = a?.screenName || $("fScreen").value; $("fScreen").readOnly = !!a; $("fPass").value = "";
+    $("acctSave").textContent = a ? "Save changes" : login ? "Sign in" : "Create account";
+    $("signOut").hidden = !a; $("delBtn").hidden = !a; $("delConfirm").hidden = true; msg("");
   }
+  $("acctSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; acctView = b.dataset.v; renderAccount(); });
   $("acctForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const first = $("fFirst").value.trim(), last = $("fLast").value.trim(), email = $("fEmail").value.trim();
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return msg("That email doesn't look right. Check for a missing @ or domain.", "err");
-    if (S.account) { Object.assign(S.account, { first, last, email }); save(); return msg("Saved.", "ok"); }
-    const screenName = $("fScreen").value.trim();
-    if (!/^[A-Za-z0-9_.-]{3,16}$/.test(screenName)) return msg("Screen name needs 3 to 16 letters, numbers, dots, dashes or underscores.", "err");
-    $("acctSave").disabled = true;
+    const password = $("fPass").value, screenName = $("fScreen").value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return msg(ERR.bad_email, "err");
+    let path = "/api/auth", method = "POST", body;
+    if (S.account) { path = "/api/me"; method = "PATCH"; body = { first, last, email }; }
+    else if (acctView === "login") { if (!password) return msg("Enter your password.", "err"); body = { action: "login", email, password, games: localGames() }; }
+    else {
+      if (!/^[A-Za-z0-9_.-]{3,16}$/.test(screenName)) return msg(ERR.bad_name, "err");
+      if (password.length < 8) return msg(ERR.bad_password, "err");
+      body = { action: "register", first, last, email, screenName, password, games: localGames() };
+    }
+    const was = S.account ? "Saved." : acctView === "login" ? "Signed in." : "Account created.";
+    $("acctSave").disabled = true; msg("Working…");
     try {
-      if (online) {
-        const pub = { id: S.pid, secret: S.secret, screenName, best: best() };
-        const r = await call("POST", pub);
-        if (r.status === 409) { msg("That screen name is taken. Try another.", "err"); return; }
-        if (r.ok) lastPub = JSON.stringify(pub);
-      }
-    } catch (err) {} finally { $("acctSave").disabled = false; }
-    S.account = { first, last, email, screenName }; save(); loadPlayers(); renderAccount(); renderLeaderboard(); msg("Account created.", "ok");
+      const r = await call(path, method, body);
+      if (!r.ok) { if (r.status === 401 && S.account) signedOutLocally(); return fail(r); }
+      online = true; adopt(r.data); msg(was, "ok"); loadPlayers();
+    } catch (err) { fail(null); } finally { $("acctSave").disabled = false; }
+  });
+  $("signOut").addEventListener("click", async () => {
+    try { await call("/api/auth", "POST", { action: "logout" }); } catch (e) {}
+    acctView = "login"; signedOutLocally(); msg("Signed out.", "ok");
   });
   $("delBtn").addEventListener("click", () => { $("delConfirm").hidden = false; $("delBtn").hidden = true; });
   $("delNo").addEventListener("click", () => { $("delConfirm").hidden = true; $("delBtn").hidden = false; });
-  $("delYes").addEventListener("click", () => {
-    const gone = { id: S.pid, secret: S.secret };
-    S.account = null; S.top = []; S.pid = rid(); S.secret = rid() + rid(); saveLocal(); lastPub = "";
-    if (online) chain = chain.then(() => call("DELETE", gone)).catch(() => {}).then(loadPlayers);
-    renderAll(); msg("Account deleted.", "ok");
+  $("delYes").addEventListener("click", async () => {
+    $("delYes").disabled = true;
+    try {
+      const r = await call("/api/me", "DELETE");
+      if (!r.ok && r.status !== 401) { $("delConfirm").hidden = true; $("delBtn").hidden = false; return fail(r); }
+      acctView = "register"; $("fEmail").value = ""; $("fScreen").value = ""; signedOutLocally(); msg("Account deleted.", "ok"); loadPlayers();
+    } catch (err) { fail(null); } finally { $("delYes").disabled = false; }
   });
 
   /* ---------- tour ---------- */
@@ -661,8 +746,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   $("playNow").addEventListener("click", () => { $("tour").hidden = true; S.tourSeen = true; saveLocal(); show("game"); });
 
   /* ---------- boot ---------- */
-  function renderAll() { renderSettings(); renderLeaderboard(); renderAccount(); paint(); }
-  renderAll();
+  function renderAll() { renderSettings(); renderModes(); renderLeaderboard(); renderAccount(); paint(); }
+  buildBoard(); renderAll();
   if (!S.tourSeen) openTour();
   if (DICT.size < 1000) { $("go").disabled = true; $("word").textContent = "Word list failed to load. Reload the page."; }
   initCloud();

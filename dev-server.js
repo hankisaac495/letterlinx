@@ -1,0 +1,24 @@
+// Local stand-in for Vercel: serves the static files and runs the functions in api/.
+// Usage: DATABASE_URL=postgres://... npm run dev
+const http = require("http"), fs = require("fs"), path = require("path");
+const PORT = process.env.PORT || 3000;
+const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css", ".json": "application/json" };
+
+http.createServer(async (req, res) => {
+  const url = new URL(req.url, "http://localhost");
+  if (url.pathname.startsWith("/api/")) {
+    const file = path.join(__dirname, "api", path.basename(url.pathname) + ".js");
+    if (path.basename(file).startsWith("_") || !fs.existsSync(file)) { res.statusCode = 404; return res.end("not found"); }
+    let raw = ""; for await (const c of req) raw += c;
+    try { req.body = raw ? JSON.parse(raw) : {}; } catch (e) { req.body = {}; }
+    req.query = Object.fromEntries(url.searchParams);
+    res.status = (s) => { res.statusCode = s; return res; };
+    res.json = (j) => { res.setHeader("content-type", "application/json"); res.end(JSON.stringify(j)); };
+    return require(file)(req, res);
+  }
+  const rel = url.pathname === "/" ? "index.html" : path.normalize(url.pathname).replace(/^[/\\]+/, "");
+  const file = path.join(__dirname, rel);
+  if (!file.startsWith(__dirname) || rel.startsWith("api") || rel.startsWith("node_modules") || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.statusCode = 404; return res.end("not found"); }
+  res.setHeader("content-type", TYPES[path.extname(file)] || "application/octet-stream");
+  fs.createReadStream(file).pipe(res);
+}).listen(PORT, () => console.log("LetterLinx on http://localhost:" + PORT));

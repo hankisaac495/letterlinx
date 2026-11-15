@@ -1,30 +1,61 @@
 # LetterLinx
 
-A one-minute word hunt for phones and desktops. Drag across neighbouring tiles on a 7×11 grid to spell words.
+A one-minute word hunt for phones and desktops. Drag across neighbouring tiles to spell words.
 
 ## Files
 
-- `index.html` – the whole game (markup, styles, script)
+- `index.html` – the game (markup, styles, script)
+- `modes.js` – the game versions: grid size, timer, scoring. Shared by the page and the API
 - `words.js` – the dictionary of valid words (about 270,000 entries)
-- `api/players.js` – Vercel function behind the shared leaderboard
+- `api/` – Vercel functions: accounts, score history, leaderboard (Postgres)
+- `dev-server.js` – runs the site and the API locally
+
+## Deploy on Vercel
+
+1. Import this repository in Vercel and deploy. No build settings are needed.
+2. In the project's **Storage** tab add **Neon** (Postgres), connect it to the project, then redeploy.
+   This sets `DATABASE_URL`, which the API reads. The tables are created on the first request.
+
+Without a database the game still plays; scores stay on each player's device and accounts are unavailable.
 
 ## Run locally
 
 ```bash
-python3 -m http.server 8000
+npm install
 ```
 
-Open http://localhost:8000. The shared leaderboard needs the Vercel function, so locally it lists only this device's player.
+```bash
+DATABASE_URL=postgres://user:password@localhost:5432/letterlinx npm run dev
+```
 
-## Deploy on Vercel
+Open http://localhost:3000.
 
-1. Push this folder to a GitHub repository.
-2. In Vercel choose **Add New → Project**, import the repository and deploy. No build settings are needed.
-3. For the shared leaderboard, open the project's **Storage** tab, add **Upstash for Redis** and connect it to the project, then redeploy. This sets `KV_REST_API_URL` and `KV_REST_API_TOKEN`, which `api/players.js` reads.
+## Database
 
-Without step 3 the game still works; scores and the account stay on each player's device.
+| Table | Holds |
+|---|---|
+| `players` | first name, last name, email, screen name, password hash, created date |
+| `games` | player, game version (`mode`), score, words found, date played |
+| `sessions` | hashed sign-in tokens with an expiry |
 
-## What is stored where
+Emails and screen names are unique, ignoring case. Passwords are hashed with scrypt.
+Deleting a player removes their games and sessions.
 
-- On the device (`localStorage`): settings, name, email, screen name, top 5 scores with their words.
-- On the server (Redis): screen name and best score only.
+## API
+
+- `POST /api/auth` – `{ action: "register" | "login" | "logout", ... }`
+- `GET | PATCH | DELETE /api/me` – read, update or delete the signed-in player
+- `POST /api/games` – save a finished round `{ mode, words, at }`; the score is recomputed on the server
+- `GET /api/leaderboard?mode=classic` – every registered player's best score in a game version
+
+## Adding a game version
+
+Add an entry to `modes` in `modes.js`:
+
+```js
+sprint: { name: "Sprint", cols: 5, rows: 6, seconds: 30, tickFrom: 5, minLength: 3, points: [0, 0, 0, 2, 4, 8, 16] }
+```
+
+A version picker appears on the game screen once there is more than one. Each version has its own
+top 5 and leaderboard, and its rounds are stored under its key in `games.mode`. Rules beyond grid
+size, timer, minimum length and scoring need new code in `index.html`.

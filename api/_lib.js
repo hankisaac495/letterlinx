@@ -1,0 +1,140 @@
+// Shared helpers for the LetterLinx API: database, schema, passwords, sessions.
+const { Pool } = require("pg");
+const crypto = require("crypto");
+const { modes, pointsFor } = require("../modes.js");
+
+const URL_ = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const COOKIE = "llx_session";
+const SESSION_DAYS = 60;
+
+const SCHEMA = `
+create table if not exists players (
+  id uuid primary key default gen_random_uuid(),
+  first_name text not null default '',
+  last_name text not null default '',
+  email text not null,
+  screen_name text not null,
+  password_hash text not null,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists players_email_key on players (lower(email));
+create unique index if not exists players_screen_name_key on players (lower(screen_name));
+create table if not exists sessions (
+  token_hash text primary key,
+  player_id uuid not null references players (id) on delete cascade,
+  expires_at timestamptz not null
+);
+create table if not exists games (
+  id bigserial primary key,
+  player_id uuid not null references players (id) on delete cascade,
+  mode text not null default 'classic',
+  score integer not null,
+  words jsonb not null,
+  played_at timestamptz not null default now(),
+  unique (player_id, played_at)
+);
+create index if not exists games_mode_score_idx on games (mode, score desc);
+create index if not exists games_player_idx on games (player_id, mode, score desc);
+`;
+
+let pool = null, ready = null;
+function db() {
+  if (!URL_) return null;
+  if (!pool) pool = new Pool({ connectionString: URL_, max: 3 });
+  return pool;
+}
+function schema() {
+  if (!ready) ready = db().query(SCHEMA).catch((e) => { ready = null; throw e; });
+  return ready;
+}
+
+// Wraps a handler: 503 when no database is configured, tables created on first use.
+const route = (fn) => async (req, res) => {
+  res.setHeader("cache-control", "no-store");
+  const p = db();
+  if (!p) return res.status(503).json({ error: "not_configured" });
+  try { await schema(); await fn(req, res, p); }
+  catch (e) { console.error(e); if (!res.headersSent) res.status(500).json({ error: "server_error" }); }
+};
+
+const body = (req) => {
+  if (req.body && typeof req.body === "object") return req.body;
+  try { return JSON.parse(req.body || "{}") || {}; } catch (e) { return {}; }
+};
+const sha = (s) => crypto.createHash("sha256").update(String(s)).digest("hex");
+
+/* passwords: scrypt with a per-player salt, stored as "salt:hash" */
+const scrypt = (pw, salt) => new Promise((ok, no) => crypto.scrypt(String(pw), salt, 64, (e, k) => (e ? no(e) : ok(k))));
+async function hashPassword(pw) {
+  const salt = crypto.randomBytes(16);
+  return salt.toString("hex") + ":" + (await scrypt(pw, salt)).toString("hex");
+}
+async function checkPassword(pw, stored) {
+  const [salt, hash] = String(stored).split(":");
+  if (!salt || !hash) return false;
+  const a = await scrypt(pw, Buffer.from(salt, "hex")), b = Buffer.from(hash, "hex");
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+/* sessions: random token in an httpOnly cookie, only its hash is stored */
+function setCookie(res, value, maxAge) {
+  res.setHeader("set-cookie", `${COOKIE}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`);
+}
+function token(req) {
+  if (req.cookies && req.cookies[COOKIE]) return req.cookies[COOKIE];
+  const m = /(?:^|;\s*)llx_session=([^;]+)/.exec(req.headers.cookie || "");
+  return m ? m[1] : null;
+}
+async function startSession(res, p, playerId) {
+  const t = crypto.randomBytes(32).toString("hex");
+  await p.query("delete from sessions where expires_at < now()");
+  await p.query(`insert into sessions (token_hash, player_id, expires_at) values ($1, $2, now() + interval '${SESSION_DAYS} days')`, [sha(t), playerId]);
+  setCookie(res, t, SESSION_DAYS * 86400);
+}
+async function endSession(req, res, p) {
+  const t = token(req);
+  if (t) await p.query("delete from sessions where token_hash = $1", [sha(t)]);
+  setCookie(res, "", 0);
+}
+async function currentPlayer(req, p) {
+  const t = token(req);
+  if (!t) return null;
+  const r = await p.query(
+    "select pl.* from sessions s join players pl on pl.id = s.player_id where s.token_hash = $1 and s.expires_at > now()", [sha(t)]);
+  return r.rows[0] || null;
+}
+
+/* what the page gets about the signed-in player: profile + top 5 rounds per game version */
+async function profile(p, player) {
+  const r = await p.query(
+    `select mode, score, words, played_at from (
+       select *, row_number() over (partition by mode order by score desc, played_at desc) n from games where player_id = $1
+     ) g where n <= 5 order by mode, n`, [player.id]);
+  const tops = {};
+  for (const g of r.rows) (tops[g.mode] = tops[g.mode] || []).push({ score: g.score, words: g.words, at: new Date(g.played_at).getTime() });
+  return {
+    account: { first: player.first_name, last: player.last_name, email: player.email, screenName: player.screen_name },
+    tops,
+  };
+}
+
+/* Save finished rounds. The score is recomputed here from the words, never taken from the browser. */
+async function saveGames(p, playerId, list) {
+  if (!Array.isArray(list)) return;
+  for (const g of list.slice(0, 25)) {
+    if (!g || !modes[g.mode] || !Array.isArray(g.words) || g.words.length > 300) continue;
+    const min = modes[g.mode].minLength, max = modes[g.mode].cols * modes[g.mode].rows;
+    const words = [...new Set(g.words.map((w) => String(w).toLowerCase()))];
+    if (!words.length || words.some((w) => !/^[a-z]+$/.test(w) || w.length < min || w.length > max)) continue;
+    const score = words.reduce((s, w) => s + pointsFor(g.mode, w.length), 0);
+    const now = Date.now(), at = Number(g.at) > 0 && Number(g.at) <= now + 60000 ? Number(g.at) : now;
+    await p.query(
+      "insert into games (player_id, mode, score, words, played_at) values ($1, $2, $3, $4, to_timestamp($5 / 1000.0)) on conflict do nothing",
+      [playerId, g.mode, score, JSON.stringify(words), at]);
+  }
+}
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const clean = (s, n) => String(s == null ? "" : s).trim().slice(0, n);
+
+module.exports = { route, body, hashPassword, checkPassword, startSession, endSession, currentPlayer, profile, saveGames, EMAIL, clean, modes };
