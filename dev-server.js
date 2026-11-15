@@ -2,7 +2,7 @@
 // Usage: DATABASE_URL=postgres://... npm run dev
 const http = require("http"), fs = require("fs"), path = require("path");
 const PORT = process.env.PORT || 3000;
-const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".webmanifest": "application/manifest+json" };
+const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".xml": "application/xml", ".txt": "text/plain; charset=utf-8", ".svg": "image/svg+xml", ".webmanifest": "application/manifest+json" };
 
 http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
@@ -16,7 +16,7 @@ http.createServer(async (req, res) => {
     res.json = (j) => { res.setHeader("content-type", "application/json"); res.end(JSON.stringify(j)); };
     return require(file)(req, res);
   }
-  const rel = url.pathname === "/" ? "index.html" : path.normalize(url.pathname).replace(/^[/\\]+/, "");
+  const rel = path.normalize(url.pathname.endsWith("/") ? url.pathname + "index.html" : url.pathname).replace(/^[/\\]+/, "");
   const file = path.join(__dirname, rel);
   if (!file.startsWith(__dirname) || rel.startsWith("api") || rel.startsWith("node_modules") || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.statusCode = 404; return res.end("not found"); }
   res.setHeader("content-type", TYPES[path.extname(file)] || "application/octet-stream");

@@ -1,0 +1,6 @@
+# All crawlers, including AI search crawlers, may read the site.
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://www.letterlinx.com/sitemap.xml

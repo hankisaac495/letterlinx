@@ -6,11 +6,23 @@ A one-minute word hunt for phones and desktops. Drag across neighbouring tiles t
 
 - `index.html` – the game (markup, styles, script)
 - `modes.js` – the game versions: grid size, timer, scoring. Shared by the page and the API
+- `build-pages.js` – generates the search tags and `es/index.html`
 - `i18n.js` – interface text in English and Spanish
 - `words.js` – English dictionary (about 270,000 words, 2–15 letters)
 - `words-es.js` – Spanish dictionary (about 366,000 words, 2–10 letters, no accents, Ñ kept)
 - `api/` – Vercel functions: accounts, score history, leaderboard (Postgres)
 - `dev-server.js` – runs the site and the API locally
+
+## Search engines and analytics
+
+- The search tags in `index.html` (title, description, canonical, Open Graph, structured data) and the whole
+  Spanish page `es/index.html` are generated. After changing `index.html` or `i18n.js`, run `npm run pages`
+  and commit the result.
+- The official address is `https://www.letterlinx.com/` (English) and `/es/` (Spanish). Change `SITE` in
+  `build-pages.js` if that moves.
+- `robots.txt`, `sitemap.xml` and `llms.txt` describe the site to crawlers.
+- Google Tag Manager (`GTM-N3VRM45M`) is loaded in the page head. The game pushes these events to the data
+  layer: `round_start`, `round_end` (score, words_found, new_high_score), `language_change`, `sign_up`, `login`.
 
 ## Deploy on Vercel
 

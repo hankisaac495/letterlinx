@@ -1,0 +1,23 @@
+# LetterLinx
+
+> LetterLinx (called Letra Linx in Spanish) is a free word game played in a web browser on phones and computers. Players link neighbouring letter tiles to spell words and try to score as many points as possible in 60 seconds.
+
+## How it works
+
+- The board is a grid of letter tiles, 6 wide and 10 high.
+- Tap GO, then drag across neighbouring tiles (across, up, down or diagonally) to spell a word of 2 or more letters, and lift to play it.
+- A valid word turns green and scores; an invalid one turns red. Used tiles disappear, the letters above slide down, and new letters enter at the top.
+- Each round lasts 60 seconds. A ticking sound plays for the last 10 seconds.
+- Scoring by word length: 2 letters 1 point, 3 letters 3, 4 letters 5, 5 letters 10, 6 letters 15, 7 letters 25, 8 letters 35, 9 or more letters 50.
+
+## Features
+
+- Free to play, with no account needed.
+- English and Spanish versions, each with its own dictionary, letter mix and leaderboard. The Spanish version includes the letter Ñ.
+- A free account (email and password) saves score history and lists the player on the leaderboard.
+- Light and dark themes, and sound on or off.
+
+## Links
+
+- [Play in English](https://www.letterlinx.com/)
+- [Jugar en español](https://www.letterlinx.com/es/)
