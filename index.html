@@ -72,7 +72,9 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 #word.good { background: var(--good); color: var(--on-state); }
 #word.bad { background: var(--bad); color: var(--on-state); }
 #time.low { color: var(--bad); animation: pulse 1s ease-in-out infinite; }
-#endBtn { border: 0; background: var(--surface-2); border-radius: 10px; padding: 8px 10px; font-size: .8rem; font-weight: 600; }
+#restartBtn { border: 0; border-radius: 50%; width: 40px; height: 40px; padding: 8px; flex: none; display: grid; place-items: center;
+  color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, transparent); }
+#restartBtn svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .bar { height: 5px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
 .bar i { display: block; height: 100%; width: 100%; background: var(--brand); transform-origin: left; }
 .bar.low i { background: var(--bad); }
@@ -225,7 +227,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <div class="stat"><div class="eyebrow">Time</div><div class="num" id="time">1:00</div></div>
       <div id="word" class="hint" aria-live="polite">Best score: 0</div>
       <div class="stat right"><div class="eyebrow">Score</div><div class="num" id="score">0</div></div>
-      <button id="endBtn" type="button" hidden>End</button>
+      <button id="restartBtn" type="button" aria-label="Restart" title="Restart" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg></button>
     </div>
     <div class="bar" id="bar"><i></i></div>
     <div class="seg center" id="modeSeg" aria-label="Game version" hidden></div>
@@ -553,10 +555,22 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   function start() {
     wake(); roundId++; phase = "playing"; score = 0; words = []; found = new Set(); path = []; fb = null; mark.clear(); locked.clear();
     for (let i = 0; i < N; i++) setLetter(i, randLetter(), true);
-    $("go").hidden = true; $("results").hidden = true; $("boardwrap").hidden = false; $("endBtn").hidden = false;
+    $("go").hidden = true; $("results").hidden = true; $("boardwrap").hidden = false; $("restartBtn").hidden = false;
     $("nav").classList.add("locked"); renderModes();
     endAt = performance.now() + mode.seconds * 1000; lastSec = mode.seconds;
     clearInterval(timerId); timerId = setInterval(clock, 100); clock(); paint();
+  }
+
+  /* Back to an empty board with the GO button. A round in progress is dropped without being scored. */
+  function reset() {
+    clearInterval(timerId); roundId++; phase = "idle"; score = 0; words = []; found = new Set();
+    path = []; fb = null; mark.clear(); locked.clear(); pointerId = null; letters = [];
+    tiles.forEach((t) => { t.firstChild.textContent = ""; t.className = "tile blank"; });
+    $("results").hidden = true; $("boardwrap").hidden = false; $("go").hidden = false; $("restartBtn").hidden = true;
+    $("nav").classList.remove("locked"); renderModes();
+    $("time").textContent = fmt(mode.seconds * 1000); $("time").classList.remove("low");
+    $("bar").classList.remove("low"); $("bar").firstElementChild.style.transform = "";
+    paint();
   }
 
   function clock() {
@@ -579,7 +593,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       if (S.account) { S.pending.push({ mode: modeId, words: g.words, at: g.at }); S.pending = S.pending.slice(-25); }
       saveLocal(); flushPending().then(loadPlayers);
     }
-    $("time").textContent = "0:00"; $("time").classList.remove("low"); $("endBtn").hidden = true;
+    $("time").textContent = "0:00"; $("time").classList.remove("low"); $("restartBtn").hidden = true;
     $("nav").classList.remove("locked"); renderModes();
     $("boardwrap").hidden = true; $("results").hidden = false;
     $("finalScore").textContent = score; $("newHigh").hidden = !isHigh;
@@ -649,8 +663,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   }
 
   $("go").addEventListener("click", start);
-  $("again").addEventListener("click", start);
-  $("endBtn").addEventListener("click", end);
+  $("again").addEventListener("click", reset);
+  $("restartBtn").addEventListener("click", reset);
 
   /* ---------- navigation ---------- */
   function show(name) {
