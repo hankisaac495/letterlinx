@@ -183,7 +183,8 @@ async function saveGames(p, playerId, list) {
     if (!g || !modes[g.mode] || !Array.isArray(g.words) || g.words.length > 300) continue;
     const min = modes[g.mode].minLength, max = modes[g.mode].cols * modes[g.mode].rows;
     const words = [...new Set(g.words.map((w) => String(w).toLowerCase()))];
-    if (!words.length || words.some((w) => !/^[a-z]+$/.test(w) || w.length < min || w.length > max)) continue;
+    const abc = modes[g.mode].alphabet;
+    if (!words.length || words.some((w) => w.length < min || w.length > max || [...w].some((ch) => !abc.includes(ch)))) continue;
     const score = words.reduce((s, w) => s + pointsFor(g.mode, w.length), 0);
     const now = Date.now(), at = Number(g.at) > 0 && Number(g.at) <= now + 60000 ? Number(g.at) : now;
     await p.query(

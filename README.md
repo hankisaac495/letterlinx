@@ -6,7 +6,8 @@ A one-minute word hunt for phones and desktops. Drag across neighbouring tiles t
 
 - `index.html` – the game (markup, styles, script)
 - `modes.js` – the game versions: grid size, timer, scoring. Shared by the page and the API
-- `words.js` – the dictionary of valid words (about 270,000 entries)
+- `words.js` – English dictionary (about 270,000 words, 2–15 letters)
+- `words-es.js` – Spanish dictionary (about 366,000 words, 2–10 letters, no accents, Ñ kept)
 - `api/` – Vercel functions: accounts, score history, leaderboard (Postgres)
 - `dev-server.js` – runs the site and the API locally
 
@@ -56,14 +57,21 @@ Players appear on the leaderboard only after confirming their email.
 - `POST /api/games` – save a finished round `{ mode, words, at }`; the score is recomputed on the server
 - `GET /api/leaderboard?mode=classic` – every confirmed player's best score in a game version
 
-## Adding a game version
+## Game versions and languages
 
-Add an entry to `modes` in `modes.js`:
+Each entry in `modes` in `modes.js` is a game version with its own top 5, leaderboard and score
+history (stored under its key in `games.mode`). Today there are two, one per word language:
+`classic` (English) and `es` (Español). Players choose on the first tour slide and in Settings.
 
-```js
-sprint: { name: "Sprint", cols: 5, rows: 6, seconds: 30, tickFrom: 5, minLength: 3, points: [0, 0, 0, 2, 4, 8, 16] }
-```
+A version sets the grid, round length, minimum word length, points table, word list file,
+alphabet and how often each letter is dealt. To add a language, add a word list file that sets a
+global variable (see `words-es.js`) and a new entry in `modes.js`. Word lists are downloaded only
+when their language is chosen. Rules beyond those settings need new code in `index.html`.
 
-A version picker appears on the game screen once there is more than one. Each version has its own
-top 5 and leaderboard, and its rounds are stored under its key in `games.mode`. Rules beyond grid
-size, timer, minimum length and scoring need new code in `index.html`.
+The interface text is English only.
+
+## Word lists
+
+Both lists come from MIT-licensed packages by Zeke Sikelianos, each described as derived from the
+Letterpress word list: `an-array-of-english-words` and `an-array-of-spanish-words`. Their licence
+text is in `THIRD-PARTY-NOTICES.md`.

@@ -208,6 +208,9 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 .clock { width: 150px; height: 150px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 2.2rem;
   background: conic-gradient(var(--bad) 0 16.6%, var(--brand) 0); position: relative; isolation: isolate; }
 .clock::before { content: ""; position: absolute; inset: 12px; border-radius: 50%; background: var(--bg); z-index: -1; }
+.pick { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.pick .seg button { padding: 10px 22px; font-size: 1rem; }
+#go.wait { opacity: .5; }
 #dots { display: flex; justify-content: center; gap: 8px; padding: 14px 0; }
 #dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); transition: width .2s, background .2s; }
 #dots i.on { width: 22px; border-radius: 4px; background: var(--brand); }
@@ -230,7 +233,6 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <button id="restartBtn" type="button" aria-label="Restart" title="Restart" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg></button>
     </div>
     <div class="bar" id="bar"><i></i></div>
-    <div class="seg center" id="modeSeg" aria-label="Game version" hidden></div>
     <div class="boardwrap" id="boardwrap">
       <div id="board">
         <svg id="trail" viewBox="0 0 7 11" preserveAspectRatio="none" aria-hidden="true"><polyline class="base" points=""/><polyline class="dash" points=""/></svg>
@@ -253,9 +255,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     <div class="panel">
       <div class="row"><span>Theme</span>
         <div class="seg" id="themeSeg"><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button></div></div>
+      <div class="row"><span>Word language</span><div class="seg langSeg" aria-label="Word language"></div></div>
       <div class="row"><span>Audio</span>
         <div class="seg" id="audioSeg"><button type="button" data-v="on">On</button><button type="button" data-v="off">Off</button></div></div>
     </div>
+    <p class="note">Word language changes the letters and the dictionary. Each language has its own scores and leaderboard.</p>
     <button class="btn" id="replayTour" type="button">Replay the welcome tour</button>
   </section>
 
@@ -322,6 +326,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <div class="logo" aria-label="LetterLinx"><div class="top">LETTER</div><div class="linx"><span>L</span><span>I</span><span>N</span><span>X</span></div></div>
       <div class="tagline">Link letters. Beat the clock.</div>
       <p>A one-minute word hunt. Trace through neighbouring tiles to spell as many words as you can before time runs out.</p>
+      <div class="pick"><div class="eyebrow">Play in</div><div class="seg langSeg" aria-label="Word language"></div><p class="note">You can change this later in Settings.</p></div>
     </div>
     <div class="slide">
       <div class="demo" aria-hidden="true">
@@ -364,17 +369,10 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 </div>
 
 <script src="modes.js"></script>
-<script src="words.js"></script>
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
   const M = window.LLX_MODES;
-  const DICT = new Set((window.LLX_WORDS || "").split("|"));
-  const WEIGHTS = { E: 12, A: 9, I: 8, O: 8, U: 4, S: 7, T: 7, N: 6, R: 6, C: 4, H: 4, M: 4, P: 4, L: 4, D: 4,
-    G: 3, B: 2, F: 2, Y: 2, W: 2, K: 1.5, V: 1, X: .5, J: .5, Z: .5, Q: .3 };
-  const BAG = Object.entries(WEIGHTS), BAG_TOTAL = BAG.reduce((s, [, w]) => s + w, 0);
-  const randLetter = () => { let r = Math.random() * BAG_TOTAL; for (const [l, w] of BAG) { if ((r -= w) < 0) return l; } return "E"; };
-
   /* ---------- saved state (this device) ---------- */
   const KEY = "letterlinx.v1";
   const S = { tourSeen: false, audio: true, theme: null, mode: null, account: null, tops: {}, pending: [] };
@@ -385,7 +383,31 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const saveLocal = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 
   /* ---------- game version ---------- */
-  let modeId = M.modes[S.mode] ? S.mode : M.defaultMode, mode = M.modes[modeId];
+  const browserLang = (navigator.language || "").slice(0, 2).toLowerCase();
+  const guess = Object.keys(M.modes).find((id) => M.modes[id].lang === browserLang) || M.defaultMode;
+  let modeId = M.modes[S.mode] ? S.mode : guess, mode = M.modes[modeId];
+
+  /* letters are dealt by the version's weights; its word list is downloaded the first time it is needed */
+  const randLetter = () => {
+    const bag = Object.entries(mode.letters); let r = Math.random() * bag.reduce((t, [, w]) => t + w, 0);
+    for (const [l, w] of bag) { if ((r -= w) < 0) return l; } return bag[0][0];
+  };
+  const dicts = {};
+  let DICT = null, dictFailed = false;
+  function loadDict(id) {
+    const d = M.modes[id].dict;
+    if (!dicts[id]) dicts[id] = new Promise((ok, no) => {
+      if (window[d.global]) return ok();
+      const el = document.createElement("script"); el.src = d.file; el.onload = ok; el.onerror = no; document.head.appendChild(el);
+    }).then(() => new Set(window[d.global].split("|"))).catch((e) => { delete dicts[id]; throw e; });
+    return dicts[id];
+  }
+  async function useDict() {
+    const id = modeId; DICT = null; dictFailed = false; paint();
+    try { const set = await loadDict(id); if (id === modeId) DICT = set; }
+    catch (e) { if (id === modeId) dictFailed = true; }
+    paint();
+  }
   let COLS = mode.cols, ROWS = mode.rows, N = COLS * ROWS;
   const pointsFor = (len) => M.pointsFor(modeId, len);
   const top = () => S.tops[modeId] || [];
@@ -489,21 +511,23 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     }
     $("time").textContent = fmt(mode.seconds * 1000);
   }
+  /* the language choice appears in Settings and on the first tour slide */
   function renderModes() {
-    const seg = $("modeSeg"), ids = Object.keys(M.modes);
-    seg.hidden = ids.length < 2 || phase === "playing";
-    seg.textContent = "";
-    for (const id of ids) {
-      const b = document.createElement("button"); b.type = "button"; b.dataset.v = id; b.textContent = M.modes[id].name;
-      b.setAttribute("aria-pressed", String(id === modeId)); seg.appendChild(b);
-    }
+    document.querySelectorAll(".langSeg").forEach((seg) => {
+      seg.textContent = "";
+      for (const id of Object.keys(M.modes)) {
+        const b = document.createElement("button"); b.type = "button"; b.dataset.v = id; b.textContent = M.modes[id].name;
+        b.setAttribute("aria-pressed", String(id === modeId)); seg.appendChild(b);
+      }
+    });
   }
-  $("modeSeg").addEventListener("click", (e) => {
-    const b = e.target.closest("button"); if (!b || phase === "playing" || b.dataset.v === modeId) return;
-    modeId = S.mode = b.dataset.v; saveLocal(); phase = "idle"; score = 0;
-    $("results").hidden = true; $("boardwrap").hidden = false; $("go").hidden = false;
-    buildBoard(); renderModes(); paint(); renderLeaderboard(); loadPlayers();
-  });
+  function setMode(id) {
+    if (!M.modes[id] || phase === "playing") return;
+    S.mode = id; saveLocal();
+    if (id === modeId) return;
+    modeId = id; buildBoard(); reset(); renderLeaderboard(); loadPlayers(); useDict();
+  }
+  document.addEventListener("click", (e) => { const b = e.target.closest(".langSeg button"); if (b) setMode(b.dataset.v); });
 
   const fmt = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
   const pts = (arr) => arr.map((i) => (i % COLS + .5) + "," + (Math.floor(i / COLS) + .5)).join(" ");
@@ -521,7 +545,10 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     if (path.length) { w.className = ""; w.textContent = path.map((i) => letters[i]).join(""); }
     else if (fb) { w.className = fb.kind; w.textContent = fb.text; }
     else if (phase === "playing") { w.className = "hint"; w.textContent = "Drag across letters"; }
+    else if (dictFailed) { w.className = "hint"; w.textContent = "Words didn't load. Tap GO to retry."; }
+    else if (!DICT) { w.className = "hint"; w.textContent = "Loading words…"; }
     else { w.className = "hint"; w.textContent = "Best score: " + best(); }
+    $("go").classList.toggle("wait", !DICT);
     $("score").textContent = score;
   }
 
@@ -553,7 +580,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const above = (used) => { const out = new Set(); for (const i of used) for (let j = i; j >= 0; j -= COLS) out.add(j); return out; };
 
   function start() {
-    wake(); roundId++; phase = "playing"; score = 0; words = []; found = new Set(); path = []; fb = null; mark.clear(); locked.clear();
+    wake();
+    if (!DICT) { if (dictFailed) useDict(); return; } roundId++; phase = "playing"; score = 0; words = []; found = new Set(); path = []; fb = null; mark.clear(); locked.clear();
     for (let i = 0; i < N; i++) setLetter(i, randLetter(), true);
     $("go").hidden = true; $("results").hidden = true; $("boardwrap").hidden = false; $("restartBtn").hidden = false;
     $("nav").classList.add("locked"); renderModes();
@@ -692,7 +720,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const dateFmt = (at) => { try { return new Date(at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); } catch (e) { return ""; } };
   function renderLeaderboard() {
     const many = Object.keys(M.modes).length > 1;
-    $("lbMode").hidden = !many; $("lbMode").textContent = mode.name + " version";
+    $("lbMode").hidden = !many; $("lbMode").textContent = mode.name;
     const ol = $("top5"); ol.textContent = "";
     if (!top().length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = "No scores yet. Finish a round and it shows up here."; ol.appendChild(li); }
     top().forEach((g, i) => {
@@ -852,13 +880,13 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   slides.addEventListener("scroll", setDots, { passive: true });
   $("tourNext").addEventListener("click", () => slides.scrollTo({ left: (slideIx + 1) * slides.clientWidth, behavior: "smooth" }));
   function openTour() { $("tour").hidden = false; slides.scrollLeft = 0; setDots(); }
-  $("playNow").addEventListener("click", () => { $("tour").hidden = true; S.tourSeen = true; saveLocal(); show("game"); });
+  $("playNow").addEventListener("click", () => { $("tour").hidden = true; S.tourSeen = true; S.mode = modeId; saveLocal(); show("game"); });
 
   /* ---------- boot ---------- */
   function renderAll() { renderSettings(); renderModes(); renderLeaderboard(); renderAccount(); paint(); }
   buildBoard(); renderAll();
   if (!S.tourSeen) openTour();
-  if (DICT.size < 1000) { $("go").disabled = true; $("word").textContent = "Word list failed to load. Reload the page."; }
+  useDict();
   initCloud();
 })();
 </script>
