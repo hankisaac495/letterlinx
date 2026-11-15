@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23F2A900'/%3E%3Ctext x='16' y='23' font-family='Arial' font-weight='900' font-size='20' text-anchor='middle' fill='%232B1E00'%3EL%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&family=Unbounded:wght@600;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap">
 <style>
 /* Layout: one-screen phone app. A header strip (time / word / score), a tile board
    that fills what is left, and a four-tab bar pinned to the bottom. */
@@ -18,8 +18,8 @@
   --line: #C5D4DA; --brand: #0C6B7A; --accent: #F2A900; --accent-ink: #2B1E00;
   --good: #128A58; --bad: #CF3B2A; --on-state: #FFFFFF; --tile: #FFFFFF; --tile-edge: #BCCDD4;
   --shade: rgba(16, 48, 59, .45);
-  --display: "Unbounded", "Rubik", system-ui, sans-serif;
-  --body: "Rubik", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #0B1C22; --surface: #132B33; --surface-2: #1C3944; --ink: #E8F2F4; --muted: #8DA9B2;
@@ -43,7 +43,7 @@ button, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
 h1, h2, h3, p { margin: 0; }
-h2 { font-family: var(--display); font-size: 1.15rem; font-weight: 600; text-wrap: balance; }
+h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap: balance; }
 .eyebrow { font-size: .72rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .num { font-family: var(--display); font-variant-numeric: tabular-nums; }
 
@@ -64,7 +64,7 @@ h2 { font-family: var(--display); font-size: 1.15rem; font-weight: 600; text-wra
 /* Game header */
 .hud { display: flex; align-items: center; gap: 10px; }
 .hud .stat { min-width: 64px; }
-.hud .stat .num { font-size: 1.35rem; font-weight: 800; line-height: 1.1; }
+.hud .stat .num { font-size: 1.5rem; font-weight: 900; line-height: 1.1; }
 .hud .stat.right { text-align: right; }
 #word { flex: 1; min-width: 0; text-align: center; font-weight: 700; font-size: 1.15rem; letter-spacing: .08em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 8px 6px; border-radius: 10px; background: var(--surface); }
@@ -85,7 +85,7 @@ h2 { font-family: var(--display); font-size: 1.15rem; font-weight: 600; text-wra
 .tile { position: relative; display: grid; place-items: center; container-type: size; }
 .tile::before { content: ""; position: absolute; inset: 5%; border-radius: 18%; z-index: 0;
   background: var(--tile); box-shadow: 0 2px 0 var(--tile-edge); }
-.tile span { position: relative; z-index: 2; font-weight: 700; font-size: 52cqw; line-height: 1; }
+.tile span { position: relative; z-index: 2; font-weight: 800; font-size: 52cqw; line-height: 1; }
 .tile.sel::before { background: var(--accent); box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 60%, #000); animation: pop .16s ease-out; }
 .tile.sel span { color: var(--accent-ink); }
 .tile.good::before { background: var(--good); box-shadow: none; animation: pop .25s ease-out; }
@@ -187,16 +187,16 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 .slide { flex: 0 0 100%; scroll-snap-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 18px; text-align: center; padding: 12px max(24px, env(safe-area-inset-right, 0px)) 12px max(24px, env(safe-area-inset-left, 0px)); overflow-y: auto; }
 .slide p { max-width: 32ch; color: var(--muted); line-height: 1.5; text-wrap: pretty; }
-.slide h2 { font-size: 1.4rem; max-width: 16ch; }
+.slide h2 { font-size: 1.6rem; max-width: 18ch; }
 .logo { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.logo .top { font-family: var(--display); font-weight: 600; font-size: 1.5rem; letter-spacing: .3em; margin-right: -.3em; }
+.logo .top { font-family: var(--display); font-weight: 800; font-size: 1.5rem; letter-spacing: .3em; margin-right: -.3em; }
 .linx { display: flex; gap: 14px; position: relative; }
 .linx::before { content: ""; position: absolute; left: 30px; right: 30px; top: 50%; height: 6px; margin-top: -3px; background: var(--brand); border-radius: 3px; }
 .linx span { position: relative; width: 58px; height: 58px; border-radius: 12px; background: var(--accent); color: var(--accent-ink);
   display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 1.7rem;
   box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 60%, #000); }
 .linx span:nth-child(even) { transform: translateY(8px); }
-.tagline { font-family: var(--display); font-weight: 600; font-size: 1.05rem; color: var(--brand); }
+.tagline { font-family: var(--display); font-weight: 800; font-size: 1.15rem; color: var(--brand); }
 .demo { position: relative; display: grid; grid-template-columns: repeat(4, 54px); grid-template-rows: repeat(3, 54px); isolation: isolate; }
 .demo svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
 .demo svg polyline { fill: none; stroke: var(--brand); stroke-width: .16; stroke-linecap: round; stroke-linejoin: round; }
