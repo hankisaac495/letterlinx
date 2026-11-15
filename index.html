@@ -152,6 +152,11 @@ input:read-only { background: var(--surface-2); color: var(--muted); }
 .msg.err { color: var(--bad); } .msg.ok { color: var(--good); }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .two > * { min-width: 0; }
+.box { background: var(--surface); border: 2px solid var(--brand); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.rowform { flex-direction: row; gap: 10px; }
+.rowform input { flex: 1; min-width: 0; letter-spacing: .25em; font-weight: 600; font-variant-numeric: tabular-nums; }
+.box .msg:empty { display: none; }
+.linkbtn { border: 0; background: none; padding: 6px 0; align-self: flex-start; color: var(--brand); font-weight: 600; text-decoration: underline; }
 .confirm { border: 2px solid var(--bad); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 
 /* Tab bar */
@@ -264,6 +269,15 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     <h2 id="acctTitle">Create your account</h2>
     <div class="seg center" id="acctSeg"><button type="button" data-v="register">Create account</button><button type="button" data-v="login">Sign in</button></div>
     <p class="note" id="acctIntro">An account saves your score history and puts you on the leaderboard. Your screen name can't be changed later.</p>
+    <div class="box" id="verifyBox" hidden>
+      <p><strong>Confirm your email.</strong> <span id="verifyText"></span></p>
+      <form id="verifyForm" class="rowform" novalidate>
+        <input type="text" id="fCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" aria-label="6-digit code">
+        <button class="btn primary" type="submit" id="verifyBtn">Confirm</button>
+      </form>
+      <div class="msg" id="verifyMsg" role="status"></div>
+      <button class="linkbtn" id="resendBtn" type="button">Send a new code</button>
+    </div>
     <form id="acctForm" novalidate>
       <div class="two" id="nameRow">
         <label>First name<input type="text" id="fFirst" maxlength="40" autocomplete="given-name"></label>
@@ -271,9 +285,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       </div>
       <label>Email<input type="email" id="fEmail" maxlength="120" autocomplete="email"></label>
       <label id="screenRow">Screen name<input type="text" id="fScreen" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-      <label id="passRow">Password<input type="password" id="fPass" maxlength="200" autocomplete="new-password"></label>
+      <label id="codeRow" hidden>Code from the email<input type="text" id="fReset" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>
+      <label id="passRow"><span id="passLabel">Password</span><input type="password" id="fPass" maxlength="200" autocomplete="new-password"></label>
       <div class="msg" id="acctMsg" role="status"></div>
       <button class="btn primary" type="submit" id="acctSave">Create account</button>
+      <button class="linkbtn" id="forgotBtn" type="button" hidden>Forgot password?</button>
     </form>
     <button class="btn" id="signOut" type="button" hidden>Sign out</button>
     <button class="btn danger" id="delBtn" type="button" hidden>Delete account</button>
@@ -657,6 +673,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     $("lbNote").textContent =
       lbState === "local" ? "The leaderboard can't be reached right now. Your scores are kept on this device."
       : syncFailed ? "Your last round couldn't be saved to your account. It is kept on this device and sent again next time."
+      : S.account && S.account.verified === false ? "Confirm your email on the Account tab to appear on the leaderboard."
       : !S.account ? "Create an account on the Account tab to save your score history and appear on the leaderboard." : "";
   }
 
@@ -669,7 +686,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
 
   /* ---------- account ---------- */
-  let acctView = "register"; // while signed out: "register" | "login"
+  let acctView = "register"; // while signed out: "register" | "login" | "forgot" | "reset"
   const ERR = {
     email_taken: "An account with that email already exists. Sign in instead.",
     name_taken: "That screen name is taken. Try another.",
@@ -677,45 +694,91 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     bad_email: "That email doesn't look right. Check for a missing @ or domain.",
     bad_name: "Screen name needs 3 to 16 letters, numbers, dots, dashes or underscores.",
     bad_password: "Password needs at least 8 characters.",
+    bad_code: "That code is wrong or has expired. Check it, or send a new one.",
+    too_soon: "A code was just sent. Wait a minute before asking for another.",
+    mail_failed: "The email couldn't be sent. Try again shortly.",
     not_configured: "Accounts aren't set up on this site yet.",
     signed_out: "You've been signed out. Sign in again.",
   };
   const msg = (text, cls) => { const m = $("acctMsg"); m.textContent = text; m.className = "msg " + (cls || ""); };
-  const fail = (r) => msg(r ? ERR[r.data?.error] || "Something went wrong. Try again." : "Can't reach the server. Check your connection and try again.", "err");
+  const fail = (r, where) => (where || msg)(r ? ERR[r.data?.error] || "Something went wrong. Try again." : "Can't reach the server. Check your connection and try again.", "err");
+  const vmsg = (text, cls) => { const m = $("verifyMsg"); m.textContent = text; m.className = "msg " + (cls || ""); };
+  const TITLES = { register: "Create your account", login: "Sign in", forgot: "Reset your password", reset: "Choose a new password" };
+  const ACTIONS = { register: "Create account", login: "Sign in", forgot: "Send reset code", reset: "Set new password" };
+  const INTROS = {
+    register: "An account saves your score history and puts you on the leaderboard. Your screen name can't be changed later.",
+    forgot: "Enter your account email and we'll send you a 6-digit code.",
+    reset: "Enter the code we emailed you and choose a new password.",
+  };
   function renderAccount() {
-    const a = S.account, login = !a && acctView === "login";
-    $("acctTitle").textContent = a ? "Your account" : login ? "Sign in" : "Create your account";
+    const a = S.account, v = a ? null : acctView;
+    $("acctTitle").textContent = a ? "Your account" : TITLES[v];
     $("acctSeg").hidden = !!a;
-    document.querySelectorAll("#acctSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === acctView)));
-    $("acctIntro").hidden = !!a || login;
-    $("nameRow").hidden = login; $("screenRow").hidden = login; $("passRow").hidden = !!a;
-    $("fPass").autocomplete = login ? "current-password" : "new-password";
+    document.querySelectorAll("#acctSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === (v === "register" ? "register" : "login"))));
+    $("acctIntro").hidden = !INTROS[v]; $("acctIntro").textContent = INTROS[v] || "";
+    $("nameRow").hidden = !!v && v !== "register"; $("screenRow").hidden = !!v && v !== "register";
+    $("passRow").hidden = !!a || v === "forgot"; $("codeRow").hidden = v !== "reset";
+    $("passLabel").textContent = v === "reset" ? "New password" : "Password";
+    $("fPass").autocomplete = v === "login" ? "current-password" : "new-password";
     $("fFirst").value = a?.first || ""; $("fLast").value = a?.last || ""; $("fEmail").value = a?.email || $("fEmail").value;
     $("fScreen").value = a?.screenName || $("fScreen").value; $("fScreen").readOnly = !!a; $("fPass").value = "";
-    $("acctSave").textContent = a ? "Save changes" : login ? "Sign in" : "Create account";
+    $("acctSave").textContent = a ? "Save changes" : ACTIONS[v];
+    $("forgotBtn").hidden = v !== "login";
+    const unverified = !!a && a.verified === false;
+    $("verifyBox").hidden = !unverified;
+    if (unverified) $("verifyText").textContent = "Enter the 6-digit code we sent to " + a.email + " to appear on the leaderboard.";
+    else { $("fCode").value = ""; vmsg(""); }
     $("signOut").hidden = !a; $("delBtn").hidden = !a; $("delConfirm").hidden = true; msg("");
   }
   $("acctSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; acctView = b.dataset.v; renderAccount(); });
+  $("forgotBtn").addEventListener("click", () => { acctView = "forgot"; renderAccount(); });
   $("acctForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const first = $("fFirst").value.trim(), last = $("fLast").value.trim(), email = $("fEmail").value.trim();
-    const password = $("fPass").value, screenName = $("fScreen").value.trim();
+    const password = $("fPass").value, screenName = $("fScreen").value.trim(), v = S.account ? "save" : acctView;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return msg(ERR.bad_email, "err");
-    let path = "/api/auth", method = "POST", body;
-    if (S.account) { path = "/api/me"; method = "PATCH"; body = { first, last, email }; }
-    else if (acctView === "login") { if (!password) return msg("Enter your password.", "err"); body = { action: "login", email, password, games: localGames() }; }
-    else {
+    let url = "/api/auth", method = "POST", body;
+    if (v === "save") { url = "/api/me"; method = "PATCH"; body = { first, last, email }; }
+    else if (v === "login") { if (!password) return msg("Enter your password.", "err"); body = { action: "login", email, password, games: localGames() }; }
+    else if (v === "forgot") body = { action: "forgot", email };
+    else if (v === "reset") {
+      if (!/^\d{6}$/.test($("fReset").value.trim())) return msg("Enter the 6-digit code from the email.", "err");
+      if (password.length < 8) return msg(ERR.bad_password, "err");
+      body = { action: "reset", email, code: $("fReset").value.trim(), password, games: localGames() };
+    } else {
       if (!/^[A-Za-z0-9_.-]{3,16}$/.test(screenName)) return msg(ERR.bad_name, "err");
       if (password.length < 8) return msg(ERR.bad_password, "err");
       body = { action: "register", first, last, email, screenName, password, games: localGames() };
     }
-    const was = S.account ? "Saved." : acctView === "login" ? "Signed in." : "Account created.";
     $("acctSave").disabled = true; msg("Working…");
     try {
-      const r = await call(path, method, body);
+      const r = await call(url, method, body);
       if (!r.ok) { if (r.status === 401 && S.account) signedOutLocally(); return fail(r); }
-      online = true; adopt(r.data); msg(was, "ok"); loadPlayers();
+      online = true;
+      if (v === "forgot") { acctView = "reset"; $("fReset").value = ""; renderAccount(); return msg("If that email has an account, a code is on its way.", "ok"); }
+      adopt(r.data); loadPlayers();
+      if (r.data.emailSent === false) msg("Saved, but the confirmation email couldn't be sent. Use “Send a new code” above.", "err");
+      else msg({ save: "Saved.", login: "Signed in.", reset: "Password changed. You're signed in.", register: "Account created." }[v], "ok");
     } catch (err) { fail(null); } finally { $("acctSave").disabled = false; }
+  });
+  $("verifyForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const code = $("fCode").value.trim();
+    if (!/^\d{6}$/.test(code)) return vmsg("Enter the 6-digit code from the email.", "err");
+    $("verifyBtn").disabled = true;
+    try {
+      const r = await call("/api/auth", "POST", { action: "verify", code });
+      if (!r.ok) { if (r.status === 401) signedOutLocally(); return fail(r, vmsg); }
+      adopt(r.data); msg("Email confirmed.", "ok"); loadPlayers();
+    } catch (err) { fail(null, vmsg); } finally { $("verifyBtn").disabled = false; }
+  });
+  $("resendBtn").addEventListener("click", async () => {
+    $("resendBtn").disabled = true;
+    try {
+      const r = await call("/api/auth", "POST", { action: "resend" });
+      if (!r.ok) return fail(r, vmsg);
+      if (r.data.account) { adopt(r.data); loadPlayers(); } else vmsg("A new code is on its way.", "ok");
+    } catch (err) { fail(null, vmsg); } finally { $("resendBtn").disabled = false; }
   });
   $("signOut").addEventListener("click", async () => {
     try { await call("/api/auth", "POST", { action: "logout" }); } catch (e) {}

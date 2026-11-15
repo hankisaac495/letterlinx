@@ -18,6 +18,10 @@ A one-minute word hunt for phones and desktops. Drag across neighbouring tiles t
 
 Without a database the game still plays; scores stay on each player's device and accounts are unavailable.
 
+3. For email confirmation and password reset, add a `RESEND_API_KEY` environment variable (from resend.com) and
+   verify the sending domain in Resend. Emails are sent from `LetterLinx <no-reply@letterlinx.com>`; set `EMAIL_FROM`
+   to change that. Without the key, accounts work but emails are never confirmed and passwords can't be reset.
+
 ## Run locally
 
 ```bash
@@ -37,16 +41,20 @@ Open http://localhost:3000.
 | `players` | first name, last name, email, screen name, password hash, created date |
 | `games` | player, game version (`mode`), score, words found, date played |
 | `sessions` | hashed sign-in tokens with an expiry |
+| `email_codes` | hashed 6-digit codes for confirming an email or resetting a password |
 
 Emails and screen names are unique, ignoring case. Passwords are hashed with scrypt.
 Deleting a player removes their games and sessions.
 
+Codes last 15 minutes, stop working after 5 wrong guesses, and can be requested once a minute.
+Players appear on the leaderboard only after confirming their email.
+
 ## API
 
-- `POST /api/auth` – `{ action: "register" | "login" | "logout", ... }`
+- `POST /api/auth` – `{ action: "register" | "login" | "logout" | "verify" | "resend" | "forgot" | "reset", ... }`
 - `GET | PATCH | DELETE /api/me` – read, update or delete the signed-in player
 - `POST /api/games` – save a finished round `{ mode, words, at }`; the score is recomputed on the server
-- `GET /api/leaderboard?mode=classic` – every registered player's best score in a game version
+- `GET /api/leaderboard?mode=classic` – every confirmed player's best score in a game version
 
 ## Adding a game version
 

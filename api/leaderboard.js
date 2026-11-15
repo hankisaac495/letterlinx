@@ -1,4 +1,4 @@
-// GET /api/leaderboard?mode=classic  -> every registered player with their best score in that game version
+// GET /api/leaderboard?mode=classic  -> every player with a confirmed email, with their best score in that game version
 const L = require("./_lib.js");
 
 module.exports = L.route(async (req, res, p) => {
@@ -7,6 +7,7 @@ module.exports = L.route(async (req, res, p) => {
   const r = await p.query(
     `select pl.screen_name, coalesce(max(g.score), 0)::int as best
        from players pl left join games g on g.player_id = pl.id and g.mode = $1
-      group by pl.id order by best desc, pl.screen_name limit 500`, [mode]);
+      where pl.email_verified or not $2
+      group by pl.id order by best desc, pl.screen_name limit 500`, [mode, L.MAIL_ON]);
   return res.status(200).json({ mode, players: r.rows.map((x) => ({ screenName: x.screen_name, best: x.best })) });
 });

@@ -35,6 +35,16 @@ create table if not exists games (
 );
 create index if not exists games_mode_score_idx on games (mode, score desc);
 create index if not exists games_player_idx on games (player_id, mode, score desc);
+alter table players add column if not exists email_verified boolean not null default false;
+create table if not exists email_codes (
+  player_id uuid not null references players (id) on delete cascade,
+  purpose text not null,              -- 'verify' or 'reset'
+  code_hash text not null,
+  attempts integer not null default 0,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  primary key (player_id, purpose)
+);
 `;
 
 let pool = null, ready = null;
@@ -104,6 +114,53 @@ async function currentPlayer(req, p) {
   return r.rows[0] || null;
 }
 
+/* email: 6-digit codes sent through Resend. Without RESEND_API_KEY, verification is switched off. */
+const MAIL_ON = !!process.env.RESEND_API_KEY;
+const MAIL_FROM = process.env.EMAIL_FROM || "LetterLinx <no-reply@letterlinx.com>";
+const MAIL_URL = process.env.RESEND_API_URL || "https://api.resend.com/emails";
+const CODE_MINUTES = 15, CODE_TRIES = 5;
+
+async function sendMail(to, subject, text) {
+  try {
+    const r = await fetch(MAIL_URL, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + process.env.RESEND_API_KEY, "content-type": "application/json" },
+      body: JSON.stringify({ from: MAIL_FROM, to: [to], subject, text }),
+    });
+    if (!r.ok) console.error("mail failed", r.status, (await r.text()).slice(0, 300));
+    return r.ok;
+  } catch (e) { console.error("mail failed", e.message); return false; }
+}
+
+// Creates and emails a code. Returns "sent", "too_soon" (one was sent under a minute ago) or "failed".
+async function sendCode(p, player, purpose) {
+  if (!MAIL_ON) return "failed";
+  const recent = await p.query(
+    "select 1 from email_codes where player_id = $1 and purpose = $2 and created_at > now() - interval '60 seconds'", [player.id, purpose]);
+  if (recent.rows.length) return "too_soon";
+  const code = String(crypto.randomInt(0, 1000000)).padStart(6, "0");
+  await p.query(
+    `insert into email_codes (player_id, purpose, code_hash, expires_at) values ($1, $2, $3, now() + interval '${CODE_MINUTES} minutes')
+     on conflict (player_id, purpose) do update set code_hash = excluded.code_hash, attempts = 0, created_at = now(), expires_at = excluded.expires_at`,
+    [player.id, purpose, sha(player.id + ":" + code)]);
+  const what = purpose === "reset" ? "reset your LetterLinx password" : "confirm your email for LetterLinx";
+  const ok = await sendMail(player.email, `${code} is your LetterLinx code`,
+    `Hi ${player.first_name || player.screen_name},\n\nYour code to ${what} is:\n\n${code}\n\nIt expires in ${CODE_MINUTES} minutes. If you didn't ask for this, you can ignore this email.\n`);
+  if (!ok) await p.query("delete from email_codes where player_id = $1 and purpose = $2", [player.id, purpose]);
+  return ok ? "sent" : "failed";
+}
+
+// True when the code matches; a code is used up on success and dies after CODE_TRIES wrong guesses.
+async function useCode(p, playerId, purpose, code) {
+  const r = await p.query(
+    "update email_codes set attempts = attempts + 1 where player_id = $1 and purpose = $2 and expires_at > now() and attempts < $3 returning code_hash",
+    [playerId, purpose, CODE_TRIES]);
+  const row = r.rows[0];
+  if (!row || row.code_hash !== sha(playerId + ":" + String(code || "").trim())) return false;
+  await p.query("delete from email_codes where player_id = $1 and purpose = $2", [playerId, purpose]);
+  return true;
+}
+
 /* what the page gets about the signed-in player: profile + top 5 rounds per game version */
 async function profile(p, player) {
   const r = await p.query(
@@ -113,7 +170,8 @@ async function profile(p, player) {
   const tops = {};
   for (const g of r.rows) (tops[g.mode] = tops[g.mode] || []).push({ score: g.score, words: g.words, at: new Date(g.played_at).getTime() });
   return {
-    account: { first: player.first_name, last: player.last_name, email: player.email, screenName: player.screen_name },
+    account: { first: player.first_name, last: player.last_name, email: player.email, screenName: player.screen_name,
+      verified: player.email_verified || !MAIL_ON },
     tops,
   };
 }
@@ -137,4 +195,4 @@ async function saveGames(p, playerId, list) {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const clean = (s, n) => String(s == null ? "" : s).trim().slice(0, n);
 
-module.exports = { route, body, hashPassword, checkPassword, startSession, endSession, currentPlayer, profile, saveGames, EMAIL, clean, modes };
+module.exports = { route, body, hashPassword, checkPassword, startSession, endSession, currentPlayer, profile, saveGames, EMAIL, clean, modes, MAIL_ON, sendCode, useCode };
