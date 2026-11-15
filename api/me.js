@@ -21,7 +21,7 @@ module.exports = L.route(async (req, res, p) => {
       let emailSent = true;
       if (changed && L.MAIL_ON) {
         await p.query("delete from email_codes where player_id = $1", [player.id]);
-        emailSent = (await L.sendCode(p, r.rows[0], "verify")) === "sent";
+        emailSent = (await L.sendCode(p, r.rows[0], "verify", b.lang)) === "sent";
       }
       return res.status(200).json({ ...(await L.profile(p, r.rows[0])), emailSent });
     } catch (e) {

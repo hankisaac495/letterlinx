@@ -133,7 +133,7 @@ async function sendMail(to, subject, text) {
 }
 
 // Creates and emails a code. Returns "sent", "too_soon" (one was sent under a minute ago) or "failed".
-async function sendCode(p, player, purpose) {
+async function sendCode(p, player, purpose, lang) {
   if (!MAIL_ON) return "failed";
   const recent = await p.query(
     "select 1 from email_codes where player_id = $1 and purpose = $2 and created_at > now() - interval '60 seconds'", [player.id, purpose]);
@@ -143,9 +143,13 @@ async function sendCode(p, player, purpose) {
     `insert into email_codes (player_id, purpose, code_hash, expires_at) values ($1, $2, $3, now() + interval '${CODE_MINUTES} minutes')
      on conflict (player_id, purpose) do update set code_hash = excluded.code_hash, attempts = 0, created_at = now(), expires_at = excluded.expires_at`,
     [player.id, purpose, sha(player.id + ":" + code)]);
-  const what = purpose === "reset" ? "reset your LetterLinx password" : "confirm your email for LetterLinx";
-  const ok = await sendMail(player.email, `${code} is your LetterLinx code`,
-    `Hi ${player.first_name || player.screen_name},\n\nYour code to ${what} is:\n\n${code}\n\nIt expires in ${CODE_MINUTES} minutes. If you didn't ask for this, you can ignore this email.\n`);
+  const name = player.first_name || player.screen_name;
+  const mail = lang === "es"
+    ? { subject: `${code} es tu código de Letra Linx`,
+        text: `Hola ${name}:\n\nTu código para ${purpose === "reset" ? "restablecer tu contraseña de Letra Linx" : "confirmar tu correo en Letra Linx"} es:\n\n${code}\n\nVence en ${CODE_MINUTES} minutos. Si no lo solicitaste, puedes ignorar este correo.\n` }
+    : { subject: `${code} is your LetterLinx code`,
+        text: `Hi ${name},\n\nYour code to ${purpose === "reset" ? "reset your LetterLinx password" : "confirm your email for LetterLinx"} is:\n\n${code}\n\nIt expires in ${CODE_MINUTES} minutes. If you didn't ask for this, you can ignore this email.\n` };
+  const ok = await sendMail(player.email, mail.subject, mail.text);
   if (!ok) await p.query("delete from email_codes where player_id = $1 and purpose = $2", [player.id, purpose]);
   return ok ? "sent" : "failed";
 }

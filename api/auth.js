@@ -13,7 +13,7 @@ module.exports = L.route(async (req, res, p) => {
     if (!me) return res.status(401).json({ error: "signed_out" });
     if (b.action === "resend") {
       if (me.email_verified) return res.status(200).json(await L.profile(p, me));
-      const sent = await L.sendCode(p, me, "verify");
+      const sent = await L.sendCode(p, me, "verify", b.lang);
       if (sent !== "sent") return res.status(sent === "too_soon" ? 429 : 502).json({ error: sent === "too_soon" ? "too_soon" : "mail_failed" });
       return res.status(200).json({ ok: true });
     }
@@ -27,7 +27,7 @@ module.exports = L.route(async (req, res, p) => {
   /* forgotten password: email a code, then swap it for a new password. Never reveals whether the email exists. */
   if (b.action === "forgot") {
     const r = await p.query("select * from players where lower(email) = lower($1)", [email]);
-    if (r.rows[0]) await L.sendCode(p, r.rows[0], "reset");
+    if (r.rows[0]) await L.sendCode(p, r.rows[0], "reset", b.lang);
     return res.status(200).json({ ok: true });
   }
   if (b.action === "reset") {
@@ -59,7 +59,7 @@ module.exports = L.route(async (req, res, p) => {
     }
     await L.saveGames(p, player.id, b.games);
     await L.startSession(res, p, player.id);
-    const emailSent = L.MAIL_ON ? (await L.sendCode(p, player, "verify")) === "sent" : true;
+    const emailSent = L.MAIL_ON ? (await L.sendCode(p, player, "verify", b.lang)) === "sent" : true;
     return res.status(200).json({ ...(await L.profile(p, player)), emailSent });
   }
 

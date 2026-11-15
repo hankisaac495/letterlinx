@@ -6,6 +6,7 @@ A one-minute word hunt for phones and desktops. Drag across neighbouring tiles t
 
 - `index.html` – the game (markup, styles, script)
 - `modes.js` – the game versions: grid size, timer, scoring. Shared by the page and the API
+- `i18n.js` – interface text in English and Spanish
 - `words.js` – English dictionary (about 270,000 words, 2–15 letters)
 - `words-es.js` – Spanish dictionary (about 366,000 words, 2–10 letters, no accents, Ñ kept)
 - `api/` – Vercel functions: accounts, score history, leaderboard (Postgres)
@@ -68,7 +69,9 @@ alphabet and how often each letter is dealt. To add a language, add a word list 
 global variable (see `words-es.js`) and a new entry in `modes.js`. Word lists are downloaded only
 when their language is chosen. Rules beyond those settings need new code in `index.html`.
 
-The interface text is English only.
+The interface text, including the confirmation and reset emails, follows the word language. All of it
+lives in `i18n.js`; a new language needs a matching block there. In Spanish the game is named
+"Letra Linx".
 
 ## Word lists
 

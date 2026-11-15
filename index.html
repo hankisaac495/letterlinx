@@ -169,7 +169,7 @@ input:read-only { background: var(--surface-2); color: var(--muted); }
 
 /* Tab bar */
 nav { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); padding-block: 6px; }
-nav button { border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 3px;
+nav button { min-width: 0; border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 3px;
   padding: 6px 0; font-size: .7rem; font-weight: 600; color: var(--muted); border-radius: 12px; }
 nav svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 nav button[aria-current="page"] { color: var(--brand); }
@@ -227,50 +227,50 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   <!-- GAME -->
   <section class="screen" id="s-game">
     <div class="hud">
-      <div class="stat"><div class="eyebrow">Time</div><div class="num" id="time">1:00</div></div>
+      <div class="stat"><div class="eyebrow" data-t="hud.time">Time</div><div class="num" id="time">1:00</div></div>
       <div id="word" class="hint" aria-live="polite">Best score: 0</div>
-      <div class="stat right"><div class="eyebrow">Score</div><div class="num" id="score">0</div></div>
-      <button id="restartBtn" type="button" aria-label="Restart" title="Restart" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg></button>
+      <div class="stat right"><div class="eyebrow" data-t="hud.score">Score</div><div class="num" id="score">0</div></div>
+      <button id="restartBtn" type="button" data-t-label="hud.restart" aria-label="Restart" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg></button>
     </div>
     <div class="bar" id="bar"><i></i></div>
     <div class="boardwrap" id="boardwrap">
       <div id="board">
         <svg id="trail" viewBox="0 0 7 11" preserveAspectRatio="none" aria-hidden="true"><polyline class="base" points=""/><polyline class="dash" points=""/></svg>
       </div>
-      <button id="go" type="button">GO</button>
+      <button id="go" type="button" data-t="go">GO</button>
     </div>
     <div id="results" hidden>
-      <div class="eyebrow">Time's up · your score</div>
+      <div class="eyebrow" data-t="over.title">Time's up · your score</div>
       <div class="num" id="finalScore">0</div>
-      <div class="badge" id="newHigh" hidden>New high score</div>
+      <div class="badge" id="newHigh" data-t="over.high" hidden>New high score</div>
       <div class="eyebrow" id="wordCount">Words</div>
       <div class="grow"><ul class="wordlist" id="finalWords"></ul></div>
-      <button class="btn primary block" id="again" type="button">Play Again</button>
+      <button class="btn primary block" id="again" type="button" data-t="over.again">Play Again</button>
     </div>
   </section>
 
   <!-- SETTINGS -->
   <section class="screen scroll" id="s-settings" hidden>
-    <h2>Settings</h2>
+    <h2 data-t="set.title">Settings</h2>
     <div class="panel">
-      <div class="row"><span>Theme</span>
-        <div class="seg" id="themeSeg"><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button></div></div>
-      <div class="row"><span>Word language</span><div class="seg langSeg" aria-label="Word language"></div></div>
-      <div class="row"><span>Audio</span>
-        <div class="seg" id="audioSeg"><button type="button" data-v="on">On</button><button type="button" data-v="off">Off</button></div></div>
+      <div class="row"><span data-t="set.theme">Theme</span>
+        <div class="seg" id="themeSeg"><button type="button" data-v="light" data-t="set.light">Light</button><button type="button" data-v="dark" data-t="set.dark">Dark</button></div></div>
+      <div class="row"><span data-t="set.lang">Language</span><div class="seg langSeg" data-t-label="set.lang" aria-label="Language"></div></div>
+      <div class="row"><span data-t="set.audio">Audio</span>
+        <div class="seg" id="audioSeg"><button type="button" data-v="on" data-t="set.on">On</button><button type="button" data-v="off" data-t="set.off">Off</button></div></div>
     </div>
-    <p class="note">Word language changes the letters and the dictionary. Each language has its own scores and leaderboard.</p>
-    <button class="btn" id="replayTour" type="button">Replay the welcome tour</button>
+    <p class="note" data-t="set.note">Language changes the letters, the dictionary and the text. Each language has its own scores and leaderboard.</p>
+    <button class="btn" id="replayTour" type="button" data-t="set.tour">Replay the welcome tour</button>
   </section>
 
   <!-- LEADERBOARD -->
   <section class="screen scroll" id="s-leaderboard" hidden>
     <p class="eyebrow" id="lbMode" hidden></p>
-    <h2>Your top 5</h2>
+    <h2 data-t="lb.top5">Your top 5</h2>
     <div class="panel"><ol class="plain" id="top5"></ol></div>
-    <h2>Leaderboard</h2>
+    <h2 data-t="lb.title">Leaderboard</h2>
     <div class="panel">
-      <table><thead><tr><th class="rank">#</th><th>Screen name</th><th>Score</th></tr></thead><tbody id="players"></tbody></table>
+      <table><thead><tr><th class="rank">#</th><th data-t="lb.name">Screen name</th><th data-t="lb.score">Score</th></tr></thead><tbody id="players"></tbody></table>
       <p class="empty" id="playersEmpty" hidden></p>
     </div>
     <p class="note" id="lbNote"></p>
@@ -279,43 +279,43 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   <!-- ACCOUNT -->
   <section class="screen scroll" id="s-account" hidden>
     <h2 id="acctTitle">Create your account</h2>
-    <div class="seg center" id="acctSeg"><button type="button" data-v="register">Create account</button><button type="button" data-v="login">Sign in</button></div>
+    <div class="seg center" id="acctSeg"><button type="button" data-v="register" data-t="acct.tab.register">Create account</button><button type="button" data-v="login" data-t="acct.tab.login">Sign in</button></div>
     <p class="note" id="acctIntro">An account saves your score history and puts you on the leaderboard. Your screen name can't be changed later.</p>
     <div class="box" id="verifyBox" hidden>
-      <p><strong>Confirm your email.</strong> <span id="verifyText"></span></p>
+      <p><strong data-t="verify.title">Confirm your email.</strong> <span id="verifyText"></span></p>
       <form id="verifyForm" class="rowform" novalidate>
-        <input type="text" id="fCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" aria-label="6-digit code">
-        <button class="btn primary" type="submit" id="verifyBtn">Confirm</button>
+        <input type="text" id="fCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" data-t-label="verify.code" aria-label="6-digit code">
+        <button class="btn primary" type="submit" id="verifyBtn" data-t="verify.do">Confirm</button>
       </form>
       <div class="msg" id="verifyMsg" role="status"></div>
-      <button class="linkbtn" id="resendBtn" type="button">Send a new code</button>
+      <button class="linkbtn" id="resendBtn" type="button" data-t="verify.resend">Send a new code</button>
     </div>
     <form id="acctForm" novalidate>
       <div class="two" id="nameRow">
-        <label>First name<input type="text" id="fFirst" maxlength="40" autocomplete="given-name"></label>
-        <label>Last name<input type="text" id="fLast" maxlength="40" autocomplete="family-name"></label>
+        <label><span data-t="f.first">First name</span><input type="text" id="fFirst" maxlength="40" autocomplete="given-name"></label>
+        <label><span data-t="f.last">Last name</span><input type="text" id="fLast" maxlength="40" autocomplete="family-name"></label>
       </div>
-      <label>Email<input type="email" id="fEmail" maxlength="120" autocomplete="email"></label>
-      <label id="screenRow">Screen name<input type="text" id="fScreen" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-      <label id="codeRow" hidden>Code from the email<input type="text" id="fReset" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>
+      <label><span data-t="f.email">Email</span><input type="email" id="fEmail" maxlength="120" autocomplete="email"></label>
+      <label id="screenRow"><span data-t="f.screen">Screen name</span><input type="text" id="fScreen" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <label id="codeRow" hidden><span data-t="f.code">Code from the email</span><input type="text" id="fReset" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>
       <label id="passRow"><span id="passLabel">Password</span><input type="password" id="fPass" maxlength="200" autocomplete="new-password"></label>
       <div class="msg" id="acctMsg" role="status"></div>
       <button class="btn primary" type="submit" id="acctSave">Create account</button>
-      <button class="linkbtn" id="forgotBtn" type="button" hidden>Forgot password?</button>
+      <button class="linkbtn" id="forgotBtn" type="button" data-t="acct.forgot" hidden>Forgot password?</button>
     </form>
-    <button class="btn" id="signOut" type="button" hidden>Sign out</button>
-    <button class="btn danger" id="delBtn" type="button" hidden>Delete account</button>
+    <button class="btn" id="signOut" type="button" data-t="acct.signout" hidden>Sign out</button>
+    <button class="btn danger" id="delBtn" type="button" data-t="acct.delete" hidden>Delete account</button>
     <div class="confirm" id="delConfirm" hidden>
-      <p><strong>Delete your account?</strong> Your profile, score history and leaderboard entry are removed for good.</p>
-      <div class="two"><button class="btn" id="delNo" type="button">Keep account</button><button class="btn danger solid" id="delYes" type="button">Delete</button></div>
+      <p><strong data-t="del.title">Delete your account?</strong> <span data-t="del.text">Your profile, score history and leaderboard entry are removed for good.</span></p>
+      <div class="two"><button class="btn" id="delNo" type="button" data-t="del.no">Keep account</button><button class="btn danger solid" id="delYes" type="button" data-t="del.yes">Delete</button></div>
     </div>
   </section>
 
-  <nav id="nav" aria-label="Main">
-    <button type="button" data-go="game" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z"/></svg>Game</button>
-    <button type="button" data-go="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
-    <button type="button" data-go="leaderboard"><svg viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 14v4M8 20h8"/></svg>Leaderboard</button>
-    <button type="button" data-go="account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.500 2 8 6"/></svg>Account</button>
+  <nav id="nav" data-t-label="nav.label" aria-label="Main">
+    <button type="button" data-go="game" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z"/></svg><span data-t="nav.game">Game</span></button>
+    <button type="button" data-go="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-t="nav.settings">Settings</span></button>
+    <button type="button" data-go="leaderboard"><svg viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 14v4M8 20h8"/></svg><span data-t="nav.leaderboard">Leaderboard</span></button>
+    <button type="button" data-go="account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.500 2 8 6"/></svg><span data-t="nav.account">Account</span></button>
   </nav>
 </div>
 
@@ -323,52 +323,48 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 <div id="tour" hidden>
   <div id="slides">
     <div class="slide">
-      <div class="logo" aria-label="LetterLinx"><div class="top">LETTER</div><div class="linx"><span>L</span><span>I</span><span>N</span><span>X</span></div></div>
-      <div class="tagline">Link letters. Beat the clock.</div>
-      <p>A one-minute word hunt. Trace through neighbouring tiles to spell as many words as you can before time runs out.</p>
-      <div class="pick"><div class="eyebrow">Play in</div><div class="seg langSeg" aria-label="Word language"></div><p class="note">You can change this later in Settings.</p></div>
+      <div class="logo" data-t-label="app.name" aria-label="LetterLinx"><div class="top" data-t="logo.top">LETTER</div><div class="linx"><span>L</span><span>I</span><span>N</span><span>X</span></div></div>
+      <div class="tagline" data-t="tour.tagline">Link letters. Beat the clock.</div>
+      <p data-t="tour.intro">A one-minute word hunt. Trace through neighbouring tiles to spell as many words as you can before time runs out.</p>
+      <div class="pick"><div class="eyebrow" data-t="tour.playIn">Play in</div><div class="seg langSeg" data-t-label="set.lang" aria-label="Language"></div><p class="note" data-t="tour.later">You can change this later in Settings.</p></div>
     </div>
     <div class="slide">
       <div class="demo" aria-hidden="true">
         <div class="tile"><span>P</span></div><div class="tile sel"><span>L</span></div><div class="tile"><span>E</span></div><div class="tile"><span>T</span></div>
         <div class="tile sel"><span>I</span></div><div class="tile"><span>A</span></div><div class="tile sel"><span>N</span></div><div class="tile"><span>S</span></div>
-        <div class="tile"><span>R</span></div><div class="tile"><span>O</span></div><div class="tile"><span>M</span></div><div class="tile sel"><span>K</span></div>
+        <div class="tile"><span>R</span></div><div class="tile"><span>O</span></div><div class="tile"><span>M</span></div><div class="tile sel"><span data-t="tour.demoLast">K</span></div>
         <svg viewBox="0 0 4 3"><polyline points="1.5,.5 .5,1.5 2.5,1.5 3.5,2.5"/></svg>
       </div>
-      <h2>Drag to link letters</h2>
-      <p>Press a tile and drag to the next one: across, up, down or diagonally. Lift your finger to play the word. Words need at least 2 letters.</p>
+      <h2 data-t="tour.dragTitle">Drag to link letters</h2>
+      <p id="tourDrag">Press a tile and drag to the next one: across, up, down or diagonally. Lift your finger to play the word. Words need at least 2 letters.</p>
     </div>
     <div class="slide">
-      <h2>Longer words score big</h2>
-      <div class="points">
-        <div>2 letters <b>1</b></div><div>6 letters <b>15</b></div>
-        <div>3 letters <b>3</b></div><div>7 letters <b>25</b></div>
-        <div>4 letters <b>5</b></div><div>8 letters <b>35</b></div>
-        <div>5 letters <b>10</b></div><div>9 or more <b>50</b></div>
-      </div>
-      <p>A real word flashes green with a ding. Anything else flashes red with a buzz.</p>
+      <h2 data-t="tour.scoreTitle">Longer words score big</h2>
+      <div class="points" id="pointsTable"></div>
+      <p data-t="tour.scoreText">A real word flashes green with a ding. Anything else flashes red with a buzz.</p>
     </div>
     <div class="slide">
       <div class="clock" aria-hidden="true">0:10</div>
-      <h2>Sixty seconds per round</h2>
-      <p>The clock starts ticking out loud for the last 10 seconds. Your five best rounds are saved, and your high score goes on the leaderboard.</p>
+      <h2 data-t="tour.clockTitle">Sixty seconds per round</h2>
+      <p data-t="tour.clockText">The clock starts ticking out loud for the last 10 seconds. Your five best rounds are saved, and your high score goes on the leaderboard.</p>
     </div>
   </div>
   <div id="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></div>
   <div class="tourbtns">
-    <button class="btn" id="tourNext" type="button">Next</button>
-    <button class="btn primary" id="playNow" type="button">Play Now</button>
+    <button class="btn" id="tourNext" type="button" data-t="tour.next">Next</button>
+    <button class="btn primary" id="playNow" type="button" data-t="tour.play">Play Now</button>
   </div>
 </div>
 
 <div class="overlay" id="modal" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <header><h2 id="modalTitle"></h2><button class="x" id="modalClose" type="button" aria-label="Close">✕</button></header>
+    <header><h2 id="modalTitle"></h2><button class="x" id="modalClose" type="button" data-t-label="modal.close" aria-label="Close">✕</button></header>
     <div class="grow"><ul class="wordlist" id="modalWords"></ul></div>
   </div>
 </div>
 
 <script src="modes.js"></script>
+<script src="i18n.js"></script>
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
@@ -383,6 +379,29 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const saveLocal = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 
   /* ---------- game version ---------- */
+  /* interface text follows the word language */
+  const t = (key, vars) => {
+    let str = (window.LLX_I18N[mode.lang] || {})[key] ?? window.LLX_I18N.en[key] ?? key;
+    for (const k in vars || {}) str = str.replace("{" + k + "}", vars[k]);
+    return str;
+  };
+  const nWords = (n) => n === 1 ? t("words.one") : t("words.many", { n });
+  function applyText() {
+    document.documentElement.lang = mode.lang; document.title = t("app.name");
+    document.querySelectorAll("[data-t]").forEach((el) => { el.textContent = t(el.dataset.t); });
+    document.querySelectorAll("[data-t-label]").forEach((el) => { el.setAttribute("aria-label", t(el.dataset.tLabel)); });
+    $("restartBtn").title = t("hud.restart");
+    $("tourDrag").textContent = t("tour.dragText", { n: mode.minLength });
+    // scoring table for the tour: two columns, read row by row
+    const p = mode.points, rowsOf = [], tbl = $("pointsTable"); tbl.textContent = "";
+    for (let n = mode.minLength; n < p.length; n++) rowsOf.push([n === p.length - 1 ? t("tour.orMore", { n }) : t("tour.letters", { n }), p[n]]);
+    const half = Math.ceil(rowsOf.length / 2);
+    for (let i = 0; i < half; i++) for (const r of [rowsOf[i], rowsOf[i + half]]) {
+      if (!r) continue;
+      const d = document.createElement("div"), b = document.createElement("b"); d.textContent = r[0] + " "; b.textContent = r[1]; d.appendChild(b); tbl.appendChild(d);
+    }
+  }
+
   const browserLang = (navigator.language || "").slice(0, 2).toLowerCase();
   const guess = Object.keys(M.modes).find((id) => M.modes[id].lang === browserLang) || M.defaultMode;
   let modeId = M.modes[S.mode] ? S.mode : guess, mode = M.modes[modeId];
@@ -502,7 +521,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   function buildBoard() {
     mode = M.modes[modeId]; COLS = mode.cols; ROWS = mode.rows; N = COLS * ROWS;
     board.style.setProperty("--cols", COLS); board.style.setProperty("--rows", ROWS);
-    board.setAttribute("aria-label", "Letter grid, " + COLS + " by " + ROWS);
+    board.setAttribute("aria-label", t("board.label", { cols: COLS, rows: ROWS }));
     trail.setAttribute("viewBox", "0 0 " + COLS + " " + ROWS);
     tiles.forEach((t) => t.remove()); tiles = []; letters = [];
     for (let i = 0; i < N; i++) {
@@ -525,7 +544,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     if (!M.modes[id] || phase === "playing") return;
     S.mode = id; saveLocal();
     if (id === modeId) return;
-    modeId = id; buildBoard(); reset(); renderLeaderboard(); loadPlayers(); useDict();
+    modeId = id; buildBoard(); reset(); renderAll(); loadPlayers(); useDict();
   }
   document.addEventListener("click", (e) => { const b = e.target.closest(".langSeg button"); if (b) setMode(b.dataset.v); });
 
@@ -544,10 +563,10 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     const w = $("word");
     if (path.length) { w.className = ""; w.textContent = path.map((i) => letters[i]).join(""); }
     else if (fb) { w.className = fb.kind; w.textContent = fb.text; }
-    else if (phase === "playing") { w.className = "hint"; w.textContent = "Drag across letters"; }
-    else if (dictFailed) { w.className = "hint"; w.textContent = "Words didn't load. Tap GO to retry."; }
-    else if (!DICT) { w.className = "hint"; w.textContent = "Loading words…"; }
-    else { w.className = "hint"; w.textContent = "Best score: " + best(); }
+    else if (phase === "playing") { w.className = "hint"; w.textContent = t("hint.drag"); }
+    else if (dictFailed) { w.className = "hint"; w.textContent = t("hint.failed"); }
+    else if (!DICT) { w.className = "hint"; w.textContent = t("hint.loading"); }
+    else { w.className = "hint"; w.textContent = t("hint.best", { n: best() }); }
     $("go").classList.toggle("wait", !DICT);
     $("score").textContent = score;
   }
@@ -625,8 +644,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     $("nav").classList.remove("locked"); renderModes();
     $("boardwrap").hidden = true; $("results").hidden = false;
     $("finalScore").textContent = score; $("newHigh").hidden = !isHigh;
-    $("wordCount").textContent = words.length === 1 ? "1 word" : words.length + " words";
-    fillWords($("finalWords"), words, "No words this round. Try short ones first: two letters still score.");
+    $("wordCount").textContent = nWords(words.length);
+    fillWords($("finalWords"), words, t("over.none"));
     paint(); renderLeaderboard();
   }
 
@@ -676,7 +695,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     const valid = DICT.has(key), dup = valid && found.has(key), ok = valid && !dup, round = roundId;
     let text = word;
     if (ok) { const n = pointsFor(word.length); score += n; found.add(key); words.push(key); text = word + "  +" + n; ding(); }
-    else { if (dup) text = word + " · already found"; buzz(); }
+    else { if (dup) text = t("word.already", { word }); buzz(); }
     const mine = fb = { text, kind: ok ? "good" : "bad", pts: p };
     const moving = ok ? above(p) : [];
     moving.forEach((i) => locked.add(i));
@@ -692,7 +711,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   $("go").addEventListener("click", start);
   $("again").addEventListener("click", reset);
-  $("restartBtn").addEventListener("click", start); // drops the round unscored and deals a new one
+  $("restartBtn").addEventListener("click", reset); // drops the round unscored; GO starts the next one
 
   /* ---------- navigation ---------- */
   function show(name) {
@@ -717,18 +736,18 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   $("replayTour").addEventListener("click", () => openTour());
 
   /* ---------- leaderboard ---------- */
-  const dateFmt = (at) => { try { return new Date(at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); } catch (e) { return ""; } };
+  const dateFmt = (at) => { try { return new Date(at).toLocaleDateString(mode.lang === "en" ? undefined : mode.lang, { month: "short", day: "numeric", year: "numeric" }); } catch (e) { return ""; } };
   function renderLeaderboard() {
     const many = Object.keys(M.modes).length > 1;
     $("lbMode").hidden = !many; $("lbMode").textContent = mode.name;
     const ol = $("top5"); ol.textContent = "";
-    if (!top().length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = "No scores yet. Finish a round and it shows up here."; ol.appendChild(li); }
+    if (!top().length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = t("lb.noScores"); ol.appendChild(li); }
     top().forEach((g, i) => {
       const li = document.createElement("li"), b = document.createElement("button");
       b.type = "button"; b.className = "scorebtn";
       const mk = (cls, txt) => { const s = document.createElement("span"); s.className = cls; s.textContent = txt; b.appendChild(s); };
-      mk("rank", i + 1); mk("num", g.score); mk("meta", (g.words.length === 1 ? "1 word" : g.words.length + " words") + " · " + dateFmt(g.at)); mk("chev", "›");
-      b.addEventListener("click", () => openModal(g.score + " points", g.words));
+      mk("rank", i + 1); mk("num", g.score); mk("meta", nWords(g.words.length) + " · " + dateFmt(g.at)); mk("chev", "›");
+      b.addEventListener("click", () => openModal(t("modal.points", { n: g.score }), g.words));
       li.appendChild(b); ol.appendChild(li);
     });
 
@@ -737,22 +756,22 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     const tb = $("players"); tb.textContent = "";
     (list || []).forEach((p, i) => {
       const tr = document.createElement("tr"); if (p.screenName === me) tr.className = "me";
-      [i + 1, p.screenName.slice(0, 24) + (p.screenName === me ? " (you)" : ""), p.best].forEach((v, k) => {
+      [i + 1, p.screenName === me ? t("lb.you", { name: p.screenName.slice(0, 24) }) : p.screenName.slice(0, 24), p.best].forEach((v, k) => {
         const td = document.createElement("td"); if (k === 0) td.className = "rank"; td.textContent = v; tr.appendChild(td);
       });
       tb.appendChild(tr);
     });
     const empty = $("playersEmpty"); empty.hidden = !!(list && list.length);
-    empty.textContent = lbState === "loading" ? "Loading players…" : "No registered players yet.";
+    empty.textContent = lbState === "loading" ? t("lb.loading") : t("lb.none");
     $("lbNote").textContent =
-      lbState === "local" ? "The leaderboard can't be reached right now. Your scores are kept on this device."
-      : syncFailed ? "Your last round couldn't be saved to your account. It is kept on this device and sent again next time."
-      : S.account && S.account.verified === false ? "Confirm your email on the Account tab to appear on the leaderboard."
-      : !S.account ? "Create an account on the Account tab to save your score history and appear on the leaderboard." : "";
+      lbState === "local" ? t("lb.local")
+      : syncFailed ? t("lb.syncFailed")
+      : S.account && S.account.verified === false ? t("lb.unverified")
+      : !S.account ? t("lb.guest") : "";
   }
 
   function openModal(title, list) {
-    $("modalTitle").textContent = title; fillWords($("modalWords"), list, "No words recorded."); $("modal").hidden = false; $("modalClose").focus();
+    $("modalTitle").textContent = title; fillWords($("modalWords"), list, t("modal.none")); $("modal").hidden = false; $("modalClose").focus();
   }
   const closeModal = () => { $("modal").hidden = true; };
   $("modalClose").addEventListener("click", closeModal);
@@ -761,46 +780,26 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   /* ---------- account ---------- */
   let acctView = "register"; // while signed out: "register" | "login" | "forgot" | "reset"
-  const ERR = {
-    email_taken: "An account with that email already exists. Sign in instead.",
-    name_taken: "That screen name is taken. Try another.",
-    bad_credentials: "Email or password is wrong.",
-    bad_email: "That email doesn't look right. Check for a missing @ or domain.",
-    bad_name: "Screen name needs 3 to 16 letters, numbers, dots, dashes or underscores.",
-    bad_password: "Password needs at least 8 characters.",
-    bad_code: "That code is wrong or has expired. Check it, or send a new one.",
-    too_soon: "A code was just sent. Wait a minute before asking for another.",
-    mail_failed: "The email couldn't be sent. Try again shortly.",
-    not_configured: "Accounts aren't set up on this site yet.",
-    signed_out: "You've been signed out. Sign in again.",
-  };
   const msg = (text, cls) => { const m = $("acctMsg"); m.textContent = text; m.className = "msg " + (cls || ""); };
-  const fail = (r, where) => (where || msg)(r ? ERR[r.data?.error] || "Something went wrong. Try again." : "Can't reach the server. Check your connection and try again.", "err");
+  const fail = (r, where) => (where || msg)(r ? (window.LLX_I18N.en["err." + r.data?.error] ? t("err." + r.data.error) : t("err.generic")) : t("err.network"), "err");
   const vmsg = (text, cls) => { const m = $("verifyMsg"); m.textContent = text; m.className = "msg " + (cls || ""); };
-  const TITLES = { register: "Create your account", login: "Sign in", forgot: "Reset your password", reset: "Choose a new password" };
-  const ACTIONS = { register: "Create account", login: "Sign in", forgot: "Send reset code", reset: "Set new password" };
-  const INTROS = {
-    register: "An account saves your score history and puts you on the leaderboard. Your screen name can't be changed later.",
-    forgot: "Enter your account email and we'll send you a 6-digit code.",
-    reset: "Enter the code we emailed you and choose a new password.",
-  };
   function renderAccount() {
     const a = S.account, v = a ? null : acctView;
-    $("acctTitle").textContent = a ? "Your account" : TITLES[v];
+    $("acctTitle").textContent = a ? t("acct.title") : t("acct.title." + v);
     $("acctSeg").hidden = !!a;
     document.querySelectorAll("#acctSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === (v === "register" ? "register" : "login"))));
-    $("acctIntro").hidden = !INTROS[v]; $("acctIntro").textContent = INTROS[v] || "";
+    const intro = !!v && v !== "login"; $("acctIntro").hidden = !intro; $("acctIntro").textContent = intro ? t("acct.intro." + v) : "";
     $("nameRow").hidden = !!v && v !== "register"; $("screenRow").hidden = !!v && v !== "register";
     $("passRow").hidden = !!a || v === "forgot"; $("codeRow").hidden = v !== "reset";
-    $("passLabel").textContent = v === "reset" ? "New password" : "Password";
+    $("passLabel").textContent = v === "reset" ? t("f.newpass") : t("f.pass");
     $("fPass").autocomplete = v === "login" ? "current-password" : "new-password";
     $("fFirst").value = a?.first || ""; $("fLast").value = a?.last || ""; $("fEmail").value = a?.email || $("fEmail").value;
     $("fScreen").value = a?.screenName || $("fScreen").value; $("fScreen").readOnly = !!a; $("fPass").value = "";
-    $("acctSave").textContent = a ? "Save changes" : ACTIONS[v];
+    $("acctSave").textContent = t("acct.do." + (v || "save"));
     $("forgotBtn").hidden = v !== "login";
     const unverified = !!a && a.verified === false;
     $("verifyBox").hidden = !unverified;
-    if (unverified) $("verifyText").textContent = "Enter the 6-digit code we sent to " + a.email + " to appear on the leaderboard.";
+    if (unverified) $("verifyText").textContent = t("verify.text", { email: a.email });
     else { $("fCode").value = ""; vmsg(""); }
     $("signOut").hidden = !a; $("delBtn").hidden = !a; $("delConfirm").hidden = true; msg("");
   }
@@ -810,53 +809,53 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     e.preventDefault();
     const first = $("fFirst").value.trim(), last = $("fLast").value.trim(), email = $("fEmail").value.trim();
     const password = $("fPass").value, screenName = $("fScreen").value.trim(), v = S.account ? "save" : acctView;
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return msg(ERR.bad_email, "err");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return msg(t("err.bad_email"), "err");
     let url = "/api/auth", method = "POST", body;
-    if (v === "save") { url = "/api/me"; method = "PATCH"; body = { first, last, email }; }
-    else if (v === "login") { if (!password) return msg("Enter your password.", "err"); body = { action: "login", email, password, games: localGames() }; }
-    else if (v === "forgot") body = { action: "forgot", email };
+    if (v === "save") { url = "/api/me"; method = "PATCH"; body = { first, last, email, lang: mode.lang }; }
+    else if (v === "login") { if (!password) return msg(t("msg.enterPassword"), "err"); body = { action: "login", email, password, games: localGames() }; }
+    else if (v === "forgot") body = { action: "forgot", email, lang: mode.lang };
     else if (v === "reset") {
-      if (!/^\d{6}$/.test($("fReset").value.trim())) return msg("Enter the 6-digit code from the email.", "err");
-      if (password.length < 8) return msg(ERR.bad_password, "err");
+      if (!/^\d{6}$/.test($("fReset").value.trim())) return msg(t("msg.enterCode"), "err");
+      if (password.length < 8) return msg(t("err.bad_password"), "err");
       body = { action: "reset", email, code: $("fReset").value.trim(), password, games: localGames() };
     } else {
-      if (!/^[A-Za-z0-9_.-]{3,16}$/.test(screenName)) return msg(ERR.bad_name, "err");
-      if (password.length < 8) return msg(ERR.bad_password, "err");
-      body = { action: "register", first, last, email, screenName, password, games: localGames() };
+      if (!/^[A-Za-z0-9_.-]{3,16}$/.test(screenName)) return msg(t("err.bad_name"), "err");
+      if (password.length < 8) return msg(t("err.bad_password"), "err");
+      body = { action: "register", first, last, email, screenName, password, games: localGames(), lang: mode.lang };
     }
-    $("acctSave").disabled = true; msg("Working…");
+    $("acctSave").disabled = true; msg(t("msg.working"));
     try {
       const r = await call(url, method, body);
       if (!r.ok) { if (r.status === 401 && S.account) signedOutLocally(); return fail(r); }
       online = true;
-      if (v === "forgot") { acctView = "reset"; $("fReset").value = ""; renderAccount(); return msg("If that email has an account, a code is on its way.", "ok"); }
+      if (v === "forgot") { acctView = "reset"; $("fReset").value = ""; renderAccount(); return msg(t("msg.forgotSent"), "ok"); }
       adopt(r.data); loadPlayers();
-      if (r.data.emailSent === false) msg("Saved, but the confirmation email couldn't be sent. Use “Send a new code” above.", "err");
-      else msg({ save: "Saved.", login: "Signed in.", reset: "Password changed. You're signed in.", register: "Account created." }[v], "ok");
+      if (r.data.emailSent === false) msg(t("msg.savedNoMail"), "err");
+      else msg(t({ save: "msg.saved", login: "msg.signedIn", reset: "msg.resetDone", register: "msg.created" }[v]), "ok");
     } catch (err) { fail(null); } finally { $("acctSave").disabled = false; }
   });
   $("verifyForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const code = $("fCode").value.trim();
-    if (!/^\d{6}$/.test(code)) return vmsg("Enter the 6-digit code from the email.", "err");
+    if (!/^\d{6}$/.test(code)) return vmsg(t("msg.enterCode"), "err");
     $("verifyBtn").disabled = true;
     try {
       const r = await call("/api/auth", "POST", { action: "verify", code });
       if (!r.ok) { if (r.status === 401) signedOutLocally(); return fail(r, vmsg); }
-      adopt(r.data); msg("Email confirmed.", "ok"); loadPlayers();
+      adopt(r.data); msg(t("msg.confirmed"), "ok"); loadPlayers();
     } catch (err) { fail(null, vmsg); } finally { $("verifyBtn").disabled = false; }
   });
   $("resendBtn").addEventListener("click", async () => {
     $("resendBtn").disabled = true;
     try {
-      const r = await call("/api/auth", "POST", { action: "resend" });
+      const r = await call("/api/auth", "POST", { action: "resend", lang: mode.lang });
       if (!r.ok) return fail(r, vmsg);
-      if (r.data.account) { adopt(r.data); loadPlayers(); } else vmsg("A new code is on its way.", "ok");
+      if (r.data.account) { adopt(r.data); loadPlayers(); } else vmsg(t("msg.newCode"), "ok");
     } catch (err) { fail(null, vmsg); } finally { $("resendBtn").disabled = false; }
   });
   $("signOut").addEventListener("click", async () => {
     try { await call("/api/auth", "POST", { action: "logout" }); } catch (e) {}
-    acctView = "login"; signedOutLocally(); msg("Signed out.", "ok");
+    acctView = "login"; signedOutLocally(); msg(t("msg.signedOut"), "ok");
   });
   $("delBtn").addEventListener("click", () => { $("delConfirm").hidden = false; $("delBtn").hidden = true; });
   $("delNo").addEventListener("click", () => { $("delConfirm").hidden = true; $("delBtn").hidden = false; });
@@ -865,7 +864,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     try {
       const r = await call("/api/me", "DELETE");
       if (!r.ok && r.status !== 401) { $("delConfirm").hidden = true; $("delBtn").hidden = false; return fail(r); }
-      acctView = "register"; $("fEmail").value = ""; $("fScreen").value = ""; signedOutLocally(); msg("Account deleted.", "ok"); loadPlayers();
+      acctView = "register"; $("fEmail").value = ""; $("fScreen").value = ""; signedOutLocally(); msg(t("msg.deleted"), "ok"); loadPlayers();
     } catch (err) { fail(null); } finally { $("delYes").disabled = false; }
   });
 
@@ -883,7 +882,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   $("playNow").addEventListener("click", () => { $("tour").hidden = true; S.tourSeen = true; S.mode = modeId; saveLocal(); show("game"); });
 
   /* ---------- boot ---------- */
-  function renderAll() { renderSettings(); renderModes(); renderLeaderboard(); renderAccount(); paint(); }
+  function renderAll() { applyText(); renderSettings(); renderModes(); renderLeaderboard(); renderAccount(); paint(); }
   buildBoard(); renderAll();
   if (!S.tourSeen) openTour();
   useDict();
