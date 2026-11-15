@@ -561,7 +561,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     clearInterval(timerId); timerId = setInterval(clock, 100); clock(); paint();
   }
 
-  /* Back to an empty board with the GO button. A round in progress is dropped without being scored. */
+  /* Back to an empty board with the GO button. */
   function reset() {
     clearInterval(timerId); roundId++; phase = "idle"; score = 0; words = []; found = new Set();
     path = []; fb = null; mark.clear(); locked.clear(); pointerId = null; letters = [];
@@ -664,7 +664,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   $("go").addEventListener("click", start);
   $("again").addEventListener("click", reset);
-  $("restartBtn").addEventListener("click", reset);
+  $("restartBtn").addEventListener("click", start); // drops the round unscored and deals a new one
 
   /* ---------- navigation ---------- */
   function show(name) {
