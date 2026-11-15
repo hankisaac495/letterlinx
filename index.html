@@ -81,7 +81,7 @@ h2 { font-family: var(--display); font-size: 1.15rem; font-weight: 600; text-wra
 .boardwrap { flex: 1; min-height: 0; container-type: size; display: flex; align-items: center; justify-content: center; position: relative; }
 #board { --cols: 6; --rows: 10; width: min(100cqw, calc(100cqh * var(--cols) / var(--rows))); aspect-ratio: var(--cols) / var(--rows); position: relative; isolation: isolate;
   display: grid; grid-template-columns: repeat(var(--cols), 1fr); grid-template-rows: repeat(var(--rows), 1fr);
-  touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer; }
+  overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer; }
 .tile { position: relative; display: grid; place-items: center; container-type: size; }
 .tile::before { content: ""; position: absolute; inset: 5%; border-radius: 18%; z-index: 0;
   background: var(--tile); box-shadow: 0 2px 0 var(--tile-edge); }
@@ -93,6 +93,9 @@ h2 { font-family: var(--display); font-size: 1.15rem; font-weight: 600; text-wra
 .tile.good span, .tile.bad span { color: var(--on-state); }
 .tile.bad::before, .tile.bad span { animation: shake .3s linear; }
 .tile.fresh::before, .tile.fresh span { animation: flip .3s ease-out; }
+/* a tile sliding down its column: --drop is how many rows it falls */
+.tile.fall::before, .tile.fall span { animation: fall calc(.14s + var(--drop, 1) * .045s) cubic-bezier(.45, 0, .7, 1); }
+.tile.fall::before { animation-name: fallBg; }
 .tile.blank::before { opacity: .55; }
 #trail { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; overflow: visible; }
 #trail polyline { fill: none; stroke-linecap: round; stroke-linejoin: round; }
@@ -105,6 +108,9 @@ h2 { font-family: var(--display); font-size: 1.15rem; font-weight: 600; text-wra
 @keyframes pop { 50% { transform: scale(1.12); } }
 @keyframes shake { 25% { transform: translateX(-8%); } 75% { transform: translateX(8%); } }
 @keyframes flip { from { transform: scaleY(0); } }
+@keyframes fall { from { transform: translateY(calc(var(--drop, 1) * -100cqh)); } }
+/* the tile face is inset to 90% of its cell, so one row is 111.11% of its own height */
+@keyframes fallBg { from { transform: translateY(calc(var(--drop, 1) * -111.11%)); } }
 @keyframes pulse { 50% { opacity: .45; } }
 
 #go { position: absolute; z-index: 5; width: min(46cqw, 190px); aspect-ratio: 1; border-radius: 50%; border: 0;
@@ -466,6 +472,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   let phase = "idle", letters = [], path = [], score = 0, words = [], found = new Set();
   let endAt = 0, timerId = 0, lastSec = 0, roundId = 0, pointerId = null;
   const mark = new Map(); // tile index -> "good" | "bad" while feedback shows
+  const locked = new Set(); // tiles about to slide down, not selectable until they land
   let fb = null;          // { text, kind, pts: [indices] } latest feedback
 
   function buildBoard() {
@@ -518,11 +525,33 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   function setLetter(i, l, fresh) {
     letters[i] = l; const t = tiles[i]; t.firstChild.textContent = l; t.classList.remove("blank");
-    if (fresh) { t.classList.remove("fresh"); void t.offsetWidth; t.classList.add("fresh"); }
+    t.classList.remove("fresh", "fall");
+    if (fresh) { void t.offsetWidth; t.classList.add("fresh"); }
   }
 
+  /* Remove the used tiles: in each column the letters above slide down and new ones enter at the top. */
+  function collapse(used) {
+    const byCol = new Map();
+    for (const i of used) { const c = i % COLS; if (!byCol.has(c)) byCol.set(c, new Set()); byCol.get(c).add(Math.floor(i / COLS)); }
+    for (const [c, gone] of byCol) {
+      const keep = [];                                   // surviving letters, top to bottom, with the row they came from
+      for (let r = 0; r < ROWS; r++) if (!gone.has(r)) keep.push({ l: letters[r * COLS + c], from: r });
+      const n = gone.size;
+      const col = [...Array.from({ length: n }, (_, j) => ({ l: randLetter(), from: j - n })), ...keep];
+      for (let r = 0; r < ROWS; r++) {
+        const drop = r - col[r].from;
+        if (!drop) continue;
+        const i = r * COLS + c, t = tiles[i];
+        letters[i] = col[r].l; t.firstChild.textContent = col[r].l;
+        t.classList.remove("fresh", "fall"); t.style.setProperty("--drop", drop); void t.offsetWidth; t.classList.add("fall");
+      }
+    }
+  }
+  /* every tile at or above a used tile in its column will move */
+  const above = (used) => { const out = new Set(); for (const i of used) for (let j = i; j >= 0; j -= COLS) out.add(j); return out; };
+
   function start() {
-    wake(); roundId++; phase = "playing"; score = 0; words = []; found = new Set(); path = []; fb = null; mark.clear();
+    wake(); roundId++; phase = "playing"; score = 0; words = []; found = new Set(); path = []; fb = null; mark.clear(); locked.clear();
     for (let i = 0; i < N; i++) setLetter(i, randLetter(), true);
     $("go").hidden = true; $("results").hidden = true; $("boardwrap").hidden = false; $("endBtn").hidden = false;
     $("nav").classList.add("locked"); renderModes();
@@ -541,7 +570,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   function end() {
     if (phase !== "playing") return;
-    clearInterval(timerId); phase = "over"; roundId++; path = []; fb = null; mark.clear(); pointerId = null;
+    clearInterval(timerId); phase = "over"; roundId++; path = []; fb = null; mark.clear(); locked.clear(); pointerId = null;
     tone(660, .18, "triangle", .18); tone(440, .4, "triangle", .18, .16);
     const isHigh = score > 0 && score > best();
     if (score > 0) {
@@ -580,7 +609,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   board.addEventListener("pointerdown", (e) => {
     if (phase !== "playing" || pointerId !== null) return;
-    const i = tileAt(e, false); if (i < 0 || mark.has(i)) return;
+    const i = tileAt(e, false); if (i < 0 || mark.has(i) || locked.has(i)) return;
     e.preventDefault(); wake(); pointerId = e.pointerId;
     try { board.setPointerCapture(e.pointerId); } catch (err) {}
     path = [i]; paint();
@@ -591,7 +620,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     const last = path[path.length - 1];
     if (i === last) return;
     if (path.length > 1 && i === path[path.length - 2]) { path.pop(); paint(); return; }
-    if (path.includes(i) || mark.has(i) || !adjacent(last, i)) return;
+    if (path.includes(i) || mark.has(i) || locked.has(i) || !adjacent(last, i)) return;
     path.push(i); paint();
   });
   const release = (e) => { if (e.pointerId !== pointerId) return; pointerId = null; submit(); };
@@ -607,10 +636,13 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     if (ok) { const n = pointsFor(word.length); score += n; found.add(key); words.push(key); text = word + "  +" + n; ding(); }
     else { if (dup) text = word + " · already found"; buzz(); }
     const mine = fb = { text, kind: ok ? "good" : "bad", pts: p };
+    const moving = ok ? above(p) : [];
+    moving.forEach((i) => locked.add(i));
     p.forEach((i) => mark.set(i, mine.kind)); paint();
     setTimeout(() => {
       if (round !== roundId) return;
-      p.forEach((i) => { mark.delete(i); if (ok) setLetter(i, randLetter(), true); });
+      p.forEach((i) => mark.delete(i));
+      if (ok) { moving.forEach((i) => { locked.delete(i); mark.delete(i); }); collapse(p); }
       if (fb === mine) fb = null;
       paint();
     }, ok ? 420 : 380);
