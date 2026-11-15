@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&family=Unbounded:wght@600;800&display=swap">
 <style>
-/* Layout: one-screen phone app. A header strip (time / word / score), a 7x11 tile board
+/* Layout: one-screen phone app. A header strip (time / word / score), a tile board
    that fills what is left, and a four-tab bar pinned to the bottom. */
 :root {
   --bg: #E7EFF2; --surface: #FFFFFF; --surface-2: #D9E5EA; --ink: #10303B; --muted: #55717C;
@@ -79,7 +79,7 @@ h2 { font-family: var(--display); font-size: 1.15rem; font-weight: 600; text-wra
 
 /* Board */
 .boardwrap { flex: 1; min-height: 0; container-type: size; display: flex; align-items: center; justify-content: center; position: relative; }
-#board { --cols: 7; --rows: 11; width: min(100cqw, calc(100cqh * var(--cols) / var(--rows))); aspect-ratio: var(--cols) / var(--rows); position: relative; isolation: isolate;
+#board { --cols: 6; --rows: 10; width: min(100cqw, calc(100cqh * var(--cols) / var(--rows))); aspect-ratio: var(--cols) / var(--rows); position: relative; isolation: isolate;
   display: grid; grid-template-columns: repeat(var(--cols), 1fr); grid-template-rows: repeat(var(--rows), 1fr);
   touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer; }
 .tile { position: relative; display: grid; place-items: center; container-type: size; }

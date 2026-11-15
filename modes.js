@@ -4,7 +4,7 @@
   var modes = {
     classic: {
       name: "Classic",
-      cols: 7, rows: 11,     // grid size
+      cols: 6, rows: 10,     // grid size
       seconds: 60,           // round length
       tickFrom: 10,          // ticking sound for the last N seconds
       minLength: 2,          // shortest word that counts
