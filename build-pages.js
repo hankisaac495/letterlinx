@@ -12,7 +12,7 @@ function head(lang) {
       description: t("app.description"), image: SITE + "/og-image.png", applicationCategory: "GameApplication", genre: "Word game",
       operatingSystem: "Any", browserRequirements: "Requires JavaScript", inLanguage: ["en", "es"], playMode: "SinglePlayer",
       isAccessibleForFree: true, offers: { "@type": "Offer", price: "0", priceCurrency: "USD" } },
-    { "@type": "FAQPage", inLanguage: lang, mainEntity: [1, 2, 3, 4].map((n) => (
+    { "@type": "FAQPage", inLanguage: lang, mainEntity: [1, 5, 2, 3, 4].map((n) => (
       { "@type": "Question", name: t("faq.q" + n), acceptedAnswer: { "@type": "Answer", text: t("faq.a" + n) } })) },
   ] };
   return [
