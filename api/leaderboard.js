@@ -13,7 +13,7 @@ module.exports = L.route(async (req, res, p) => {
       `select pl.screen_name, max(g.score)::int as best
          from games g join players pl on pl.id = g.player_id
         where g.mode = $1 and g.game is null and g.score > 0 and (pl.email_verified or not $2)
-        group by pl.id order by best desc, pl.screen_name limit 500`, [mode, L.MAIL_ON]);
+        group by pl.id order by best desc, min(g.played_at) limit 10`, [mode, L.MAIL_ON]);   // all-time top 10
     return res.status(200).json({ mode, variant: "booster", players: list(r.rows) });
   }
 

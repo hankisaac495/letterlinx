@@ -79,7 +79,8 @@ Players appear on the leaderboard only after confirming their email.
 - `POST /api/games` – save a finished round `{ mode, game, words, at }`; the score is recomputed on the server
 - `GET | POST /api/admin` – dashboard data and actions, admins only
 - `GET /api/leaderboard?mode=classic&game=101` – Linx Daily: confirmed players' best scores in that day's game
-- `GET /api/leaderboard?mode=classic&variant=booster` – Brain Booster: confirmed players' all-time best
+- `GET /api/leaderboard?mode=classic&variant=booster` – Brain Booster: the all-time top 10
+- `GET /api/stats?mode=classic&tz=America/New_York` – the signed-in player's Brain Booster stats (played, top score, day streaks, longest word)
 
 ## Game variations
 

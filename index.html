@@ -197,6 +197,15 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .wordlist { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-content: flex-start; }
 .wordlist li { background: var(--surface); border-radius: 10px; padding: 6px 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
 .wordlist li b { color: var(--good); margin-left: 6px; font-variant-numeric: tabular-nums; }
+/* my stats (Brain Booster leaderboard) */
+#myStats, #lbMineBox { display: flex; flex-direction: column; gap: 14px; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.stats div { background: var(--surface); border-radius: 14px; padding: 12px 6px; text-align: center; min-width: 0; }
+.stats b { display: block; font-size: 1.7rem; font-weight: 900; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stats span { display: block; font-size: .72rem; color: var(--muted); line-height: 1.2; margin-top: 4px; }
+.longest { background: var(--surface); border-radius: 14px; padding: 12px 16px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.longest span { color: var(--muted); font-size: .9rem; }
+.longest b { font-size: 1.3rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; overflow-wrap: anywhere; }
 /* games screen */
 #variantList { display: flex; flex-direction: column; gap: 12px; }
 .variant { width: 100%; text-align: left; border: 2px solid transparent; background: var(--surface); border-radius: 18px; padding: 16px 18px;
@@ -418,14 +427,26 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   <section class="screen scroll" id="s-leaderboard" hidden>
     <div class="seg center" id="lbTabs"><button type="button" data-v="daily" data-t="lb.tab.daily">Daily</button><button type="button" data-v="booster" data-t="lb.tab.booster">Brain Booster</button></div>
     <p class="eyebrow" id="lbMode" hidden></p>
+    <div id="myStats" hidden>
+      <h2 data-t="stats.title">My stats</h2>
+      <div class="stats">
+        <div><b id="stPlayed">0</b><span data-t="stats.played">Played</span></div>
+        <div><b id="stTop">0</b><span data-t="stats.top">Top score</span></div>
+        <div><b id="stStreak">0</b><span data-t="stats.streak">Current streak</span></div>
+        <div><b id="stMax">0</b><span data-t="stats.max">Max streak</span></div>
+      </div>
+      <div class="longest"><span data-t="stats.longest">All-time longest word</span><b id="stLongest">—</b></div>
+    </div>
     <h2 id="lbTitle">Today's leaderboard</h2>
     <div class="panel">
       <table><thead><tr><th class="rank">#</th><th data-t="lb.name">Screen name</th><th data-t="lb.score">Score</th></tr></thead><tbody id="players"></tbody></table>
       <p class="empty" id="playersEmpty" hidden></p>
     </div>
     <p class="note" id="lbNote"></p>
-    <h2 id="lbMine">Your games</h2>
-    <div class="panel"><ol class="plain" id="top5"></ol></div>
+    <div id="lbMineBox">
+      <h2 id="lbMine">Your games</h2>
+      <div class="panel"><ol class="plain" id="top5"></ol></div>
+    </div>
   </section>
 
   <!-- ACCOUNT -->
@@ -561,6 +582,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   if (Array.isArray(S.top)) { if (!S.tops.classic) S.tops.classic = S.top; delete S.top; }
   if (!Array.isArray(S.pending)) S.pending = [];
   if (!S.boost || typeof S.boost !== "object") S.boost = {};
+  if (!S.bstats || typeof S.bstats !== "object") S.bstats = {};
   // rounds saved on this device before daily games were random boards: they belong to Brain Booster
   for (const m of Object.keys(S.tops)) {
     const old = (S.tops[m] || []).filter((g) => g && !Number.isInteger(g.game));
@@ -626,6 +648,34 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   let variant = VARIANTS.includes(S.variant) ? S.variant : "daily";
   const boosts = () => S.boost[modeId] || [];                     // this player's five best Brain Booster rounds
   const best = () => variant === "daily" ? bestIn(gameNo) : boosts()[0]?.score || 0;
+  /* Brain Booster stats. Kept on the device for everyone; a signed-in player's come from their saved rounds. */
+  const dayKey = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  function streaks(days, today) {                                   // days: sorted "YYYY-MM-DD" keys
+    const num = (k) => { const p = k.split("-"); return Math.round(Date.UTC(+p[0], p[1] - 1, +p[2]) / 86400000); };
+    let max = 0, run = 0, prev = null;
+    for (const k of days) { const n = num(k); run = prev !== null && n === prev + 1 ? run + 1 : 1; if (run > max) max = run; prev = n; }
+    const gap = prev === null ? 9 : num(today) - prev;              // a streak is still alive if the last day was today or yesterday
+    return { current: gap <= 1 ? run : 0, max };
+  }
+  function noteBooster(score, list) {
+    const st = S.bstats[modeId] = S.bstats[modeId] || { played: 0, top: 0, longest: "", days: [] };
+    st.played++; st.top = Math.max(st.top, score);
+    for (const w of list) if (w.length > st.longest.length) st.longest = w;
+    const k = dayKey(new Date()); if (!st.days.includes(k)) st.days = [...st.days, k].sort().slice(-800);
+  }
+  let serverStats = null;                                           // { mode, played, top, days, today, longest } for the signed-in player
+  function myStats() {
+    const src = S.account && serverStats && serverStats.mode === modeId ? serverStats : { ...(S.bstats[modeId] || { played: 0, top: 0, longest: "", days: [] }), today: dayKey(new Date()) };
+    return { played: src.played, top: src.top, longest: src.longest, ...streaks(src.days || [], src.today) };
+  }
+  async function loadStats() {
+    if (!online || !S.account) return;
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+      const r = await call("/api/stats?mode=" + encodeURIComponent(modeId) + "&tz=" + encodeURIComponent(tz), "GET");
+      if (r.ok) { serverStats = r.data; renderLeaderboard(); }
+    } catch (e) {}
+  }
   const mergeBoost = (a, b) => {
     const seen = new Set(), out = [];
     for (const g of [...(a || []), ...(b || [])]) {
@@ -695,7 +745,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     } catch (e) { lbState = "local"; }
     renderLeaderboard();
   }
-  function signedOutLocally() { S.account = null; S.tops = {}; S.boost = {}; S.pending = []; saveLocal(); renderAll(); }
+  function signedOutLocally() { S.account = null; S.tops = {}; S.boost = {}; S.bstats = {}; S.pending = []; serverStats = null; saveLocal(); renderAll(); }
   async function initCloud() {
     try {
       const r = await call("/api/me", "GET");
@@ -927,9 +977,9 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     track("round_end", { game_language: mode.lang, game_variant: roundVariant, score, words_found: words.length, new_high_score: isHigh });
     if (score > 0) {
       const g = { game: daily ? roundGame : null, score, words: words.slice(), at: Date.now() };
-      if (daily) S.tops[modeId] = mergeGames(games(), [g]); else S.boost[modeId] = mergeBoost(boosts(), [g]);
+      if (daily) S.tops[modeId] = mergeGames(games(), [g]); else { S.boost[modeId] = mergeBoost(boosts(), [g]); noteBooster(score, g.words); }
       if (S.account) { S.pending.push({ mode: modeId, words: g.words, at: g.at, game: g.game }); S.pending = S.pending.slice(-25); }
-      saveLocal(); flushPending().then(loadPlayers);
+      saveLocal(); flushPending().then(() => { loadPlayers(); if (!daily) loadStats(); });
     }
     $("time").textContent = "0:00"; $("time").classList.remove("low"); $("restartBtn").hidden = true;
     $("nav").classList.remove("locked"); renderModes();
@@ -1029,7 +1079,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     for (const s of ["game", "games", "settings", "leaderboard", "account", "admin"]) $("s-" + s).hidden = s !== name;
     document.querySelectorAll("#nav button").forEach((b) => b.dataset.go === (name === "admin" ? "settings" : name) ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
     if (name === "account") renderAccount();
-    if (name === "leaderboard") { lbTab = variant; players = null; lbState = "loading"; renderLeaderboard(); loadPlayers(); }
+    if (name === "leaderboard") { lbTab = variant; players = null; lbState = "loading"; renderLeaderboard(); loadPlayers(); if (lbTab === "booster") loadStats(); }
     if (name === "games") renderVariants();
   }
   $("nav").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) show(b.dataset.go); });
@@ -1054,7 +1104,13 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     document.querySelectorAll("#lbTabs button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === lbTab)));
     $("lbMode").hidden = false; $("lbMode").textContent = (daily ? t("lb.game", { game: gameNo }) : t("v.booster.name")) + (many ? " · " + mode.name : "");
     $("lbTitle").textContent = daily ? t("lb.title") : t("lb.titleBooster");
-    $("lbMine").textContent = daily ? t("lb.top5") : t("lb.top5Booster");
+    $("lbMine").textContent = t("lb.top5");
+    $("lbMineBox").hidden = !daily; $("myStats").hidden = daily;
+    if (!daily) {
+      const st = myStats();
+      $("stPlayed").textContent = st.played; $("stTop").textContent = st.top; $("stStreak").textContent = st.current; $("stMax").textContent = st.max;
+      $("stLongest").textContent = st.longest || "—";
+    }
     const mine = daily ? games() : boosts(), ol = $("top5"); ol.textContent = "";
     if (!mine.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = t("lb.noScores"); ol.appendChild(li); }
     mine.forEach((g, i) => {
@@ -1089,7 +1145,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   $("lbTabs").addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b || b.dataset.v === lbTab) return;
-    lbTab = b.dataset.v; players = null; lbState = "loading"; renderLeaderboard(); loadPlayers();
+    lbTab = b.dataset.v; players = null; lbState = "loading"; renderLeaderboard(); loadPlayers(); if (lbTab === "booster") loadStats();
   });
 
   /* ---------- games: choose a variation ---------- */
