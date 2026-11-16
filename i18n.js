@@ -89,8 +89,12 @@ window.LLX_I18N = {
     "tour.dragText": "Press a tile and drag to the next one: across, up, down or diagonally. Lift your finger to play the word. Words need at least {n} letters.",
     "tour.scoreTitle": "Longer words score big", "tour.letters": "{n} letters", "tour.orMore": "{n} or more",
     "tour.scoreText": "A real word flashes green with a ding. Anything else flashes red with a buzz.",
+    "tour.waysTitle": "Two ways to play",
+    "tour.dailyText": "The same letters for every player, with a new numbered game each day at midnight. Compare scores on the day's leaderboard.",
+    "tour.boosterText": "A fresh random board every time you play. Chase your all-time best.",
+    "tour.waysText": "Switch between them any time on the Games tab.",
     "tour.clockTitle": "Sixty seconds per round",
-    "tour.clockText": "Everyone gets the same letters each day, and a new numbered game starts at midnight. Play as often as you like: your best score goes on the day's leaderboard.",
+    "tour.clockText": "The clock ticks out loud for the last 10 seconds. Play as often as you like: your best scores are saved and ranked on the leaderboard.",
     "tour.next": "Next", "tour.play": "Play Now"
   },
   es: {
@@ -181,8 +185,12 @@ window.LLX_I18N = {
     "tour.dragText": "Presiona una ficha y arrastra hasta la siguiente: en horizontal, vertical o diagonal. Levanta el dedo para jugar la palabra. Las palabras deben tener al menos {n} letras.",
     "tour.scoreTitle": "Las palabras largas valen más", "tour.letters": "{n} letras", "tour.orMore": "{n} o más",
     "tour.scoreText": "Una palabra válida se ilumina en verde con una campanita. Cualquier otra se ilumina en rojo con un zumbido.",
+    "tour.waysTitle": "Dos formas de jugar",
+    "tour.dailyText": "Las mismas letras para todos, con un nuevo juego numerado cada día a medianoche. Compara tu puntuación en la clasificación del día.",
+    "tour.boosterText": "Un tablero nuevo al azar cada vez que juegas. Supera tu récord.",
+    "tour.waysText": "Cambia de uno a otro cuando quieras en la pestaña Juegos.",
     "tour.clockTitle": "Sesenta segundos por ronda",
-    "tour.clockText": "Todos reciben las mismas letras cada día, y a medianoche empieza un nuevo juego numerado. Juega las veces que quieras: tu mejor puntuación aparece en la clasificación del día.",
+    "tour.clockText": "El reloj suena en los últimos 10 segundos. Juega las veces que quieras: tus mejores puntuaciones se guardan y aparecen en la clasificación.",
     "tour.next": "Siguiente", "tour.play": "Jugar ahora"
   }
 };
