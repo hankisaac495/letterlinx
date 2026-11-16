@@ -196,6 +196,16 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .wordlist { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-content: flex-start; }
 .wordlist li { background: var(--surface); border-radius: 10px; padding: 6px 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
 .wordlist li b { color: var(--good); margin-left: 6px; font-variant-numeric: tabular-nums; }
+/* games screen */
+#variantList { display: flex; flex-direction: column; gap: 12px; }
+.variant { width: 100%; text-align: left; border: 2px solid transparent; background: var(--surface); border-radius: 18px; padding: 16px 18px;
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; }
+.variant[aria-pressed="true"] { border-color: var(--brand); }
+.variant .vname { font-size: 1.3rem; font-weight: 900; }
+.variant .vtext { grid-column: 1 / -1; color: var(--muted); font-size: .95rem; line-height: 1.45; }
+.variant .vmeta { grid-column: 1 / -1; font-size: .8rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); }
+.variant .vgo { background: var(--accent); color: var(--accent-ink); font-weight: 800; padding: 6px 14px; border-radius: 10px; }
+.variant[aria-pressed="true"] .vgo { background: var(--brand); color: var(--surface); }
 .sharebox { display: flex; align-items: center; gap: 12px; text-align: left; background: var(--surface); border-radius: 14px; padding: 12px 14px; }
 .sharetext { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .sharetext span { font-size: .9rem; color: var(--muted); }
@@ -272,7 +282,7 @@ input:read-only { background: var(--surface-2); color: var(--muted); }
 .confirm { border: 2px solid var(--bad); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 
 /* Tab bar */
-nav { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); padding-block: 6px; }
+nav { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--line); padding-block: 6px; }
 nav button { min-width: 0; border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 3px;
   padding: 6px 0; font-size: .7rem; font-weight: 600; color: var(--muted); border-radius: 12px; }
 nav svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -354,7 +364,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     <div id="results" hidden>
       <div class="eyebrow" id="overTitle">Time's up · your score</div>
       <div class="num" id="finalScore">0</div>
-      <div class="badge" id="newHigh" data-t="over.high" hidden>New best today</div>
+      <div class="badge" id="newHigh" hidden>New best today</div>
       <div class="eyebrow" id="wordCount">Words</div>
       <div class="grow"><ul class="wordlist" id="finalWords"></ul></div>
       <div class="sharebox" id="shareBox" hidden>
@@ -363,6 +373,12 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       </div>
       <button class="btn primary block" id="again" type="button" data-t="over.again">Play Again</button>
     </div>
+  </section>
+
+  <!-- GAMES: choose a game variation -->
+  <section class="screen scroll" id="s-games" hidden>
+    <h2 data-t="games.title">Games</h2>
+    <div id="variantList"></div>
   </section>
 
   <!-- SETTINGS -->
@@ -395,14 +411,15 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   <!-- LEADERBOARD -->
   <section class="screen scroll" id="s-leaderboard" hidden>
+    <div class="seg center" id="lbTabs"><button type="button" data-v="daily" data-t="lb.tab.daily">Daily</button><button type="button" data-v="booster" data-t="lb.tab.booster">Brain Booster</button></div>
     <p class="eyebrow" id="lbMode" hidden></p>
-    <h2 data-t="lb.title">Today's leaderboard</h2>
+    <h2 id="lbTitle">Today's leaderboard</h2>
     <div class="panel">
       <table><thead><tr><th class="rank">#</th><th data-t="lb.name">Screen name</th><th data-t="lb.score">Score</th></tr></thead><tbody id="players"></tbody></table>
       <p class="empty" id="playersEmpty" hidden></p>
     </div>
     <p class="note" id="lbNote"></p>
-    <h2 data-t="lb.top5">Your games</h2>
+    <h2 id="lbMine">Your games</h2>
     <div class="panel"><ol class="plain" id="top5"></ol></div>
   </section>
 
@@ -455,6 +472,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   <nav id="nav" data-t-label="nav.label" aria-label="Main">
     <button type="button" data-go="game" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z"/></svg><span data-t="nav.game">Game</span></button>
+    <button type="button" data-go="games"><svg viewBox="0 0 24 24"><rect x="3.500" y="3.500" width="7" height="7" rx="1.500"/><rect x="13.500" y="3.500" width="7" height="7" rx="1.500"/><rect x="3.500" y="13.500" width="7" height="7" rx="1.500"/><rect x="13.500" y="13.500" width="7" height="7" rx="1.500"/></svg><span data-t="nav.games">Games</span></button>
     <button type="button" data-go="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-t="nav.settings">Settings</span></button>
     <button type="button" data-go="leaderboard"><svg viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 14v4M8 20h8"/></svg><span data-t="nav.leaderboard">Leaderboard</span></button>
     <button type="button" data-go="account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.500 2 8 6"/></svg><span data-t="nav.account">Account</span></button>
@@ -524,11 +542,17 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const M = window.LLX_MODES;
   /* ---------- saved state (this device) ---------- */
   const KEY = "letterlinx.v1";
-  const S = { tourSeen: false, audio: true, theme: null, mode: null, account: null, tops: {}, pending: [] };
+  const S = { tourSeen: false, audio: true, theme: null, mode: null, variant: "daily", account: null, tops: {}, boost: {}, pending: [] };
   try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
   if (!S.tops || typeof S.tops !== "object") S.tops = {};
   if (Array.isArray(S.top)) { if (!S.tops.classic) S.tops.classic = S.top; delete S.top; }
   if (!Array.isArray(S.pending)) S.pending = [];
+  if (!S.boost || typeof S.boost !== "object") S.boost = {};
+  // rounds saved on this device before daily games were random boards: they belong to Brain Booster
+  for (const m of Object.keys(S.tops)) {
+    const old = (S.tops[m] || []).filter((g) => g && !Number.isInteger(g.game));
+    if (old.length) { S.boost[m] = [...(S.boost[m] || []), ...old]; S.tops[m] = S.tops[m].filter((g) => g && Number.isInteger(g.game)); }
+  }
   const saveLocal = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 
   /* ---------- game version ---------- */
@@ -584,7 +608,19 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   let gameNo = M.gameNumber(new Date());
   const games = () => S.tops[modeId] || [];                       // this player's best round in each daily game
   const bestIn = (game) => games().find((g) => g.game === game)?.score || 0;
-  const best = () => bestIn(gameNo);
+  /* game variations: "daily" (Linx Daily, same letters for everyone) and "booster" (Brain Booster, random boards) */
+  const VARIANTS = ["daily", "booster"];
+  let variant = VARIANTS.includes(S.variant) ? S.variant : "daily";
+  const boosts = () => S.boost[modeId] || [];                     // this player's five best Brain Booster rounds
+  const best = () => variant === "daily" ? bestIn(gameNo) : boosts()[0]?.score || 0;
+  const mergeBoost = (a, b) => {
+    const seen = new Set(), out = [];
+    for (const g of [...(a || []), ...(b || [])]) {
+      if (!g || typeof g.score !== "number" || !Array.isArray(g.words) || seen.has(g.at)) continue;
+      seen.add(g.at); out.push({ score: g.score, words: g.words.map(String), at: g.at });
+    }
+    return out.sort((x, y) => y.score - x.score || y.at - x.at).slice(0, 5);
+  };
   const mergeGames = (a, b) => {
     const byGame = new Map();
     for (const g of [...(a || []), ...(b || [])]) {
@@ -596,6 +632,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   };
 
   /* ---------- server: accounts, score history, leaderboard ---------- */
+  let lbTab = VARIANTS.includes(S.variant) ? S.variant : "daily";   // which leaderboard tab is showing
   let online = false, players = null, lbState = "loading", syncFailed = false;
   async function call(path, method, body) {
     const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 10000);
@@ -609,13 +646,21 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   /* take the server's view of the signed-in player; keep rounds not uploaded yet */
   function adopt(data) {
     S.account = data.account;
-    const waiting = {};
-    for (const g of S.pending) (waiting[g.mode] = waiting[g.mode] || []).push({ game: g.game, score: g.words.reduce((s, w) => s + M.pointsFor(g.mode, w.length), 0), words: g.words, at: g.at });
-    const tops = {};
+    const waiting = {}, waitingBoost = {};
+    for (const g of S.pending) {
+      const e = { game: g.game, score: g.words.reduce((s, w) => s + M.pointsFor(g.mode, w.length), 0), words: g.words, at: g.at };
+      const into = Number.isInteger(g.game) ? waiting : waitingBoost; (into[g.mode] = into[g.mode] || []).push(e);
+    }
+    const tops = {}, boost = {};
     for (const m of new Set([...Object.keys(data.tops || {}), ...Object.keys(waiting)])) tops[m] = mergeGames(data.tops?.[m], waiting[m]);
+    for (const m of new Set([...Object.keys(data.boost || {}), ...Object.keys(waitingBoost)])) boost[m] = mergeBoost(data.boost?.[m], waitingBoost[m]);
+    S.boost = boost;
     S.tops = tops; saveLocal(); renderAll();
   }
-  const localGames = () => Object.entries(S.tops).flatMap(([m, list]) => (list || []).map((g) => ({ mode: m, words: g.words, at: g.at, game: g.game })));
+  const localGames = () => [
+    ...Object.entries(S.tops).flatMap(([m, list]) => (list || []).map((g) => ({ mode: m, words: g.words, at: g.at, game: g.game }))),
+    ...Object.entries(S.boost).flatMap(([m, list]) => (list || []).map((g) => ({ mode: m, words: g.words, at: g.at, game: null }))),
+  ];
   async function flushPending() {
     while (online && S.account && S.pending.length) {
       const g = S.pending[0];
@@ -630,14 +675,14 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   }
   async function loadPlayers() {
     try {
-      const r = await call("/api/leaderboard?mode=" + encodeURIComponent(modeId) + "&game=" + gameNo, "GET");
+      const r = await call("/api/leaderboard?mode=" + encodeURIComponent(modeId) + (lbTab === "daily" ? "&game=" + gameNo : "&variant=booster"), "GET");
       if (!r.ok || !Array.isArray(r.data?.players)) throw 0;
       players = r.data.players.filter((p) => typeof p.screenName === "string" && typeof p.best === "number");
       online = true; lbState = "live";
     } catch (e) { lbState = "local"; }
     renderLeaderboard();
   }
-  function signedOutLocally() { S.account = null; S.tops = {}; S.pending = []; saveLocal(); renderAll(); }
+  function signedOutLocally() { S.account = null; S.tops = {}; S.boost = {}; S.pending = []; saveLocal(); renderAll(); }
   async function initCloud() {
     try {
       const r = await call("/api/me", "GET");
@@ -710,6 +755,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const board = $("board"), trail = $("trail"), [lineA, lineB] = trail.querySelectorAll("polyline");
   let tiles = [];
   let phase = "idle", letters = [], path = [], score = 0, words = [], found = new Set();
+  let roundVariant = "daily";
   let roundGame = 0, streams = [];   // the daily game this round belongs to, and its letter sequence per column
   let endAt = 0, timerId = 0, lastSec = 0, roundId = 0, pointerId = null;
   const mark = new Map(); // tile index -> "good" | "bad" while feedback shows
@@ -788,7 +834,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     else if (phase === "playing") { w.className = "hint"; w.textContent = t("hint.drag"); }
     else if (dictFailed) { w.className = "hint"; w.textContent = t("hint.failed"); }
     else if (!DICT) { w.className = "hint"; w.textContent = t("hint.loading"); }
-    else { w.className = "hint"; w.textContent = t("hint.best", { n: best(), game: gameNo }); }
+    else { w.className = "hint"; w.textContent = variant === "daily" ? t("hint.best", { n: best(), game: gameNo }) : t("hint.bestBooster", { n: best() }); }
     $("go").classList.toggle("wait", !DICT);
     $("score").textContent = score;
   }
@@ -825,12 +871,14 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     wake();
     if (!DICT) { if (dictFailed) useDict(); return; }
     checkDay(); roundGame = gameNo;
-    streams = Array.from({ length: COLS }, (_, c) => M.letterStream(modeId, roundGame, c));
+    roundVariant = variant;
+    // Linx Daily deals the day's fixed letters; Brain Booster deals a fresh random board every time
+    streams = Array.from({ length: COLS }, (_, c) => M.letterStream(modeId, roundVariant === "daily" ? roundGame : "r" + Math.random() + Date.now(), c));
     roundId++; phase = "playing"; score = 0; words = []; found = new Set(); path = []; fb = null; mark.clear(); locked.clear();
     for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) setLetter(r * COLS + c, streams[c](), true);   // each column, top to bottom
     $("go").hidden = true; $("results").hidden = true; $("boardwrap").hidden = false; $("restartBtn").hidden = false;
     $("nav").classList.add("locked"); renderModes();
-    track("round_start", { game_language: mode.lang });
+    track("round_start", { game_language: mode.lang, game_variant: roundVariant });
     endAt = performance.now() + mode.seconds * 1000; lastSec = mode.seconds;
     clearInterval(timerId); timerId = setInterval(clock, 100); clock(); paint();
   }
@@ -861,21 +909,23 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     if (phase !== "playing") return;
     clearInterval(timerId); phase = "over"; roundId++; path = []; fb = null; mark.clear(); locked.clear(); pointerId = null;
     tone(660, .18, "triangle", .18); tone(440, .4, "triangle", .18, .16);
-    const isHigh = score > 0 && score > bestIn(roundGame);
-    track("round_end", { game_language: mode.lang, score, words_found: words.length, new_high_score: isHigh });
+    const daily = roundVariant === "daily";
+    const isHigh = score > 0 && score > (daily ? bestIn(roundGame) : boosts()[0]?.score || 0);
+    track("round_end", { game_language: mode.lang, game_variant: roundVariant, score, words_found: words.length, new_high_score: isHigh });
     if (score > 0) {
-      const g = { game: roundGame, score, words: words.slice(), at: Date.now() };
-      S.tops[modeId] = mergeGames(games(), [g]);
+      const g = { game: daily ? roundGame : null, score, words: words.slice(), at: Date.now() };
+      if (daily) S.tops[modeId] = mergeGames(games(), [g]); else S.boost[modeId] = mergeBoost(boosts(), [g]);
       if (S.account) { S.pending.push({ mode: modeId, words: g.words, at: g.at, game: g.game }); S.pending = S.pending.slice(-25); }
       saveLocal(); flushPending().then(loadPlayers);
     }
     $("time").textContent = "0:00"; $("time").classList.remove("low"); $("restartBtn").hidden = true;
     $("nav").classList.remove("locked"); renderModes();
     $("boardwrap").hidden = true; $("results").hidden = false;
-    $("overTitle").textContent = t("over.title", { game: roundGame });
+    $("overTitle").textContent = daily ? t("over.title", { game: roundGame }) : t("over.titleBooster");
+    $("newHigh").textContent = daily ? t("over.high") : t("over.highBooster");
     // sharing: game number, score and the longest word found (the first one, if several are equally long)
     const longest = words.reduce((a, w) => w.length > a.length ? w : a, "");
-    shareText = score > 0 ? t("share.message", { game: roundGame, score, word: longest }) : "";
+    shareText = !score ? "" : daily ? t("share.message", { game: roundGame, score, word: longest }) : t("share.messageBooster", { score, word: longest });
     $("shareBox").hidden = !shareText; $("shareBtn").textContent = t("share.button");
     $("finalScore").textContent = score; $("newHigh").hidden = !isHigh;
     $("wordCount").textContent = nWords(words.length);
@@ -963,10 +1013,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   /* ---------- navigation ---------- */
   function show(name) {
     if (phase === "playing" && name !== "game") return;
-    for (const s of ["game", "settings", "leaderboard", "account", "admin"]) $("s-" + s).hidden = s !== name;
+    for (const s of ["game", "games", "settings", "leaderboard", "account", "admin"]) $("s-" + s).hidden = s !== name;
     document.querySelectorAll("#nav button").forEach((b) => b.dataset.go === (name === "admin" ? "settings" : name) ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
     if (name === "account") renderAccount();
-    if (name === "leaderboard") { renderLeaderboard(); loadPlayers(); }
+    if (name === "leaderboard") { lbTab = variant; players = null; lbState = "loading"; renderLeaderboard(); loadPlayers(); }
+    if (name === "games") renderVariants();
   }
   $("nav").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) show(b.dataset.go); });
 
@@ -986,21 +1037,25 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   /* ---------- leaderboard ---------- */
   const dateFmt = (at) => { try { return new Date(at).toLocaleDateString(mode.lang === "en" ? undefined : mode.lang, { month: "short", day: "numeric", year: "numeric" }); } catch (e) { return ""; } };
   function renderLeaderboard() {
-    const many = Object.keys(M.modes).length > 1;
-    $("lbMode").hidden = false; $("lbMode").textContent = t("lb.game", { game: gameNo }) + (many ? " · " + mode.name : "");
-    const ol = $("top5"); ol.textContent = "";
-    if (!games().length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = t("lb.noScores"); ol.appendChild(li); }
-    games().forEach((g) => {
+    const many = Object.keys(M.modes).length > 1, daily = lbTab === "daily";
+    document.querySelectorAll("#lbTabs button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === lbTab)));
+    $("lbMode").hidden = false; $("lbMode").textContent = (daily ? t("lb.game", { game: gameNo }) : t("v.booster.name")) + (many ? " · " + mode.name : "");
+    $("lbTitle").textContent = daily ? t("lb.title") : t("lb.titleBooster");
+    $("lbMine").textContent = daily ? t("lb.top5") : t("lb.top5Booster");
+    const mine = daily ? games() : boosts(), ol = $("top5"); ol.textContent = "";
+    if (!mine.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = t("lb.noScores"); ol.appendChild(li); }
+    mine.forEach((g, i) => {
       const li = document.createElement("li"), b = document.createElement("button");
       b.type = "button"; b.className = "scorebtn";
       const mk = (cls, txt) => { const s = document.createElement("span"); s.className = cls; s.textContent = txt; b.appendChild(s); };
-      mk("gno", "#" + g.game); mk("num", g.score); mk("meta", nWords(g.words.length) + " · " + dateFmt(g.at)); mk("chev", "›");
-      b.addEventListener("click", () => openModal(t("lb.game", { game: g.game }) + " · " + t("modal.points", { n: g.score }), g.words));
+      if (daily) mk("gno", "#" + g.game); else mk("rank", i + 1);
+      mk("num", g.score); mk("meta", nWords(g.words.length) + " · " + dateFmt(g.at)); mk("chev", "›");
+      b.addEventListener("click", () => openModal((daily ? t("lb.game", { game: g.game }) + " · " : "") + t("modal.points", { n: g.score }), g.words));
       li.appendChild(b); ol.appendChild(li);
     });
 
     const me = S.account?.screenName;
-    let list = lbState === "live" ? players : me ? [{ screenName: me, best: best() }] : [];
+    let list = lbState === "live" ? players : me ? [{ screenName: me, best: daily ? bestIn(gameNo) : boosts()[0]?.score || 0 }] : [];
     const tb = $("players"); tb.textContent = "";
     (list || []).forEach((p, i) => {
       const tr = document.createElement("tr"); if (p.screenName === me) tr.className = "me";
@@ -1010,12 +1065,36 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       tb.appendChild(tr);
     });
     const empty = $("playersEmpty"); empty.hidden = !!(list && list.length);
-    empty.textContent = lbState === "loading" ? t("lb.loading") : t("lb.none");
+    empty.textContent = lbState === "loading" ? t("lb.loading") : daily ? t("lb.none") : t("lb.noneBooster");
     $("lbNote").textContent =
       lbState === "local" ? t("lb.local")
       : syncFailed ? t("lb.syncFailed")
       : S.account && S.account.verified === false ? t("lb.unverified")
       : !S.account ? t("lb.guest") : "";
+  }
+
+  $("lbTabs").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b || b.dataset.v === lbTab) return;
+    lbTab = b.dataset.v; players = null; lbState = "loading"; renderLeaderboard(); loadPlayers();
+  });
+
+  /* ---------- games: choose a variation ---------- */
+  function renderVariants() {
+    const box = $("variantList"); box.textContent = "";
+    for (const v of VARIANTS) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "variant"; b.setAttribute("aria-pressed", String(v === variant));
+      const add = (cls, text) => { const n = document.createElement("span"); n.className = cls; n.textContent = text; b.appendChild(n); };
+      add("vname", t("v." + v + ".name")); add("vgo", v === variant ? t("games.playing") : t("games.play"));
+      add("vtext", t("v." + v + ".text"));
+      add("vmeta", v === "daily" ? t("lb.game", { game: gameNo }) + " · " + t("games.best", { n: bestIn(gameNo) }) : t("games.best", { n: boosts()[0]?.score || 0 }));
+      b.addEventListener("click", () => setVariant(v));
+      box.appendChild(b);
+    }
+  }
+  function setVariant(v) {
+    if (phase === "playing") return;
+    if (v !== variant) { variant = S.variant = v; saveLocal(); track("variant_change", { game_variant: v }); }
+    reset(); show("game");
   }
 
   function openModal(title, list) {
@@ -1219,7 +1298,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   $("playNow").addEventListener("click", () => { $("tour").hidden = true; S.tourSeen = true; S.mode = modeId; saveLocal(); show("game"); });
 
   /* ---------- boot ---------- */
-  function renderAll() { applyText(); renderSettings(); renderModes(); renderLeaderboard(); renderAccount(); paint(); }
+  function renderAll() { applyText(); renderVariants(); renderSettings(); renderModes(); renderLeaderboard(); renderAccount(); paint(); }
   buildBoard(); renderAll();
   if (!S.tourSeen) openTour();
   useDict();

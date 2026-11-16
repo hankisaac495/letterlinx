@@ -78,7 +78,19 @@ Players appear on the leaderboard only after confirming their email.
 - `GET | PATCH | DELETE /api/me` – read, update or delete the signed-in player
 - `POST /api/games` – save a finished round `{ mode, game, words, at }`; the score is recomputed on the server
 - `GET | POST /api/admin` – dashboard data and actions, admins only
-- `GET /api/leaderboard?mode=classic&game=101` – confirmed players' best scores in that day's game
+- `GET /api/leaderboard?mode=classic&game=101` – Linx Daily: confirmed players' best scores in that day's game
+- `GET /api/leaderboard?mode=classic&variant=booster` – Brain Booster: confirmed players' all-time best
+
+## Game variations
+
+Players choose a variation on the Games screen:
+
+- **Linx Daily** (default): the daily game described below.
+- **Brain Booster**: a new random board every round. Its rounds are saved with no game number, and its
+  leaderboard ranks every confirmed player's all-time best.
+
+The Leaderboard screen has a tab for each. Variations and languages are independent: each language has its
+own Linx Daily and its own Brain Booster.
 
 ## Daily games
 

@@ -7,7 +7,8 @@
 - The board is a grid of 60 letter tiles: 6 wide and 10 high on an upright screen, 10 wide and 6 high on a sideways one.
 - Tap GO, then drag across neighbouring tiles (across, up, down or diagonally) to spell a word of 2 or more letters, and lift to play it.
 - A valid word turns green and scores; an invalid one turns red. Used tiles disappear, the letters above slide down, and new letters enter at the top.
-- It is a daily game: every player gets the same letters on the same day, in the same order as tiles are used. A new numbered game (starting at 101) begins at midnight on the player's device. Players can replay the day's game; their best score is ranked on that day's leaderboard.
+- There are two variations. Brain Booster deals a new random board every round and ranks all-time best scores. Linx Daily is the default:
+- Linx Daily is a daily game: every player gets the same letters on the same day, in the same order as tiles are used. A new numbered game (starting at 101) begins at midnight on the player's device. Players can replay the day's game; their best score is ranked on that day's leaderboard.
 - Each round lasts 60 seconds. A ticking sound plays for the last 10 seconds.
 - Scoring by word length: 2 letters 1 point, 3 letters 3, 4 letters 5, 5 letters 10, 6 letters 15, 7 letters 25, 8 letters 35, 9 or more letters 50.
 

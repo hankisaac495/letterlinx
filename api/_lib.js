@@ -196,7 +196,15 @@ async function profile(p, player) {
     const list = tops[g.mode] = tops[g.mode] || [];
     if (list.length < 30) list.push({ game: g.game, score: g.score, words: g.words, at: new Date(g.played_at).getTime() });
   }
+  // Brain Booster (random boards, no game number): the player's five best rounds per language
+  const rb = await p.query(
+    `select mode, score, words, played_at from (
+       select *, row_number() over (partition by mode order by score desc, played_at desc) n from games where player_id = $1 and game is null
+     ) g where n <= 5 order by mode, n`, [player.id]);
+  const boost = {};
+  for (const g of rb.rows) (boost[g.mode] = boost[g.mode] || []).push({ score: g.score, words: g.words, at: new Date(g.played_at).getTime() });
   return {
+    boost,
     account: { first: player.first_name, last: player.last_name, email: player.email, screenName: player.screen_name,
       verified: player.email_verified || !MAIL_ON, admin: isAdmin(player) },
     tops,
@@ -215,8 +223,12 @@ async function saveGames(p, playerId, list) {
     const score = words.reduce((s, w) => s + pointsFor(g.mode, w.length), 0);
     const now = Date.now(), at = Number(g.at) > 0 && Number(g.at) <= now + 60000 ? Number(g.at) : now;
     // the daily game number comes from the player's local date, so it may differ by one from the UTC date
-    const game = Number(g.game);
-    if (!Number.isInteger(game) || game < daily.first || Math.abs(game - gameNumberUTC(at)) > 1) continue;
+    // and a Brain Booster round (random board) has none
+    let game = null;
+    if (g.game != null) {
+      game = Number(g.game);
+      if (!Number.isInteger(game) || game < daily.first || Math.abs(game - gameNumberUTC(at)) > 1) continue;
+    }
     await p.query(
       "insert into games (player_id, mode, score, words, played_at, game) values ($1, $2, $3, $4, to_timestamp($5 / 1000.0), $6) on conflict do nothing",
       [playerId, g.mode, score, JSON.stringify(words), at, game]);
