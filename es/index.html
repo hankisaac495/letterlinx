@@ -401,7 +401,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   <!-- ADMIN (only for accounts listed in ADMIN_EMAILS; English only) -->
   <section class="screen scroll" id="s-admin" hidden>
-    <div class="adminhead"><h2>Admin dashboard</h2><button class="btn small" id="adminBack" type="button">Back to account</button></div>
+    <div class="adminhead"><h2>Admin dashboard</h2><button class="btn small" id="adminBack" type="button">Back to Settings</button></div>
     <p class="msg" id="adminMsg" role="status"></p>
     <div id="adminLeaders"></div>
     <div class="tiles" id="adminTotals"></div>
@@ -832,7 +832,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   function show(name) {
     if (phase === "playing" && name !== "game") return;
     for (const s of ["game", "settings", "leaderboard", "account", "admin"]) $("s-" + s).hidden = s !== name;
-    document.querySelectorAll("#nav button").forEach((b) => b.dataset.go === (name === "admin" ? "account" : name) ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+    document.querySelectorAll("#nav button").forEach((b) => b.dataset.go === (name === "admin" ? "settings" : name) ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
     if (name === "account") renderAccount();
     if (name === "leaderboard") { renderLeaderboard(); loadPlayers(); }
   }
@@ -1070,7 +1070,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const openAdmin = (e) => { if (e) e.preventDefault(); amsg(""); adminAsk = null; show("admin"); loadAdmin(); };
   $("adminOpen").addEventListener("click", openAdmin);
   $("adminLink").addEventListener("click", openAdmin);
-  $("adminBack").addEventListener("click", () => show("account"));
+  $("adminBack").addEventListener("click", () => show("settings"));
   $("adminSearch").addEventListener("input", renderAdmin);
 
   /* ---------- tour ---------- */
