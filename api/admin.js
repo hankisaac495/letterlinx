@@ -7,7 +7,7 @@ const ZONE = "America/New_York"; // the month runs on US Eastern time
 module.exports = L.route(async (req, res, p) => {
   const me = await L.currentPlayer(req, p);
   if (!me) return res.status(401).json({ error: "signed_out" });
-  if (!L.isAdmin(me)) return res.status(403).json({ error: "forbidden" });
+  if (!L.isAdmin(me)) return res.status(403).json({ error: "forbidden", reason: L.adminProblem(me) });
 
   if (req.method === "GET") {
     const [totals, players, bests, month] = await Promise.all([

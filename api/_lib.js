@@ -177,6 +177,10 @@ async function useCode(p, playerId, purpose, code) {
 /* admins: comma-separated emails in ADMIN_EMAILS. The address must be confirmed before the powers apply. */
 const ADMINS = new Set((process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean));
 const isAdminEmail = (email) => ADMINS.has(String(email || "").toLowerCase());
+// why a signed-in player is not an admin, to make setup problems easy to spot
+const adminProblem = (player) => !ADMINS.size ? "ADMIN_EMAILS is not set on this deployment"
+  : !isAdminEmail(player.email) ? "this account's email is not in ADMIN_EMAILS"
+  : "this account's email has not been confirmed with its 6-digit code";
 const isAdmin = (player) => !!player && isAdminEmail(player.email) && (player.email_verified || !MAIL_ON);
 
 /* what the page gets about the signed-in player: profile + top 5 rounds per game version */
@@ -214,4 +218,4 @@ async function saveGames(p, playerId, list) {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const clean = (s, n) => String(s == null ? "" : s).trim().slice(0, n);
 
-module.exports = { route, body, hashPassword, checkPassword, startSession, endSession, currentPlayer, profile, saveGames, EMAIL, clean, modes, MAIL_ON, sendCode, useCode, notifySignup, isAdmin, isAdminEmail };
+module.exports = { route, body, hashPassword, checkPassword, startSession, endSession, currentPlayer, profile, saveGames, EMAIL, clean, modes, MAIL_ON, sendCode, useCode, notifySignup, isAdmin, isAdminEmail, adminProblem };
