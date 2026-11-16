@@ -76,18 +76,26 @@ Players appear on the leaderboard only after confirming their email.
 
 - `POST /api/auth` – `{ action: "register" | "login" | "logout" | "verify" | "resend" | "forgot" | "reset", ... }`
 - `GET | PATCH | DELETE /api/me` – read, update or delete the signed-in player
-- `POST /api/games` – save a finished round `{ mode, words, at }`; the score is recomputed on the server
+- `POST /api/games` – save a finished round `{ mode, game, words, at }`; the score is recomputed on the server
 - `GET | POST /api/admin` – dashboard data and actions, admins only
-- `GET /api/leaderboard?mode=classic` – every confirmed player's best score in a game version
+- `GET /api/leaderboard?mode=classic&game=101` – confirmed players' best scores in that day's game
+
+## Daily games
+
+Every player gets the same letters on the same calendar day. `daily` in `modes.js` sets the first game number
+(101) and the date it is played on; the number goes up by one at midnight on the player's device.
+
+- Each column has its own repeatable letter sequence, seeded by language, game number and column. Its first
+  letters fill the column top to bottom; the rest arrive in order as tiles are used.
+- Players can replay a day's game. Their best score in that game is what the day's leaderboard ranks.
+- `games.game` stores the game number. Rounds saved before daily games have no number and are not ranked.
+- On a wide screen the same board is drawn turned on its side, so it is identical in both orientations.
 
 ## Game versions and languages
 
 Each entry in `modes` in `modes.js` is a game version with its own top 5, leaderboard and score
 history (stored under its key in `games.mode`). Today there are two, one per word language:
 `classic` (English) and `es` (Español). Players choose on the first tour slide and in Settings.
-
-On a screen wider than it is tall, the grid is dealt on its side (10 × 6 instead of 6 × 10); the shape is
-fixed when a round starts.
 
 A version sets the grid, round length, minimum word length, points table, word list file,
 alphabet and how often each letter is dealt. To add a language, add a word list file that sets a

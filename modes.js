@@ -29,9 +29,45 @@
         P: 2.5, B: 2.3, G: 1.5, H: 1, F: 1, V: 1, Z: 0.8, J: 0.6, Q: 0.4, Y: 0.4, "\u00d1": 0.4, X: 0.15 }
     }
   };
+  // Daily games: everyone gets the same letters on the same calendar day. Game `first` is played on `start`.
+  var daily = { start: "2026-11-16", first: 101 };
+  function dayNumber(y, mo, d) {
+    var s = daily.start.split("-");
+    return Math.max(daily.first, daily.first + Math.round((Date.UTC(y, mo, d) - Date.UTC(+s[0], s[1] - 1, +s[2])) / 86400000));
+  }
+  // repeatable random numbers from a text seed, identical on every device
+  function seedOf(str) {
+    var h = 1779033703 ^ str.length;
+    for (var i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+    h = Math.imul(h ^ (h >>> 16), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return (h ^ (h >>> 16)) >>> 0;
+  }
+  function rng(a) {
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
   var api = {
     modes: modes,
     defaultMode: "classic",
+    daily: daily,
+    // game number for a device's local calendar date, and for a moment in UTC (used by the server as a sanity check)
+    gameNumber: function (date) { return dayNumber(date.getFullYear(), date.getMonth(), date.getDate()); },
+    gameNumberUTC: function (ms) { var d = new Date(ms); return dayNumber(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); },
+    // the endless letter sequence for one column of one day's game: the first letters fill the column from the
+    // top down, the rest arrive in order as tiles are used
+    letterStream: function (mode, game, col) {
+      var bag = modes[mode].letters, keys = Object.keys(bag), total = 0, next = rng(seedOf(mode + ":" + game + ":" + col));
+      for (var i = 0; i < keys.length; i++) total += bag[keys[i]];
+      return function () {
+        var x = next() * total;
+        for (var k = 0; k < keys.length; k++) { x -= bag[keys[k]]; if (x < 0) return keys[k]; }
+        return keys[0];
+      };
+    },
     pointsFor: function (mode, len) {
       var p = (modes[mode] || modes.classic).points;
       return len >= p.length ? p[p.length - 1] : p[len] || 0;

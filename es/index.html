@@ -177,6 +177,11 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 @keyframes shake { 25% { transform: translateX(-8%); } 75% { transform: translateX(8%); } }
 @keyframes flip { from { transform: scaleY(0); } }
 @keyframes fall { from { transform: translateY(calc(var(--drop, 1) * -100cqh)); } }
+/* board turned on its side: tiles slide sideways instead of down */
+#board.wide .tile.fall span { animation-name: fallX; }
+#board.wide .tile.fall::before { animation-name: fallBgX; }
+@keyframes fallX { from { transform: translateX(calc(var(--drop, 1) * -100cqw)); } }
+@keyframes fallBgX { from { transform: translateX(calc(var(--drop, 1) * -111.11%)); } }
 /* the tile face is inset to 90% of its cell, so one row is 111.11% of its own height */
 @keyframes fallBg { from { transform: translateY(calc(var(--drop, 1) * -111.11%)); } }
 @keyframes pulse { 50% { opacity: .45; } }
@@ -193,6 +198,10 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .wordlist { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-content: flex-start; }
 .wordlist li { background: var(--surface); border-radius: 10px; padding: 6px 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
 .wordlist li b { color: var(--good); margin-left: 6px; font-variant-numeric: tabular-nums; }
+.sharebox { display: flex; align-items: center; gap: 12px; text-align: left; background: var(--surface); border-radius: 14px; padding: 12px 14px; }
+.sharetext { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sharetext span { font-size: .9rem; color: var(--muted); }
+.sharebox .btn { flex: none; background: var(--brand); color: var(--surface); padding: 10px 18px; }
 .grow { flex: 1; min-height: 0; overflow-y: auto; }
 .empty { color: var(--muted); padding: 14px 4px; }
 
@@ -238,6 +247,7 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .note { font-size: .85rem; color: var(--muted); }
 .scorebtn { width: 100%; border: 0; background: transparent; text-align: left; display: flex; align-items: center; gap: 12px; padding: 12px 0; }
 .scorebtn .rank, td.rank { width: 1.6em; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+.scorebtn .gno { min-width: 3.2em; color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
 .scorebtn .num { font-size: 1.15rem; font-weight: 800; min-width: 3ch; }
 .scorebtn .meta { flex: 1; min-width: 0; color: var(--muted); font-size: .85rem; }
 .scorebtn .chev { color: var(--muted); }
@@ -344,11 +354,15 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <button id="go" type="button" data-t="go">¡YA!</button>
     </div>
     <div id="results" hidden>
-      <div class="eyebrow" data-t="over.title">Se acabó el tiempo · tu puntuación</div>
+      <div class="eyebrow" id="overTitle">Time's up · your score</div>
       <div class="num" id="finalScore">0</div>
-      <div class="badge" id="newHigh" data-t="over.high" hidden>Nuevo récord</div>
+      <div class="badge" id="newHigh" data-t="over.high" hidden>Nuevo récord de hoy</div>
       <div class="eyebrow" id="wordCount">Words</div>
       <div class="grow"><ul class="wordlist" id="finalWords"></ul></div>
+      <div class="sharebox" id="shareBox" hidden>
+        <div class="sharetext"><strong data-t="share.title">Comparte esta puntuación</strong><span data-t="share.text">¡Reta a un amigo a superarla!</span></div>
+        <button class="btn" id="shareBtn" type="button" data-t="share.button">Compartir</button>
+      </div>
       <button class="btn primary block" id="again" type="button" data-t="over.again">Jugar de nuevo</button>
     </div>
   </section>
@@ -373,7 +387,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     </div>
     <article class="about">
       <h2 data-t="about.title">Acerca de Letra Linx</h2>
-      <p data-t="about.text">Letra Linx es un juego de palabras gratis que se juega en el navegador, en el teléfono o en la computadora. Une fichas de letras vecinas para formar palabras, gana más puntos con palabras largas y descubre cuántos puntos puedes sumar en 60 segundos. Juega en español o en inglés, guarda tus mejores rondas y sube en la clasificación.</p>
+      <p data-t="about.text">Letra Linx es un juego de palabras gratis que se juega en el navegador, en el teléfono o en la computadora. Une fichas de letras vecinas para formar palabras, gana más puntos con palabras largas y descubre cuántos puntos puedes sumar en 60 segundos. Juega en español o en inglés. Cada día a medianoche empieza un nuevo juego numerado con las mismas letras para todos. Guarda tus puntuaciones y sube en la clasificación del día.</p>
       <h3 data-t="faq.q1">¿Cómo se juega Letra Linx?</h3><p data-t="faq.a1">Toca ¡YA! y arrastra el dedo por fichas vecinas (en horizontal, vertical o diagonal) para formar una palabra de 2 letras o más. Levanta el dedo para jugarla. Las fichas usadas desaparecen, las letras de arriba bajan y entran letras nuevas por la parte superior.</p>
       <h3 data-t="faq.q2">¿Cómo se calcula la puntuación?</h3><p data-t="faq.a2">Según el largo de la palabra: 2 letras valen 1 punto, 3 letras 3, 4 letras 5, 5 letras 10, 6 letras 15, 7 letras 25, 8 letras 35, y 9 letras o más 50.</p>
       <h3 data-t="faq.q3">¿Letra Linx es gratis?</h3><p data-t="faq.a3">Sí. Puedes jugar sin cuenta. Una cuenta gratuita guarda tu historial de puntuaciones y te incluye en la clasificación.</p>
@@ -384,14 +398,14 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   <!-- LEADERBOARD -->
   <section class="screen scroll" id="s-leaderboard" hidden>
     <p class="eyebrow" id="lbMode" hidden></p>
-    <h2 data-t="lb.top5">Tus 5 mejores</h2>
-    <div class="panel"><ol class="plain" id="top5"></ol></div>
-    <h2 data-t="lb.title">Clasificación</h2>
+    <h2 data-t="lb.title">Clasificación de hoy</h2>
     <div class="panel">
       <table><thead><tr><th class="rank">#</th><th data-t="lb.name">Alias</th><th data-t="lb.score">Puntos</th></tr></thead><tbody id="players"></tbody></table>
       <p class="empty" id="playersEmpty" hidden></p>
     </div>
     <p class="note" id="lbNote"></p>
+    <h2 data-t="lb.top5">Tus juegos</h2>
+    <div class="panel"><ol class="plain" id="top5"></ol></div>
   </section>
 
   <!-- ACCOUNT -->
@@ -476,7 +490,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     <div class="slide">
       <div class="clock" aria-hidden="true">0:10</div>
       <h2 data-t="tour.clockTitle">Sesenta segundos por ronda</h2>
-      <p data-t="tour.clockText">El reloj empieza a sonar en los últimos 10 segundos. Se guardan tus cinco mejores rondas y tu récord aparece en la clasificación.</p>
+      <p data-t="tour.clockText">Todos reciben las mismas letras cada día, y a medianoche empieza un nuevo juego numerado. Juega las veces que quieras: tu mejor puntuación aparece en la clasificación del día.</p>
     </div>
   </div>
   <div id="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></div>
@@ -549,11 +563,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const track = (event, params) => { try { window.dataLayer.push({ event, ...params }); } catch (e) {} };  // analytics events for Tag Manager
   let modeId = M.modes[S.mode] ? S.mode : guess, mode = M.modes[modeId];
 
-  /* letters are dealt by the version's weights; its word list is downloaded the first time it is needed */
-  const randLetter = () => {
-    const bag = Object.entries(mode.letters); let r = Math.random() * bag.reduce((t, [, w]) => t + w, 0);
-    for (const [l, w] of bag) { if ((r -= w) < 0) return l; } return bag[0][0];
-  };
+  /* each language's word list is downloaded the first time it is needed */
   const dicts = {};
   let DICT = null, dictFailed = false;
   function loadDict(id) {
@@ -572,15 +582,19 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   }
   let COLS = mode.cols, ROWS = mode.rows, N = COLS * ROWS;
   const pointsFor = (len) => M.pointsFor(modeId, len);
-  const top = () => S.tops[modeId] || [];
-  const best = () => top()[0]?.score || 0;
-  const mergeTop = (a, b) => {
-    const seen = new Set(), out = [];
+  /* daily game: the number follows this device's calendar date, and seeds the letters */
+  let gameNo = M.gameNumber(new Date());
+  const games = () => S.tops[modeId] || [];                       // this player's best round in each daily game
+  const bestIn = (game) => games().find((g) => g.game === game)?.score || 0;
+  const best = () => bestIn(gameNo);
+  const mergeGames = (a, b) => {
+    const byGame = new Map();
     for (const g of [...(a || []), ...(b || [])]) {
-      if (!g || typeof g.score !== "number" || !Array.isArray(g.words) || seen.has(g.at)) continue;
-      seen.add(g.at); out.push({ score: g.score, words: g.words.map(String), at: g.at });
+      if (!g || typeof g.score !== "number" || !Array.isArray(g.words) || !Number.isInteger(g.game)) continue;   // rounds from before daily games are dropped
+      const cur = byGame.get(g.game);
+      if (!cur || g.score > cur.score) byGame.set(g.game, { game: g.game, score: g.score, words: g.words.map(String), at: g.at });
     }
-    return out.sort((x, y) => y.score - x.score || y.at - x.at).slice(0, 5);
+    return [...byGame.values()].sort((x, y) => y.game - x.game).slice(0, 30);
   };
 
   /* ---------- server: accounts, score history, leaderboard ---------- */
@@ -598,12 +612,12 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   function adopt(data) {
     S.account = data.account;
     const waiting = {};
-    for (const g of S.pending) (waiting[g.mode] = waiting[g.mode] || []).push({ score: g.words.reduce((s, w) => s + M.pointsFor(g.mode, w.length), 0), words: g.words, at: g.at });
+    for (const g of S.pending) (waiting[g.mode] = waiting[g.mode] || []).push({ game: g.game, score: g.words.reduce((s, w) => s + M.pointsFor(g.mode, w.length), 0), words: g.words, at: g.at });
     const tops = {};
-    for (const m of new Set([...Object.keys(data.tops || {}), ...Object.keys(waiting)])) tops[m] = mergeTop(data.tops?.[m], waiting[m]);
+    for (const m of new Set([...Object.keys(data.tops || {}), ...Object.keys(waiting)])) tops[m] = mergeGames(data.tops?.[m], waiting[m]);
     S.tops = tops; saveLocal(); renderAll();
   }
-  const localGames = () => Object.entries(S.tops).flatMap(([m, list]) => (list || []).map((g) => ({ mode: m, words: g.words, at: g.at })));
+  const localGames = () => Object.entries(S.tops).flatMap(([m, list]) => (list || []).map((g) => ({ mode: m, words: g.words, at: g.at, game: g.game })));
   async function flushPending() {
     while (online && S.account && S.pending.length) {
       const g = S.pending[0];
@@ -618,7 +632,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   }
   async function loadPlayers() {
     try {
-      const r = await call("/api/leaderboard?mode=" + encodeURIComponent(modeId), "GET");
+      const r = await call("/api/leaderboard?mode=" + encodeURIComponent(modeId) + "&game=" + gameNo, "GET");
       if (!r.ok || !Array.isArray(r.data?.players)) throw 0;
       players = r.data.players.filter((p) => typeof p.screenName === "string" && typeof p.best === "number");
       online = true; lbState = "live";
@@ -698,28 +712,47 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const board = $("board"), trail = $("trail"), [lineA, lineB] = trail.querySelectorAll("polyline");
   let tiles = [];
   let phase = "idle", letters = [], path = [], score = 0, words = [], found = new Set();
+  let roundGame = 0, streams = [];   // the daily game this round belongs to, and its letter sequence per column
   let endAt = 0, timerId = 0, lastSec = 0, roundId = 0, pointerId = null;
   const mark = new Map(); // tile index -> "good" | "bad" while feedback shows
   const locked = new Set(); // tiles about to slide down, not selectable until they land
   let fb = null;          // { text, kind, pts: [indices] } latest feedback
 
+  /* The board is always the version's grid (e.g. 6 columns of 10). On a screen wider than it is tall it is
+     drawn turned on its side: each column becomes a row, used tiles slide sideways and new letters enter from
+     the left. It is the same board either way, so turning the device mid-round only re-draws it. */
+  let wide = false;
   const isWide = () => window.innerWidth > window.innerHeight && mode.rows > mode.cols;
-  const shapeFits = () => COLS === (isWide() ? mode.rows : mode.cols);
-  // turning the device re-shapes the empty board; a round in progress keeps the shape it started with
-  window.addEventListener("resize", () => { if (phase !== "playing" && !shapeFits()) { buildBoard(); paint(); } });
+  const spot = (i) => { const c = i % COLS, r = Math.floor(i / COLS); return wide ? [r, c] : [c, r]; };   // tile -> [x, y] on screen
+  function layout() {
+    wide = isWide();
+    const vc = wide ? ROWS : COLS, vr = wide ? COLS : ROWS;
+    board.classList.toggle("wide", wide);
+    board.style.setProperty("--cols", vc); board.style.setProperty("--rows", vr);
+    board.setAttribute("aria-label", t("board.label", { cols: vc, rows: vr }));
+    trail.setAttribute("viewBox", "0 0 " + vc + " " + vr);
+    tiles.forEach((el, i) => { const [x, y] = spot(i); el.style.gridColumn = x + 1; el.style.gridRow = y + 1; });
+  }
+  window.addEventListener("resize", () => { if (isWide() !== wide) { layout(); paint(); } });
   function buildBoard() {
-    // on a screen wider than it is tall the board is dealt on its side (same tiles, e.g. 10 across by 6 down)
-    mode = M.modes[modeId]; const wide = isWide(); COLS = wide ? mode.rows : mode.cols; ROWS = wide ? mode.cols : mode.rows; N = COLS * ROWS;
-    board.style.setProperty("--cols", COLS); board.style.setProperty("--rows", ROWS);
-    board.setAttribute("aria-label", t("board.label", { cols: COLS, rows: ROWS }));
-    trail.setAttribute("viewBox", "0 0 " + COLS + " " + ROWS);
+    mode = M.modes[modeId]; COLS = mode.cols; ROWS = mode.rows; N = COLS * ROWS;
     tiles.forEach((t) => t.remove()); tiles = []; letters = [];
     for (let i = 0; i < N; i++) {
       const t = document.createElement("div"); t.className = "tile blank";
       t.appendChild(document.createElement("span")); board.appendChild(t); tiles.push(t);
     }
+    layout();
     $("time").textContent = fmt(mode.seconds * 1000);
   }
+  /* a new numbered game begins at midnight on this device; a round in progress finishes on its own game first */
+  function checkDay() {
+    const n = M.gameNumber(new Date());
+    if (n === gameNo || phase === "playing") return;
+    gameNo = n; paint(); renderLeaderboard(); loadPlayers();
+  }
+  setInterval(checkDay, 15000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) checkDay(); });
+
   /* the language choice appears in Settings and on the first tour slide */
   function renderModes() {
     document.querySelectorAll(".langSeg").forEach((seg) => {
@@ -740,7 +773,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   document.addEventListener("click", (e) => { const b = e.target.closest(".langSeg button"); if (b) setMode(b.dataset.v); });
 
   const fmt = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
-  const pts = (arr) => arr.map((i) => (i % COLS + .5) + "," + (Math.floor(i / COLS) + .5)).join(" ");
+  const pts = (arr) => arr.map((i) => { const [x, y] = spot(i); return (x + .5) + "," + (y + .5); }).join(" ");
 
   function paint() {
     for (let i = 0; i < N; i++) {
@@ -757,7 +790,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     else if (phase === "playing") { w.className = "hint"; w.textContent = t("hint.drag"); }
     else if (dictFailed) { w.className = "hint"; w.textContent = t("hint.failed"); }
     else if (!DICT) { w.className = "hint"; w.textContent = t("hint.loading"); }
-    else { w.className = "hint"; w.textContent = t("hint.best", { n: best() }); }
+    else { w.className = "hint"; w.textContent = t("hint.best", { n: best(), game: gameNo }); }
     $("go").classList.toggle("wait", !DICT);
     $("score").textContent = score;
   }
@@ -776,7 +809,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       const keep = [];                                   // surviving letters, top to bottom, with the row they came from
       for (let r = 0; r < ROWS; r++) if (!gone.has(r)) keep.push({ l: letters[r * COLS + c], from: r });
       const n = gone.size;
-      const col = [...Array.from({ length: n }, (_, j) => ({ l: randLetter(), from: j - n })), ...keep];
+      const drawn = Array.from({ length: n }, () => streams[c]());   // next letters of this column's sequence; the first drawn enters first
+      const col = [...drawn.map((_, j) => ({ l: drawn[n - 1 - j], from: j - n })), ...keep];
       for (let r = 0; r < ROWS; r++) {
         const drop = r - col[r].from;
         if (!drop) continue;
@@ -792,8 +826,10 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   function start() {
     wake();
     if (!DICT) { if (dictFailed) useDict(); return; }
-    if (!shapeFits()) buildBoard(); roundId++; phase = "playing"; score = 0; words = []; found = new Set(); path = []; fb = null; mark.clear(); locked.clear();
-    for (let i = 0; i < N; i++) setLetter(i, randLetter(), true);
+    checkDay(); roundGame = gameNo;
+    streams = Array.from({ length: COLS }, (_, c) => M.letterStream(modeId, roundGame, c));
+    roundId++; phase = "playing"; score = 0; words = []; found = new Set(); path = []; fb = null; mark.clear(); locked.clear();
+    for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) setLetter(r * COLS + c, streams[c](), true);   // each column, top to bottom
     $("go").hidden = true; $("results").hidden = true; $("boardwrap").hidden = false; $("restartBtn").hidden = false;
     $("nav").classList.add("locked"); renderModes();
     track("round_start", { game_language: mode.lang });
@@ -805,7 +841,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   function reset() {
     clearInterval(timerId); roundId++; phase = "idle"; score = 0; words = []; found = new Set();
     path = []; fb = null; mark.clear(); locked.clear(); pointerId = null; letters = [];
-    if (!shapeFits()) buildBoard();                      // the device was turned during the last round
+    checkDay();
     tiles.forEach((t) => { t.firstChild.textContent = ""; t.className = "tile blank"; });
     $("results").hidden = true; $("boardwrap").hidden = false; $("go").hidden = false; $("restartBtn").hidden = true;
     $("nav").classList.remove("locked"); renderModes();
@@ -827,22 +863,40 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     if (phase !== "playing") return;
     clearInterval(timerId); phase = "over"; roundId++; path = []; fb = null; mark.clear(); locked.clear(); pointerId = null;
     tone(660, .18, "triangle", .18); tone(440, .4, "triangle", .18, .16);
-    const isHigh = score > 0 && score > best();
+    const isHigh = score > 0 && score > bestIn(roundGame);
     track("round_end", { game_language: mode.lang, score, words_found: words.length, new_high_score: isHigh });
     if (score > 0) {
-      const g = { score, words: words.slice(), at: Date.now() };
-      S.tops[modeId] = mergeTop(top(), [g]);
-      if (S.account) { S.pending.push({ mode: modeId, words: g.words, at: g.at }); S.pending = S.pending.slice(-25); }
+      const g = { game: roundGame, score, words: words.slice(), at: Date.now() };
+      S.tops[modeId] = mergeGames(games(), [g]);
+      if (S.account) { S.pending.push({ mode: modeId, words: g.words, at: g.at, game: g.game }); S.pending = S.pending.slice(-25); }
       saveLocal(); flushPending().then(loadPlayers);
     }
     $("time").textContent = "0:00"; $("time").classList.remove("low"); $("restartBtn").hidden = true;
     $("nav").classList.remove("locked"); renderModes();
     $("boardwrap").hidden = true; $("results").hidden = false;
+    $("overTitle").textContent = t("over.title", { game: roundGame });
+    // sharing: game number, score and the longest word found (the first one, if several are equally long)
+    const longest = words.reduce((a, w) => w.length > a.length ? w : a, "");
+    shareText = score > 0 ? t("share.message", { game: roundGame, score, word: longest }) : "";
+    $("shareBox").hidden = !shareText; $("shareBtn").textContent = t("share.button");
     $("finalScore").textContent = score; $("newHigh").hidden = !isHigh;
     $("wordCount").textContent = nWords(words.length);
     fillWords($("finalWords"), words, t("over.none"));
-    paint(); renderLeaderboard();
+    checkDay(); paint(); renderLeaderboard();
   }
+
+  /* Share the round: the phone's share sheet where there is one, otherwise copy the text */
+  let shareText = "";
+  const shareUrl = () => location.origin + (mode.lang === "es" ? "/es/" : "/");
+  $("shareBtn").addEventListener("click", async () => {
+    if (!shareText) return;
+    track("share", { game_language: mode.lang });
+    try {
+      if (navigator.share) { await navigator.share({ text: shareText, url: shareUrl() }); return; }
+      await navigator.clipboard.writeText(shareText + " " + shareUrl());
+      $("shareBtn").textContent = t("share.copied");
+    } catch (e) { if (e && e.name !== "AbortError") $("shareBtn").textContent = t("share.failed"); }
+  });
 
   function fillWords(ul, list, emptyText) {
     ul.textContent = "";
@@ -854,11 +908,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   }
 
   function tileAt(e, strict) {
-    const r = board.getBoundingClientRect(), size = r.width / COLS;
+    const r = board.getBoundingClientRect(), size = r.width / (wide ? ROWS : COLS);
     const x = e.clientX - r.left, y = e.clientY - r.top;
-    const c = Math.floor(x / size), row = Math.floor(y / size);
+    const vx = Math.floor(x / size), vy = Math.floor(y / size), c = wide ? vy : vx, row = wide ? vx : vy;
     if (c < 0 || c >= COLS || row < 0 || row >= ROWS) return -1;
-    if (strict && Math.hypot(x - (c + .5) * size, y - (row + .5) * size) > size * .4) return -1;
+    if (strict && Math.hypot(x - (vx + .5) * size, y - (vy + .5) * size) > size * .4) return -1;
     return row * COLS + c;
   }
   const adjacent = (a, b) => Math.abs(a % COLS - b % COLS) <= 1 && Math.abs(Math.floor(a / COLS) - Math.floor(b / COLS)) <= 1;
@@ -935,15 +989,15 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const dateFmt = (at) => { try { return new Date(at).toLocaleDateString(mode.lang === "en" ? undefined : mode.lang, { month: "short", day: "numeric", year: "numeric" }); } catch (e) { return ""; } };
   function renderLeaderboard() {
     const many = Object.keys(M.modes).length > 1;
-    $("lbMode").hidden = !many; $("lbMode").textContent = mode.name;
+    $("lbMode").hidden = false; $("lbMode").textContent = t("lb.game", { game: gameNo }) + (many ? " · " + mode.name : "");
     const ol = $("top5"); ol.textContent = "";
-    if (!top().length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = t("lb.noScores"); ol.appendChild(li); }
-    top().forEach((g, i) => {
+    if (!games().length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = t("lb.noScores"); ol.appendChild(li); }
+    games().forEach((g) => {
       const li = document.createElement("li"), b = document.createElement("button");
       b.type = "button"; b.className = "scorebtn";
       const mk = (cls, txt) => { const s = document.createElement("span"); s.className = cls; s.textContent = txt; b.appendChild(s); };
-      mk("rank", i + 1); mk("num", g.score); mk("meta", nWords(g.words.length) + " · " + dateFmt(g.at)); mk("chev", "›");
-      b.addEventListener("click", () => openModal(t("modal.points", { n: g.score }), g.words));
+      mk("gno", "#" + g.game); mk("num", g.score); mk("meta", nWords(g.words.length) + " · " + dateFmt(g.at)); mk("chev", "›");
+      b.addEventListener("click", () => openModal(t("lb.game", { game: g.game }) + " · " + t("modal.points", { n: g.score }), g.words));
       li.appendChild(b); ol.appendChild(li);
     });
 

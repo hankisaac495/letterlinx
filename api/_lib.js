@@ -1,7 +1,7 @@
 // Shared helpers for the LetterLinx API: database, schema, passwords, sessions.
 const { Pool } = require("pg");
 const crypto = require("crypto");
-const { modes, pointsFor } = require("../modes.js");
+const { modes, pointsFor, gameNumberUTC, daily } = require("../modes.js");
 
 const URL_ = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 const COOKIE = "llx_session";
@@ -35,6 +35,8 @@ create table if not exists games (
 );
 create index if not exists games_mode_score_idx on games (mode, score desc);
 create index if not exists games_player_idx on games (player_id, mode, score desc);
+alter table games add column if not exists game integer;
+create index if not exists games_daily_idx on games (mode, game, score desc);
 alter table players add column if not exists email_verified boolean not null default false;
 create table if not exists email_codes (
   player_id uuid not null references players (id) on delete cascade,
@@ -185,12 +187,15 @@ const isAdmin = (player) => !!player && isAdminEmail(player.email) && (player.em
 
 /* what the page gets about the signed-in player: profile + top 5 rounds per game version */
 async function profile(p, player) {
+  // the player's best round in each daily game, newest games first (30 per language)
   const r = await p.query(
-    `select mode, score, words, played_at from (
-       select *, row_number() over (partition by mode order by score desc, played_at desc) n from games where player_id = $1
-     ) g where n <= 5 order by mode, n`, [player.id]);
+    `select distinct on (mode, game) mode, game, score, words, played_at from games
+      where player_id = $1 and game is not null order by mode, game desc, score desc, played_at asc`, [player.id]);
   const tops = {};
-  for (const g of r.rows) (tops[g.mode] = tops[g.mode] || []).push({ score: g.score, words: g.words, at: new Date(g.played_at).getTime() });
+  for (const g of r.rows) {
+    const list = tops[g.mode] = tops[g.mode] || [];
+    if (list.length < 30) list.push({ game: g.game, score: g.score, words: g.words, at: new Date(g.played_at).getTime() });
+  }
   return {
     account: { first: player.first_name, last: player.last_name, email: player.email, screenName: player.screen_name,
       verified: player.email_verified || !MAIL_ON, admin: isAdmin(player) },
@@ -209,13 +214,16 @@ async function saveGames(p, playerId, list) {
     if (!words.length || words.some((w) => w.length < min || w.length > max || [...w].some((ch) => !abc.includes(ch)))) continue;
     const score = words.reduce((s, w) => s + pointsFor(g.mode, w.length), 0);
     const now = Date.now(), at = Number(g.at) > 0 && Number(g.at) <= now + 60000 ? Number(g.at) : now;
+    // the daily game number comes from the player's local date, so it may differ by one from the UTC date
+    const game = Number(g.game);
+    if (!Number.isInteger(game) || game < daily.first || Math.abs(game - gameNumberUTC(at)) > 1) continue;
     await p.query(
-      "insert into games (player_id, mode, score, words, played_at) values ($1, $2, $3, $4, to_timestamp($5 / 1000.0)) on conflict do nothing",
-      [playerId, g.mode, score, JSON.stringify(words), at]);
+      "insert into games (player_id, mode, score, words, played_at, game) values ($1, $2, $3, $4, to_timestamp($5 / 1000.0), $6) on conflict do nothing",
+      [playerId, g.mode, score, JSON.stringify(words), at, game]);
   }
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const clean = (s, n) => String(s == null ? "" : s).trim().slice(0, n);
 
-module.exports = { route, body, hashPassword, checkPassword, startSession, endSession, currentPlayer, profile, saveGames, EMAIL, clean, modes, MAIL_ON, sendCode, useCode, notifySignup, isAdmin, isAdminEmail, adminProblem };
+module.exports = { route, body, hashPassword, checkPassword, startSession, endSession, currentPlayer, profile, saveGames, EMAIL, clean, modes, gameNumberUTC, MAIL_ON, sendCode, useCode, notifySignup, isAdmin, isAdminEmail, adminProblem };
