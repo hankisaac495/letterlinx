@@ -174,6 +174,11 @@ async function useCode(p, playerId, purpose, code) {
   return true;
 }
 
+/* admins: comma-separated emails in ADMIN_EMAILS. The address must be confirmed before the powers apply. */
+const ADMINS = new Set((process.env.ADMIN_EMAILS || "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean));
+const isAdminEmail = (email) => ADMINS.has(String(email || "").toLowerCase());
+const isAdmin = (player) => !!player && isAdminEmail(player.email) && (player.email_verified || !MAIL_ON);
+
 /* what the page gets about the signed-in player: profile + top 5 rounds per game version */
 async function profile(p, player) {
   const r = await p.query(
@@ -184,7 +189,7 @@ async function profile(p, player) {
   for (const g of r.rows) (tops[g.mode] = tops[g.mode] || []).push({ score: g.score, words: g.words, at: new Date(g.played_at).getTime() });
   return {
     account: { first: player.first_name, last: player.last_name, email: player.email, screenName: player.screen_name,
-      verified: player.email_verified || !MAIL_ON },
+      verified: player.email_verified || !MAIL_ON, admin: isAdmin(player) },
     tops,
   };
 }
@@ -209,4 +214,4 @@ async function saveGames(p, playerId, list) {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const clean = (s, n) => String(s == null ? "" : s).trim().slice(0, n);
 
-module.exports = { route, body, hashPassword, checkPassword, startSession, endSession, currentPlayer, profile, saveGames, EMAIL, clean, modes, MAIL_ON, sendCode, useCode, notifySignup };
+module.exports = { route, body, hashPassword, checkPassword, startSession, endSession, currentPlayer, profile, saveGames, EMAIL, clean, modes, MAIL_ON, sendCode, useCode, notifySignup, isAdmin, isAdminEmail };

@@ -50,6 +50,13 @@ DATABASE_URL=postgres://user:password@localhost:5432/letterlinx npm run dev
 
 Open http://localhost:3000.
 
+## Admin dashboard
+
+Set `ADMIN_EMAILS` in Vercel to a comma-separated list of email addresses. A player who registers with one of
+those addresses and confirms it gets an "Admin dashboard" button on the Account screen. It shows this month's
+top scorer in each language (the month runs on US Eastern time), totals, and every player, with actions to
+remove a player's scores or delete their account. All checks happen in `api/admin.js`.
+
 ## Database
 
 | Table | Holds |
@@ -70,6 +77,7 @@ Players appear on the leaderboard only after confirming their email.
 - `POST /api/auth` – `{ action: "register" | "login" | "logout" | "verify" | "resend" | "forgot" | "reset", ... }`
 - `GET | PATCH | DELETE /api/me` – read, update or delete the signed-in player
 - `POST /api/games` – save a finished round `{ mode, words, at }`; the score is recomputed on the server
+- `GET | POST /api/admin` – dashboard data and actions, admins only
 - `GET /api/leaderboard?mode=classic` – every confirmed player's best score in a game version
 
 ## Game versions and languages

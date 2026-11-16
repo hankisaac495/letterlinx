@@ -179,6 +179,31 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .about h3 { font-size: .95rem; font-weight: 800; color: var(--ink); margin-top: 6px; }
 .sitelinks a { color: var(--ink); font-weight: 600; text-decoration: none; }
 .sitelinks a span:last-child { color: var(--muted); }
+/* admin dashboard */
+.adminhead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.btn.small { padding: 8px 12px; font-size: .85rem; border-radius: 10px; }
+.leader { background: var(--brand); color: var(--surface); border-radius: 18px; padding: 16px 18px; display: grid; grid-template-columns: 1fr auto; gap: 2px 14px; align-items: center; }
+.leader + .leader { margin-top: 10px; }
+.leader .eyebrow { color: inherit; opacity: .8; grid-column: 1 / -1; }
+.leader .who { font-size: 1.5rem; font-weight: 900; line-height: 1.15; overflow-wrap: anywhere; }
+.leader .pts { font-size: 2.6rem; font-weight: 900; line-height: 1; grid-row: 2 / span 2; grid-column: 2; font-variant-numeric: tabular-nums; }
+.leader .sub { font-size: .85rem; opacity: .9; overflow-wrap: anywhere; }
+.leader.none { background: var(--surface); color: var(--muted); display: block; }
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tiles div { background: var(--surface); border-radius: 14px; padding: 10px 12px; min-width: 0; }
+.tiles b { display: block; font-size: 1.5rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+.tiles span { font-size: .75rem; color: var(--muted); }
+#adminPlayers { display: flex; flex-direction: column; gap: 8px; }
+.pcard { background: var(--surface); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.pcard .name { font-weight: 800; overflow-wrap: anywhere; }
+.pcard .line { font-size: .85rem; color: var(--muted); overflow-wrap: anywhere; }
+.tag { display: inline-block; font-size: .7rem; font-weight: 800; padding: 1px 8px; border-radius: 99px; margin-left: 6px; vertical-align: middle;
+  background: var(--surface-2); color: var(--muted); }
+.tag.ok { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+.tag.admin { background: var(--accent); color: var(--accent-ink); }
+.pcard .acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; align-items: center; }
+.pcard .acts .ask { font-size: .85rem; font-weight: 700; flex-basis: 100%; }
+.btn.small.danger.solid { box-shadow: none; }
 .note { font-size: .85rem; color: var(--muted); }
 .scorebtn { width: 100%; border: 0; background: transparent; text-align: left; display: flex; align-items: center; gap: 12px; padding: 12px 0; }
 .scorebtn .rank, td.rank { width: 1.6em; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -186,7 +211,7 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .scorebtn .meta { flex: 1; min-width: 0; color: var(--muted); font-size: .85rem; }
 .scorebtn .chev { color: var(--muted); }
 li + li > .scorebtn { border-top: 1px solid var(--line); }
-ol.plain { list-style: none; margin: 0; padding: 0; }
+ol.plain, ul.plain { list-style: none; margin: 0; padding: 0; }
 table { width: 100%; border-collapse: collapse; }
 th { text-align: left; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 12px 0 6px; }
 td { padding: 10px 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
@@ -361,12 +386,24 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <button class="btn primary" type="submit" id="acctSave">Create account</button>
       <button class="linkbtn" id="forgotBtn" type="button" data-t="acct.forgot" hidden>¿Olvidaste tu contraseña?</button>
     </form>
+    <button class="btn" id="adminOpen" type="button" hidden>Admin dashboard</button>
     <button class="btn" id="signOut" type="button" data-t="acct.signout" hidden>Cerrar sesión</button>
     <button class="btn danger" id="delBtn" type="button" data-t="acct.delete" hidden>Eliminar cuenta</button>
     <div class="confirm" id="delConfirm" hidden>
       <p><strong data-t="del.title">¿Eliminar tu cuenta?</strong> <span data-t="del.text">Tu perfil, tu historial de puntuaciones y tu lugar en la clasificación se eliminarán para siempre.</span></p>
       <div class="two"><button class="btn" id="delNo" type="button" data-t="del.no">Conservar cuenta</button><button class="btn danger solid" id="delYes" type="button" data-t="del.yes">Eliminar</button></div>
     </div>
+  </section>
+
+  <!-- ADMIN (only for accounts listed in ADMIN_EMAILS; English only) -->
+  <section class="screen scroll" id="s-admin" hidden>
+    <div class="adminhead"><h2>Admin dashboard</h2><button class="btn small" id="adminBack" type="button">Back to account</button></div>
+    <p class="msg" id="adminMsg" role="status"></p>
+    <div id="adminLeaders"></div>
+    <div class="tiles" id="adminTotals"></div>
+    <div class="adminhead"><h2>Players</h2><span class="note" id="adminCount"></span></div>
+    <input type="text" id="adminSearch" placeholder="Search name, screen name or email" aria-label="Search players" autocomplete="off">
+    <ul class="plain" id="adminPlayers"></ul>
   </section>
 
   <nav id="nav" data-t-label="nav.label" aria-label="Principal">
@@ -787,8 +824,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   /* ---------- navigation ---------- */
   function show(name) {
     if (phase === "playing" && name !== "game") return;
-    for (const s of ["game", "settings", "leaderboard", "account"]) $("s-" + s).hidden = s !== name;
-    document.querySelectorAll("#nav button").forEach((b) => b.dataset.go === name ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+    for (const s of ["game", "settings", "leaderboard", "account", "admin"]) $("s-" + s).hidden = s !== name;
+    document.querySelectorAll("#nav button").forEach((b) => b.dataset.go === (name === "admin" ? "account" : name) ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
     if (name === "account") renderAccount();
     if (name === "leaderboard") { renderLeaderboard(); loadPlayers(); }
   }
@@ -876,6 +913,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     $("verifyBox").hidden = !unverified;
     if (unverified) $("verifyText").textContent = t("verify.text", { email: a.email });
     else { $("fCode").value = ""; vmsg(""); }
+    $("adminOpen").hidden = !(a && a.admin);
     $("signOut").hidden = !a; $("delBtn").hidden = !a; $("delConfirm").hidden = true; msg("");
   }
   $("acctSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; acctView = b.dataset.v; renderAccount(); });
@@ -946,6 +984,79 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       acctView = "register"; $("fEmail").value = ""; $("fScreen").value = ""; signedOutLocally(); msg(t("msg.deleted"), "ok"); loadPlayers();
     } catch (err) { fail(null); } finally { $("delYes").disabled = false; }
   });
+
+  /* ---------- admin dashboard ---------- */
+  let adminData = null, adminAsk = null; // adminAsk: { id, action } waiting for a second tap
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+  const day = (at) => at ? new Date(at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "never";
+  const fullName = (p) => [p.first, p.last].filter(Boolean).join(" ");
+  const amsg = (text, cls) => { const m = $("adminMsg"); m.textContent = text; m.className = "msg " + (cls || ""); };
+  async function loadAdmin() {
+    try {
+      const r = await call("/api/admin", "GET");
+      if (!r.ok) { adminData = null; amsg(r.status === 403 ? "This account doesn't have admin access." : "Couldn't load the dashboard. Try again.", "err"); }
+      else adminData = r.data;
+    } catch (e) { amsg("Can't reach the server. Check your connection and try again.", "err"); }
+    renderAdmin();
+  }
+  function renderAdmin() {
+    const d = adminData, leaders = $("adminLeaders"), totals = $("adminTotals"), list = $("adminPlayers");
+    leaders.textContent = ""; totals.textContent = ""; list.textContent = ""; $("adminCount").textContent = "";
+    if (!d) return;
+    // this month's top scorer, one card per language
+    for (const m of d.modes) {
+      const top = d.leaders.find((x) => x.mode === m.id), card = el("div", "leader" + (top ? "" : " none"));
+      card.appendChild(el("div", "eyebrow", "Top score · " + d.month + " · " + m.name));
+      if (top) {
+        card.appendChild(el("div", "who", top.screenName));
+        card.appendChild(el("div", "pts", top.score));
+        card.appendChild(el("div", "sub", [fullName(top), top.email].filter(Boolean).join(" · ") + " · " + top.words + " words · " + day(top.at)));
+      } else card.appendChild(el("div", null, "No rounds played yet this month."));
+      leaders.appendChild(card);
+    }
+    const t = d.totals;
+    for (const [n, label] of [[t.players, "players"], [t.confirmed, "confirmed"], [t.players_7d, "new in 7 days"], [t.rounds, "rounds played"], [t.rounds_7d, "rounds in 7 days"]]) {
+      const tile = el("div"); tile.appendChild(el("b", null, n)); tile.appendChild(el("span", null, label)); totals.appendChild(tile);
+    }
+    const q = $("adminSearch").value.trim().toLowerCase();
+    const shown = d.players.filter((p) => !q || [p.screenName, p.first, p.last, p.email].join(" ").toLowerCase().includes(q));
+    $("adminCount").textContent = shown.length === d.players.length ? d.players.length + " total" : shown.length + " of " + d.players.length;
+    for (const p of shown) {
+      const li = el("li", "pcard"), name = el("div", "name", p.screenName);
+      name.appendChild(el("span", "tag" + (p.confirmed ? " ok" : ""), p.confirmed ? "confirmed" : "unconfirmed"));
+      if (p.admin) name.appendChild(el("span", "tag admin", "admin"));
+      li.appendChild(name);
+      li.appendChild(el("div", "line", [fullName(p), p.email].filter(Boolean).join(" · ")));
+      li.appendChild(el("div", "line", "Joined " + day(p.joined) + " · " + p.rounds + (p.rounds === 1 ? " round" : " rounds") + " · last played " + day(p.lastPlayed)));
+      li.appendChild(el("div", "line", "Best: " + d.modes.map((m) => m.name + " " + (p.best[m.id] || 0)).join(" · ")));
+      const acts = el("div", "acts");
+      const btn = (label, cls, fn) => { const b = el("button", "btn small " + cls, label); b.type = "button"; b.addEventListener("click", fn); acts.appendChild(b); };
+      if (adminAsk && adminAsk.id === p.id) {
+        const del = adminAsk.action === "delete_player";
+        acts.appendChild(el("span", "ask", del ? "Delete " + p.screenName + "'s account and all their rounds? This can't be undone." : "Remove all of " + p.screenName + "'s rounds from the leaderboard and their history? This can't be undone."));
+        btn("Cancel", "", () => { adminAsk = null; renderAdmin(); });
+        btn(del ? "Delete account" : "Remove scores", "danger solid", () => adminAct(p, adminAsk.action));
+      } else {
+        if (p.rounds) btn("Remove scores", "", () => { adminAsk = { id: p.id, action: "clear_scores" }; renderAdmin(); });
+        if (!p.admin) btn("Delete account", "danger", () => { adminAsk = { id: p.id, action: "delete_player" }; renderAdmin(); });
+      }
+      if (acts.children.length) li.appendChild(acts);
+      list.appendChild(li);
+    }
+    if (!shown.length) list.appendChild(el("li", "empty", q ? "No players match that search." : "No players yet."));
+  }
+  async function adminAct(p, action) {
+    adminAsk = null;
+    try {
+      const r = await call("/api/admin", "POST", { action, id: p.id });
+      if (!r.ok) amsg("That didn't work. Reload the dashboard and try again.", "err");
+      else amsg(action === "delete_player" ? "Deleted " + p.screenName + "." : "Removed " + p.screenName + "'s scores.", "ok");
+    } catch (e) { amsg("Can't reach the server. Check your connection and try again.", "err"); }
+    await loadAdmin(); if (S.account) { try { const me = await call("/api/me", "GET"); if (me.ok) adopt(me.data); } catch (e) {} } loadPlayers();
+  }
+  $("adminOpen").addEventListener("click", () => { amsg(""); adminAsk = null; show("admin"); loadAdmin(); });
+  $("adminBack").addEventListener("click", () => show("account"));
+  $("adminSearch").addEventListener("input", renderAdmin);
 
   /* ---------- tour ---------- */
   const slides = $("slides");
