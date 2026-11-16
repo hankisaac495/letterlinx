@@ -83,6 +83,35 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .num { font-family: var(--display); font-variant-numeric: tabular-nums; }
 
 #app { height: 100%; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; }
+/* tablets and larger: let the board grow to fill the screen, and scale the text around it */
+@media (min-width: 700px) and (min-height: 640px) {
+  body { font-size: 18px; }
+  #app { max-width: 780px; }
+  .screen { gap: 18px; padding-block: 18px; }
+  .screen.scroll > * { width: 100%; max-width: 620px; margin-inline: auto; }
+  .hud { gap: 16px; }
+  .hud .stat { min-width: 96px; }
+  .hud .stat .num { font-size: 2.2rem; }
+  .eyebrow { font-size: .8rem; }
+  #word { font-size: 1.6rem; padding: 12px 10px; border-radius: 14px; }
+  #word.hint { font-size: 1.05rem; }
+  #restartBtn { width: 52px; height: 52px; padding: 11px; }
+  .bar { height: 7px; }
+  nav button { font-size: .85rem; padding: 10px 0; }
+  nav svg { width: 30px; height: 30px; }
+  #results { max-width: 620px; width: 100%; margin-inline: auto; }
+  .slide p { font-size: 1.1rem; max-width: 36ch; }
+  .slide h2 { font-size: 2rem; }
+  .logo .top { font-size: 2.1rem; }
+  .linx { gap: 18px; }
+  .linx span { width: 80px; height: 80px; font-size: 2.4rem; border-radius: 16px; }
+  .linx::before { left: 40px; right: 40px; }
+  .tagline { font-size: 1.45rem; }
+  .demo { grid-template-columns: repeat(4, 76px); grid-template-rows: repeat(3, 76px); }
+  .points div { padding: 9px 16px; }
+  .clock { width: 200px; height: 200px; font-size: 3rem; }
+  .tourbtns { max-width: 620px; }
+}
 .screen { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; padding-block: 12px; }
 .screen.scroll { overflow-y: auto; }
 
