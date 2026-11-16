@@ -242,33 +242,9 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .about { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; color: var(--muted); font-size: .9rem; line-height: 1.5; }
 .about h2 { color: var(--ink); }
 .about h3 { font-size: .95rem; font-weight: 800; color: var(--ink); margin-top: 6px; }
-.sitelinks a { color: var(--ink); font-weight: 600; text-decoration: none; }
-.sitelinks a span:last-child { color: var(--muted); }
-/* admin dashboard */
-.adminhead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.btn.small { padding: 8px 12px; font-size: .85rem; border-radius: 10px; }
-.leader { background: var(--brand); color: var(--surface); border-radius: 18px; padding: 16px 18px; display: grid; grid-template-columns: 1fr auto; gap: 2px 14px; align-items: center; }
-.leader + .leader { margin-top: 10px; }
-.leader .eyebrow { color: inherit; opacity: .8; grid-column: 1 / -1; }
-.leader .who { font-size: 1.5rem; font-weight: 900; line-height: 1.15; overflow-wrap: anywhere; }
-.leader .pts { font-size: 2.6rem; font-weight: 900; line-height: 1; grid-row: 2 / span 2; grid-column: 2; font-variant-numeric: tabular-nums; }
-.leader .sub { font-size: .85rem; opacity: .9; overflow-wrap: anywhere; }
-.leader.none { background: var(--surface); color: var(--muted); display: block; }
-.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.tiles div { background: var(--surface); border-radius: 14px; padding: 10px 12px; min-width: 0; }
-.tiles b { display: block; font-size: 1.5rem; font-weight: 900; font-variant-numeric: tabular-nums; }
-.tiles span { font-size: .75rem; color: var(--muted); }
-#adminPlayers { display: flex; flex-direction: column; gap: 8px; }
-.pcard { background: var(--surface); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
-.pcard .name { font-weight: 800; overflow-wrap: anywhere; }
-.pcard .line { font-size: .85rem; color: var(--muted); overflow-wrap: anywhere; }
-.tag { display: inline-block; font-size: .7rem; font-weight: 800; padding: 1px 8px; border-radius: 99px; margin-left: 6px; vertical-align: middle;
-  background: var(--surface-2); color: var(--muted); }
-.tag.ok { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
-.tag.admin { background: var(--accent); color: var(--accent-ink); }
-.pcard .acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; align-items: center; }
-.pcard .acts .ask { font-size: .85rem; font-weight: 700; flex-basis: 100%; }
-.btn.small.danger.solid { box-shadow: none; }
+.sitelinks { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 6px; background: var(--surface); border-radius: 12px; padding: 6px 8px; }
+.sitelinks a { color: var(--brand); font-weight: 700; font-size: .88rem; text-decoration: none; padding: 5px 10px; border-radius: 8px; }
+.sitelinks a:active { background: var(--surface-2); }
 .note { font-size: .85rem; color: var(--muted); }
 .scorebtn { width: 100%; border: 0; background: transparent; text-align: left; display: flex; align-items: center; gap: 12px; padding: 12px 0; }
 .scorebtn .rank, td.rank { width: 1.6em; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -413,12 +389,16 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
         <div class="seg" id="audioSeg"><button type="button" data-v="on" data-t="set.on">Sí</button><button type="button" data-v="off" data-t="set.off">No</button></div></div>
     </div>
     <p class="note" data-t="set.note">El idioma cambia las letras, el diccionario y los textos. Cada idioma tiene sus propias puntuaciones y su propia clasificación.</p>
-    <button class="btn" id="replayTour" type="button" data-t="set.tour">Ver de nuevo la presentación</button>
-    <div class="panel sitelinks" role="navigation" data-t-label="links.label" aria-label="Más sobre Letra Linx">
-      <a class="row" href="/about/"><span data-t="links.about">Acerca de</span><span aria-hidden="true">›</span></a>
-      <a class="row" href="/contact/"><span data-t="links.contact">Contacto</span><span aria-hidden="true">›</span></a>
-      <a class="row" href="/privacy/"><span data-t="links.privacy">Política de privacidad</span><span aria-hidden="true">›</span></a>
-      <a class="row" href="#" id="adminLink" hidden><span>Admin</span><span aria-hidden="true">›</span></a>
+    <button class="btn primary" id="replayTour" type="button" data-t="set.tour">Ver de nuevo la presentación</button>
+    <div class="sitelinks" role="navigation" data-t-label="links.label" aria-label="Más sobre Letra Linx">
+      <a href="/about/" data-t="links.about">Acerca de</a>
+      <a href="/contact/" data-t="links.contact">Contacto</a>
+      <a href="/privacy/" data-t="links.privacy">Política de privacidad</a>
+      <a href="#" id="adminLink" hidden>Admin</a>
+    </div>
+    <div class="sharebox">
+      <div class="sharetext"><strong data-t="invite.text">¿Te encanta Letra Linx? ¡Compártelo con tus amigos!</strong></div>
+      <button class="btn" id="inviteBtn" type="button" data-t="share.button">Compartir</button>
     </div>
     <article class="about">
       <h2 data-t="about.title">Acerca de Letra Linx</h2>
@@ -1006,16 +986,16 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   /* Share the round: the phone's share sheet where there is one, otherwise copy the text */
   let shareText = "";
   const shareUrl = () => location.origin + (mode.lang === "es" ? "/es/" : "/");
-  $("shareBtn").addEventListener("click", async () => {
-    if (!shareText) return;
-    track("share", { game_language: mode.lang });
+  async function share(text, btn) {
     try {
       // the link goes inside the text: given a separate link, some apps (Messages among them) send only the link
-      if (navigator.share) { await navigator.share({ text: shareText + " " + shareUrl() }); return; }
-      await navigator.clipboard.writeText(shareText + " " + shareUrl());
-      $("shareBtn").textContent = t("share.copied");
-    } catch (e) { if (e && e.name !== "AbortError") $("shareBtn").textContent = t("share.failed"); }
-  });
+      if (navigator.share) { await navigator.share({ text: text + " " + shareUrl() }); return; }
+      await navigator.clipboard.writeText(text + " " + shareUrl());
+      btn.textContent = t("share.copied"); setTimeout(() => { btn.textContent = t("share.button"); }, 2500);
+    } catch (e) { if (e && e.name !== "AbortError") btn.textContent = t("share.failed"); }
+  }
+  $("shareBtn").addEventListener("click", () => { if (!shareText) return; track("share", { game_language: mode.lang, share_type: "score" }); share(shareText, $("shareBtn")); });
+  $("inviteBtn").addEventListener("click", () => { track("share", { game_language: mode.lang, share_type: "game" }); share(t("invite.message"), $("inviteBtn")); });
 
   function fillWords(ul, list, emptyText) {
     ul.textContent = "";
