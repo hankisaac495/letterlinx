@@ -35,7 +35,8 @@ Without a database the game still plays; scores stay on each player's device and
 
 3. For email confirmation and password reset, add a `RESEND_API_KEY` environment variable (from resend.com) and
    verify the sending domain in Resend. Emails are sent from `LetterLinx <no-reply@letterlinx.com>`; set `EMAIL_FROM`
-   to change that. Without the key, accounts work but emails are never confirmed and passwords can't be reset.
+   to change that. Each new sign-up also sends a notice to `info@letterlinx.com`; set `SIGNUP_NOTIFY_EMAIL`
+   to change the address. Without the key, accounts work but emails are never confirmed and passwords can't be reset.
 
 ## Run locally
 

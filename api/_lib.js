@@ -132,6 +132,15 @@ async function sendMail(to, subject, text) {
   } catch (e) { console.error("mail failed", e.message); return false; }
 }
 
+// Tells the team inbox that someone registered. Never blocks or fails the sign-up.
+const NOTIFY_TO = process.env.SIGNUP_NOTIFY_EMAIL || "info@letterlinx.com";
+async function notifySignup(player, lang) {
+  if (!MAIL_ON || !NOTIFY_TO) return false;
+  const name = [player.first_name, player.last_name].filter(Boolean).join(" ") || "(not given)";
+  return sendMail(NOTIFY_TO, `New LetterLinx sign-up: ${player.screen_name}`,
+    `A new player registered on LetterLinx.\n\nScreen name: ${player.screen_name}\nName: ${name}\nEmail: ${player.email}\nLanguage: ${lang === "es" ? "Spanish" : "English"}\nTime: ${new Date().toUTCString()}\n\nTheir email address is not confirmed yet; they appear on the leaderboard once they enter their code.\n`);
+}
+
 // Creates and emails a code. Returns "sent", "too_soon" (one was sent under a minute ago) or "failed".
 async function sendCode(p, player, purpose, lang) {
   if (!MAIL_ON) return "failed";
@@ -200,4 +209,4 @@ async function saveGames(p, playerId, list) {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const clean = (s, n) => String(s == null ? "" : s).trim().slice(0, n);
 
-module.exports = { route, body, hashPassword, checkPassword, startSession, endSession, currentPlayer, profile, saveGames, EMAIL, clean, modes, MAIL_ON, sendCode, useCode };
+module.exports = { route, body, hashPassword, checkPassword, startSession, endSession, currentPlayer, profile, saveGames, EMAIL, clean, modes, MAIL_ON, sendCode, useCode, notifySignup };

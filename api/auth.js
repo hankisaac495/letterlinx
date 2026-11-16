@@ -60,6 +60,7 @@ module.exports = L.route(async (req, res, p) => {
     await L.saveGames(p, player.id, b.games);
     await L.startSession(res, p, player.id);
     const emailSent = L.MAIL_ON ? (await L.sendCode(p, player, "verify", b.lang)) === "sent" : true;
+    await L.notifySignup(player, b.lang);
     return res.status(200).json({ ...(await L.profile(p, player)), emailSent });
   }
 
