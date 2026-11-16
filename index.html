@@ -1056,6 +1056,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
     const me = S.account?.screenName;
     let list = lbState === "live" ? players : me ? [{ screenName: me, best: daily ? bestIn(gameNo) : boosts()[0]?.score || 0 }] : [];
+    list = (list || []).filter((p) => p.best > 0);                    // players without a score are not listed
     const tb = $("players"); tb.textContent = "";
     (list || []).forEach((p, i) => {
       const tr = document.createElement("tr"); if (p.screenName === me) tr.className = "me";

@@ -87,7 +87,7 @@ Players choose a variation on the Games screen:
 
 - **Linx Daily** (default): the daily game described below.
 - **Brain Booster**: a new random board every round. Its rounds are saved with no game number, and its
-  leaderboard ranks every confirmed player's all-time best.
+  leaderboard ranks confirmed players' all-time best.
 
 The Leaderboard screen has a tab for each. Variations and languages are independent: each language has its
 own Linx Daily and its own Brain Booster.
