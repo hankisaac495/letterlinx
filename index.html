@@ -333,6 +333,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <a class="row" href="/about/"><span data-t="links.about">About</span><span aria-hidden="true">›</span></a>
       <a class="row" href="/contact/"><span data-t="links.contact">Contact</span><span aria-hidden="true">›</span></a>
       <a class="row" href="/privacy/"><span data-t="links.privacy">Privacy Policy</span><span aria-hidden="true">›</span></a>
+      <a class="row" href="#" id="adminLink" hidden><span>Admin</span><span aria-hidden="true">›</span></a>
     </div>
     <article class="about">
       <h2 data-t="about.title">About LetterLinx</h2>
@@ -832,6 +833,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   /* ---------- settings ---------- */
   const sysDark = () => window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
   function renderSettings() {
+    $("adminLink").hidden = !(S.account && S.account.admin);
     if (S.theme) document.documentElement.dataset.theme = S.theme;
     const eff = S.theme || (sysDark() ? "dark" : "light");
     document.querySelectorAll("#themeSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === eff)));
@@ -1052,7 +1054,9 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     } catch (e) { amsg("Can't reach the server. Check your connection and try again.", "err"); }
     await loadAdmin(); if (S.account) { try { const me = await call("/api/me", "GET"); if (me.ok) adopt(me.data); } catch (e) {} } loadPlayers();
   }
-  $("adminOpen").addEventListener("click", () => { amsg(""); adminAsk = null; show("admin"); loadAdmin(); });
+  const openAdmin = (e) => { if (e) e.preventDefault(); amsg(""); adminAsk = null; show("admin"); loadAdmin(); };
+  $("adminOpen").addEventListener("click", openAdmin);
+  $("adminLink").addEventListener("click", openAdmin);
   $("adminBack").addEventListener("click", () => show("account"));
   $("adminSearch").addEventListener("input", renderAdmin);
 
