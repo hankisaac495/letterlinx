@@ -606,12 +606,28 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   /* ---------- audio ---------- */
   let actx = null;
+  /* Browsers, iOS Safari above all, only let sound start from inside a tap. wake() is called from taps:
+     it creates the audio engine once, and restarts it whenever the phone has paused it (first load,
+     returning from another app, a phone call, the lock screen). */
+  let unlocked = false;
   function wake() {
     if (!S.audio) return;
-    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); } catch (e) {}
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!actx) { actx = new AC(); unlocked = false; }
+      if (actx.state !== "running") actx.resume().catch(() => {});   // covers iOS "suspended" and "interrupted"
+      if (!unlocked) {                                                // iOS needs one sound started inside a tap
+        const src = actx.createBufferSource(); src.buffer = actx.createBuffer(1, 1, 22050);
+        src.connect(actx.destination); src.start(0); unlocked = true;
+      }
+    } catch (e) {}
   }
+  // any tap or key press anywhere keeps the audio engine awake, not just the GO button
+  for (const ev of ["touchend", "click", "keydown"]) document.addEventListener(ev, wake, { passive: true });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && actx && actx.state !== "running") unlocked = false; });
   function tone(freq, dur, type = "sine", vol = .2, delay = 0) {
-    if (!S.audio || !actx) return;
+    if (!S.audio || !actx || actx.state !== "running") return;   // not running yet: skip rather than queue a late sound
     const t = actx.currentTime + delay, o = actx.createOscillator(), g = actx.createGain();
     o.type = type; o.frequency.value = freq;
     g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .008); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
