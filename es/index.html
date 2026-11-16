@@ -610,8 +610,31 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
      it creates the audio engine once, and restarts it whenever the phone has paused it (first load,
      returning from another app, a phone call, the lock screen). */
   let unlocked = false;
+
+  /* iPhone: web sound effects are muted by the ring/silent switch unless the page asks to be treated as
+     media playback. Newer Safari has a setting for that; older versions need a silent track kept playing. */
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  let silentTrack = null;
+  function playThroughSilentSwitch(on) {
+    try {
+      if (navigator.audioSession) { navigator.audioSession.type = on ? "playback" : "auto"; return; }
+      if (!isIOS) return;
+      if (on && !silentTrack) {
+        const rate = 8000, n = rate / 2, wav = new Uint8Array(44 + n), dv = new DataView(wav.buffer), str = (o, x) => [...x].forEach((c, i) => dv.setUint8(o + i, c.charCodeAt(0)));
+        str(0, "RIFF"); dv.setUint32(4, 36 + n, true); str(8, "WAVEfmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+        dv.setUint32(24, rate, true); dv.setUint32(28, rate, true); dv.setUint16(32, 1, true); dv.setUint16(34, 8, true); str(36, "data"); dv.setUint32(40, n, true);
+        wav.fill(128, 44);                                             // 8-bit silence
+        silentTrack = new Audio(URL.createObjectURL(new Blob([wav], { type: "audio/wav" })));
+        silentTrack.loop = true; silentTrack.setAttribute("playsinline", ""); silentTrack.preload = "auto";
+      }
+      if (!silentTrack) return;
+      if (on) { if (silentTrack.paused) silentTrack.play().catch(() => {}); } else silentTrack.pause();
+    } catch (e) {}
+  }
+
   function wake() {
     if (!S.audio) return;
+    playThroughSilentSwitch(true);
     try {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
@@ -625,7 +648,10 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   }
   // any tap or key press anywhere keeps the audio engine awake, not just the GO button
   for (const ev of ["touchend", "click", "keydown"]) document.addEventListener(ev, wake, { passive: true });
-  document.addEventListener("visibilitychange", () => { if (!document.hidden && actx && actx.state !== "running") unlocked = false; });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) { if (silentTrack) silentTrack.pause(); }      // nothing keeps playing in the background
+    else if (actx && actx.state !== "running") unlocked = false;
+  });
   function tone(freq, dur, type = "sine", vol = .2, delay = 0) {
     if (!S.audio || !actx || actx.state !== "running") return;   // not running yet: skip rather than queue a late sound
     const t = actx.currentTime + delay, o = actx.createOscillator(), g = actx.createGain();
@@ -864,7 +890,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     document.querySelectorAll("#audioSeg button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.v === "on") === !!S.audio)));
   }
   $("themeSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.theme = b.dataset.v; saveLocal(); renderSettings(); });
-  $("audioSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.audio = b.dataset.v === "on"; saveLocal(); renderSettings(); if (S.audio) { wake(); ding(); } });
+  $("audioSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.audio = b.dataset.v === "on"; saveLocal(); renderSettings(); if (S.audio) { wake(); ding(); } else playThroughSilentSwitch(false); });
   $("replayTour").addEventListener("click", () => openTour());
 
   /* ---------- leaderboard ---------- */
