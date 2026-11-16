@@ -22,6 +22,7 @@ A one-minute word hunt for phones and desktops. Drag across neighbouring tiles t
 - The official address is `https://www.letterlinx.com/` (English) and `/es/` (Spanish). Change `SITE` in
   `build-pages.js` if that moves.
 - `robots.txt`, `sitemap.xml` and `llms.txt` describe the site to crawlers.
+- Google AdSense (`ca-pub-2508666501518811`) is loaded in the head of every page, and `ads.txt` authorises it.
 - Google Tag Manager (`GTM-N3VRM45M`) is loaded in the page head. The game pushes these events to the data
   layer: `round_start`, `round_end` (score, words_found, new_high_score), `language_change`, `sign_up`, `login`.
 
