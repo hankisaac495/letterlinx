@@ -217,6 +217,9 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 .overlay { position: fixed; inset: 0; z-index: 40; background: var(--shade); display: grid; place-items: center; padding: 24px; }
 .modal { background: var(--bg); border-radius: 18px; padding: 20px; width: min(100%, 420px); max-height: 80%; display: flex; flex-direction: column; gap: 14px; }
 .modal header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.modal.notice { text-align: center; align-items: center; gap: 12px; padding: 28px 22px 22px; }
+.modal.notice h2 { font-size: 1.5rem; }
+.modal.notice p { color: var(--muted); line-height: 1.5; max-width: 30ch; }
 .x { border: 0; background: var(--surface-2); border-radius: 50%; width: 36px; height: 36px; font-size: 1.1rem; line-height: 1; }
 
 /* Tour */
@@ -413,6 +416,14 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <header><h2 id="modalTitle"></h2><button class="x" id="modalClose" type="button" data-t-label="modal.close" aria-label="Close">✕</button></header>
     <div class="grow"><ul class="wordlist" id="modalWords"></ul></div>
+  </div>
+</div>
+
+<div class="overlay" id="notice" hidden>
+  <div class="modal notice" role="dialog" aria-modal="true" aria-labelledby="noticeTitle">
+    <h2 id="noticeTitle"></h2>
+    <p id="noticeText"></p>
+    <button class="btn primary block" id="noticePlay" type="button" data-t="tour.play">Play Now</button>
   </div>
 </div>
 
@@ -831,7 +842,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   function openModal(title, list) {
     $("modalTitle").textContent = title; fillWords($("modalWords"), list, t("modal.none")); $("modal").hidden = false; $("modalClose").focus();
   }
-  const closeModal = () => { $("modal").hidden = true; };
+  const closeModal = () => { $("modal").hidden = true; $("notice").hidden = true; };
+  /* confirmation overlay with a Play Now button (welcome after confirming, or changes saved) */
+  function notice(title, text) { $("noticeTitle").textContent = title; $("noticeText").textContent = text; $("notice").hidden = false; $("noticePlay").focus(); }
+  $("noticePlay").addEventListener("click", () => { closeModal(); show("game"); });
+  $("notice").addEventListener("click", (e) => { if (e.target === $("notice")) closeModal(); });
   $("modalClose").addEventListener("click", closeModal);
   $("modal").addEventListener("click", (e) => { if (e.target === $("modal")) closeModal(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
@@ -891,6 +906,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       if (v === "register") track("sign_up", { method: "email" }); else if (v === "login") track("login", { method: "email" });
       if (r.data.emailSent === false) msg(t("msg.savedNoMail"), "err");
       else msg(t({ save: "msg.saved", login: "msg.signedIn", reset: "msg.resetDone", register: "msg.created" }[v]), "ok");
+      // saved, and no new email waiting to be confirmed: show the confirmation overlay
+      if (v === "save" && r.data.emailSent !== false && S.account.verified !== false) notice(t("saved.title"), t("saved.text"));
     } catch (err) { fail(null); } finally { $("acctSave").disabled = false; }
   });
   $("verifyForm").addEventListener("submit", async (e) => {
@@ -902,6 +919,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       const r = await call("/api/auth", "POST", { action: "verify", code });
       if (!r.ok) { if (r.status === 401) signedOutLocally(); return fail(r, vmsg); }
       adopt(r.data); msg(t("msg.confirmed"), "ok"); loadPlayers();
+      notice(t("welcome.title", { name: S.account.first || S.account.screenName }), t("welcome.text"));
     } catch (err) { fail(null, vmsg); } finally { $("verifyBtn").disabled = false; }
   });
   $("resendBtn").addEventListener("click", async () => {
