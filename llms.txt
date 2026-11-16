@@ -4,7 +4,7 @@
 
 ## How it works
 
-- The board is a grid of letter tiles, 6 wide and 10 high.
+- The board is a grid of 60 letter tiles: 6 wide and 10 high on an upright screen, 10 wide and 6 high on a sideways one.
 - Tap GO, then drag across neighbouring tiles (across, up, down or diagonally) to spell a word of 2 or more letters, and lift to play it.
 - A valid word turns green and scores; an invalid one turns red. Used tiles disappear, the letters above slide down, and new letters enter at the top.
 - Each round lasts 60 seconds. A ticking sound plays for the last 10 seconds.

@@ -110,6 +110,8 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
   .clock { width: 200px; height: 200px; font-size: 3rem; }
   .tourbtns { max-width: 620px; }
 }
+/* tablets held sideways: room for the wide board */
+@media (min-width: 900px) and (min-height: 640px) and (orientation: landscape) { #app { max-width: 1120px; } }
 .screen { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; padding-block: 12px; }
 .screen.scroll { overflow-y: auto; }
 
@@ -699,8 +701,13 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const locked = new Set(); // tiles about to slide down, not selectable until they land
   let fb = null;          // { text, kind, pts: [indices] } latest feedback
 
+  const isWide = () => window.innerWidth > window.innerHeight && mode.rows > mode.cols;
+  const shapeFits = () => COLS === (isWide() ? mode.rows : mode.cols);
+  // turning the device re-shapes the empty board; a round in progress keeps the shape it started with
+  window.addEventListener("resize", () => { if (phase !== "playing" && !shapeFits()) { buildBoard(); paint(); } });
   function buildBoard() {
-    mode = M.modes[modeId]; COLS = mode.cols; ROWS = mode.rows; N = COLS * ROWS;
+    // on a screen wider than it is tall the board is dealt on its side (same tiles, e.g. 10 across by 6 down)
+    mode = M.modes[modeId]; const wide = isWide(); COLS = wide ? mode.rows : mode.cols; ROWS = wide ? mode.cols : mode.rows; N = COLS * ROWS;
     board.style.setProperty("--cols", COLS); board.style.setProperty("--rows", ROWS);
     board.setAttribute("aria-label", t("board.label", { cols: COLS, rows: ROWS }));
     trail.setAttribute("viewBox", "0 0 " + COLS + " " + ROWS);
@@ -782,7 +789,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   function start() {
     wake();
-    if (!DICT) { if (dictFailed) useDict(); return; } roundId++; phase = "playing"; score = 0; words = []; found = new Set(); path = []; fb = null; mark.clear(); locked.clear();
+    if (!DICT) { if (dictFailed) useDict(); return; }
+    if (!shapeFits()) buildBoard(); roundId++; phase = "playing"; score = 0; words = []; found = new Set(); path = []; fb = null; mark.clear(); locked.clear();
     for (let i = 0; i < N; i++) setLetter(i, randLetter(), true);
     $("go").hidden = true; $("results").hidden = true; $("boardwrap").hidden = false; $("restartBtn").hidden = false;
     $("nav").classList.add("locked"); renderModes();
@@ -795,6 +803,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   function reset() {
     clearInterval(timerId); roundId++; phase = "idle"; score = 0; words = []; found = new Set();
     path = []; fb = null; mark.clear(); locked.clear(); pointerId = null; letters = [];
+    if (!shapeFits()) buildBoard();                      // the device was turned during the last round
     tiles.forEach((t) => { t.firstChild.textContent = ""; t.className = "tile blank"; });
     $("results").hidden = true; $("boardwrap").hidden = false; $("go").hidden = false; $("restartBtn").hidden = true;
     $("nav").classList.remove("locked"); renderModes();

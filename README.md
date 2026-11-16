@@ -86,6 +86,9 @@ Each entry in `modes` in `modes.js` is a game version with its own top 5, leader
 history (stored under its key in `games.mode`). Today there are two, one per word language:
 `classic` (English) and `es` (Español). Players choose on the first tour slide and in Settings.
 
+On a screen wider than it is tall, the grid is dealt on its side (10 × 6 instead of 6 × 10); the shape is
+fixed when a round starts.
+
 A version sets the grid, round length, minimum word length, points table, word list file,
 alphabet and how often each letter is dealt. To add a language, add a word list file that sets a
 global variable (see `words-es.js`) and a new entry in `modes.js`. Word lists are downloaded only
