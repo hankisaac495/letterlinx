@@ -218,10 +218,15 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .variant .vmeta { grid-column: 1 / -1; font-size: .8rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); }
 .variant .vgo { background: var(--accent); color: var(--accent-ink); font-weight: 800; padding: 6px 14px; border-radius: 10px; }
 .variant[aria-pressed="true"] .vgo { background: var(--brand); color: var(--surface); }
-.sharebox { display: flex; align-items: center; gap: 12px; text-align: left; background: var(--surface); border-radius: 14px; padding: 12px 14px; }
-.sharetext { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.sharetext span { font-size: .9rem; color: var(--muted); }
-.sharebox .btn { flex: none; background: var(--brand); color: var(--surface); padding: 10px 18px; }
+/* results: the word list takes only the room it needs; the share box sits centred in the space above Play Again */
+.grow.fit { flex: 0 1 auto; }
+.sharewrap { flex: 1 0 auto; display: flex; align-items: center; padding-block: 6px; }
+.sharebox { width: 100%; display: flex; align-items: center; gap: 14px; text-align: left; background: var(--surface); border-radius: 16px; padding: 16px 18px;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--brand) 35%, transparent); }
+.sharetext { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.sharetext strong { font-size: 1.25rem; font-weight: 900; line-height: 1.2; }
+.sharetext span { font-size: 1.02rem; color: var(--muted); line-height: 1.35; }
+.sharebox .btn { flex: none; background: var(--brand); color: var(--surface); padding: 13px 22px; font-size: 1.1rem; font-weight: 800; }
 .grow { flex: 1; min-height: 0; overflow-y: auto; }
 .empty { color: var(--muted); padding: 14px 4px; }
 
@@ -382,11 +387,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <div class="num" id="finalScore">0</div>
       <div class="badge" id="newHigh" hidden>New best today</div>
       <div class="eyebrow" id="wordCount">Words</div>
-      <div class="grow"><ul class="wordlist" id="finalWords"></ul></div>
-      <div class="sharebox" id="shareBox" hidden>
+      <div class="grow fit"><ul class="wordlist" id="finalWords"></ul></div>
+      <div class="sharewrap"><div class="sharebox" id="shareBox" hidden>
         <div class="sharetext"><strong data-t="share.title">Comparte esta puntuación</strong><span data-t="share.text">¡Reta a un amigo a superarla!</span></div>
         <button class="btn" id="shareBtn" type="button" data-t="share.button">Compartir</button>
-      </div>
+      </div></div>
       <button class="btn primary block" id="again" type="button" data-t="over.again">Jugar de nuevo</button>
     </div>
   </section>
