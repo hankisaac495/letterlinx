@@ -784,7 +784,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   async function initCloud() {
     try {
       const r = await call("/api/me", "GET");
-      if (r.status === 200) { online = true; adopt(r.data); await flushPending(); }
+      if (r.status === 200) {
+        online = true; adopt(r.data); await flushPending();
+        // the About, Contact and Privacy pages link admins to /#admin
+        if (location.hash === "#admin" && S.account && S.account.admin) { history.replaceState(null, "", location.pathname); openAdmin(); }
+      }
       else if (r.status === 401) { online = true; if (S.account) signedOutLocally(); }
     } catch (e) {}
     renderAccount(); loadPlayers();

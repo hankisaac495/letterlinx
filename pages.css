@@ -29,6 +29,19 @@ a { color: var(--brand); font-weight: 700; text-underline-offset: 2px; }
   box-shadow: 0 3px 0 var(--accent-edge); white-space: nowrap; }
 .play:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--accent-edge); }
 
+/* page links under the header */
+[hidden] { display: none !important; }
+.subnav { background: var(--accent); }
+.subnav .wrap { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 4px; padding-block: 6px; }
+.subnav a { flex: none; color: var(--accent-ink); text-decoration: none; font-weight: 800; font-size: .95rem; padding: 6px 12px; border-radius: 9px; white-space: nowrap; }
+.subnav a:hover { background: color-mix(in srgb, var(--accent-ink) 10%, transparent); }
+.subnav a[aria-current="page"] { background: var(--accent-ink); color: var(--accent); }
+/* narrow phones: smaller header and page links so everything fits on one line where it can */
+@media (max-width: 400px) {
+  .brand { font-size: 1.05rem; gap: 8px; }
+  .play { padding: 8px 12px; font-size: .9rem; }
+  .subnav a { font-size: .88rem; padding: 6px 9px; }
+}
 main { padding-block: 28px 40px; }
 h1 { font-size: 2rem; font-weight: 900; line-height: 1.15; margin: 0 0 6px; text-wrap: balance; }
 h2 { font-size: 1.3rem; font-weight: 800; margin: 32px 0 6px; text-wrap: balance; }

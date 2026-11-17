@@ -42,6 +42,14 @@ try { var t = JSON.parse(localStorage.getItem("letterlinx.v1") || "{}").theme; i
     <a class="brand" href="/" aria-label="LetterLinx home"><span class="mark" aria-hidden="true"><i>L</i><i>I</i><i>N</i><i>X</i></span><span>LetterLinx</span></a>
     <a class="play" href="/">Play the game</a>
   </div>
+  <nav class="subnav" aria-label="Site pages">
+    <div class="wrap">
+      <a href="/about/">About</a>
+      <a href="/contact/">Contact</a>
+      <a href="/privacy/" aria-current="page">Privacy Policy</a>
+      <a href="/#admin" id="adminLink" hidden>Admin</a>
+    </div>
+  </nav>
 </header>
 <main class="wrap">
 <h1>Privacy Policy</h1>
@@ -141,5 +149,8 @@ try { var t = JSON.parse(localStorage.getItem("letterlinx.v1") || "{}").theme; i
     <p>&copy; 2026 Letter Linx</p>
   </div>
 </footer>
+<script>
+try { var acct = JSON.parse(localStorage.getItem("letterlinx.v1") || "{}").account; if (acct && acct.admin) document.getElementById("adminLink").hidden = false; } catch (e) {}
+</script>
 </body>
 </html>
