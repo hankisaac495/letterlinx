@@ -224,10 +224,12 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 /* results: the word list takes only the room it needs; the share box sits centred in the space above Play Again */
 .grow.fit { flex: 0 1 auto; min-height: 44px; }
 /* very short screens (iPhone SE): the boxes keep their headings and buttons, without the explanation line */
-@media (max-height: 600px) { .sharebox .sharetext span { display: none; } .sharebox, .sharebox.signbox { padding-block: 10px; } }
+@media (max-height: 600px) { #results .sharebox .sharetext span { display: none; } #results .sharebox { padding-block: 10px; } }
 a.btn { display: inline-block; text-decoration: none; text-align: center; }
 .sharebox.donatebox { flex-direction: column; align-items: stretch; }
-.sharebox.donatebox .btn { align-self: flex-start; padding-inline: 32px; background: var(--accent); color: var(--accent-ink); box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 60%, #000); }
+.donatebtns { display: flex; flex-wrap: wrap; gap: 10px; }
+.sharebox.donatebox #visitBtn { background: var(--good); color: var(--on-state); box-shadow: 0 3px 0 color-mix(in srgb, var(--good) 60%, #000); }
+.sharebox.donatebox .btn { padding-inline: 24px; background: var(--accent); color: var(--accent-ink); box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 60%, #000); }
 .signedas { font-size: .92rem; color: var(--muted); line-height: 1.4; }
 .signedas b { color: var(--ink); font-weight: 800; }
 .signedas span { display: block; color: var(--bad); font-weight: 700; }
@@ -455,7 +457,10 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     </div>
     <div class="sharebox donatebox">
       <div class="sharetext"><strong data-t="donate.title">Apoya a Literacy Advocates</strong><span data-t="donate.text">Letra Linx es posible gracias a Literacy Advocates, un proveedor de confianza de recursos respaldados por la investigación para padres y educadores.</span></div>
-      <a class="btn" id="donateBtn" href="https://www.paypal.com/donate/?hosted_button_id=K7ZZF7ZZA3WDS" target="_blank" rel="noopener" data-t="donate.button">Donar</a>
+      <div class="donatebtns">
+        <a class="btn" id="donateBtn" href="https://www.paypal.com/donate/?hosted_button_id=K7ZZF7ZZA3WDS" target="_blank" rel="noopener" data-t="donate.button">Donar</a>
+        <a class="btn" id="visitBtn" href="https://literacy.net/" target="_blank" rel="noopener" data-t="donate.visit">Visita Literacy.net</a>
+      </div>
     </div>
     <article class="about">
       <h2 data-t="about.title">Acerca de Letra Linx</h2>
@@ -1059,6 +1064,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   }
   $("signBtn").addEventListener("click", () => show("account"));
   $("donateBtn").addEventListener("click", () => track("donate_click", { game_language: mode.lang }));
+  $("visitBtn").addEventListener("click", () => track("visit_literacy_click", { game_language: mode.lang }));
   /* results screen: guests get the sign-in box, signed-in players see who the score is saved to */
   function renderSignState() {
     const a = S.account, p = $("signedAs");
