@@ -211,6 +211,7 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .longest span { color: var(--muted); font-size: .9rem; }
 .longest b { font-size: 1.3rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; overflow-wrap: anywhere; }
 /* past daily leaderboards: date bar and calendar */
+#lbMode { font-size: .88rem; font-weight: 800; color: var(--ink); }
 .lbdate { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: -6px; }
 .lbdate .btn { display: inline-flex; align-items: center; gap: 8px; }
 .lbdate .btn { padding: 12px 18px; font-size: 1.05rem; font-weight: 800; }
@@ -1238,7 +1239,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     const many = Object.keys(M.modes).length > 1, daily = lbTab === "daily";
     document.querySelectorAll("#lbTabs button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === lbTab)));
     const vg = viewGame(), past = daily && vg !== gameNo;
-    $("lbMode").hidden = false; $("lbMode").textContent = (daily ? t("lb.game", { game: vg }) : t("v.booster.name")) + (many ? " · " + mode.name : "");
+    $("lbMode").hidden = false; $("lbMode").textContent = (daily ? t("v.daily.name") + " · " + t("lb.game", { game: vg }) : t("v.booster.name")) + (many ? " · " + mode.name : "");
     $("lbTitle").textContent = !daily ? t("lb.titleBooster") : past ? t("lb.titleDay", { date: longDate(dateOfGame(vg)) }) : t("lb.title");
     $("lbDate").hidden = !daily; $("calToday").hidden = !past; $("calLabel").textContent = longDate(dateOfGame(vg));
     $("lbMine").textContent = t("lb.top5");
