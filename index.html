@@ -223,6 +223,9 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .grow.fit { flex: 0 1 auto; min-height: 44px; }
 /* very short screens (iPhone SE): the boxes keep their headings and buttons, without the explanation line */
 @media (max-height: 600px) { .sharebox .sharetext span { display: none; } .sharebox, .sharebox.signbox { padding-block: 10px; } }
+.signedas { font-size: .92rem; color: var(--muted); line-height: 1.4; }
+.signedas b { color: var(--ink); font-weight: 800; }
+.signedas span { display: block; color: var(--bad); font-weight: 700; }
 .overmeta { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 12px; }
 .overmeta .badge { align-self: center; }
 #results { overflow-y: auto; }
@@ -411,7 +414,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <div class="sharebox signbox" id="signBox" hidden>
         <div class="sharetext"><strong data-t="sign.title">Sign In or Register!</strong><span data-t="sign.text">You must be signed in for your score to appear on the leaderboard.</span></div>
         <button class="btn" id="signBtn" type="button" data-t="sign.button">Account</button>
-      </div></div>
+      </div>
+      <p class="signedas" id="signedAs" hidden></p></div>
       <button class="btn primary block" id="again" type="button" data-t="over.again">Play Again</button>
     </div>
   </section>
@@ -1026,7 +1030,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     // sharing: game number, score and the longest word found (the first one, if several are equally long)
     const longest = words.reduce((a, w) => w.length > a.length ? w : a, "");
     shareText = !score ? "" : daily ? t("share.message", { game: roundGame, score, word: longest }) : t("share.messageBooster", { score, word: longest });
-    $("shareBox").hidden = !shareText; $("signBox").hidden = !!S.account; $("shareBtn").textContent = t("share.button");
+    $("shareBox").hidden = !shareText; renderSignState(); $("shareBtn").textContent = t("share.button");
     $("finalScore").textContent = score; $("newHigh").hidden = !isHigh;
     $("wordCount").textContent = nWords(words.length);
     fillWords($("finalWords"), words, t("over.none"));
@@ -1045,6 +1049,15 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     } catch (e) { if (e && e.name !== "AbortError") btn.textContent = t("share.failed"); }
   }
   $("signBtn").addEventListener("click", () => show("account"));
+  /* results screen: guests get the sign-in box, signed-in players see who the score is saved to */
+  function renderSignState() {
+    const a = S.account, p = $("signedAs");
+    $("signBox").hidden = !!a; p.hidden = !a; p.textContent = "";
+    if (!a) return;
+    const [before, after] = t("signedIn").split("{name}"), b = document.createElement("b");
+    b.textContent = a.screenName; p.append(before, b, after || "");
+    if (a.verified === false) { const n = document.createElement("span"); n.textContent = t("lb.unverified"); p.appendChild(n); }
+  }
   $("shareBtn").addEventListener("click", () => { if (!shareText) return; track("share", { game_language: mode.lang, share_type: "score" }); share(shareText, $("shareBtn")); });
   $("inviteBtn").addEventListener("click", () => { track("share", { game_language: mode.lang, share_type: "game" }); share(t("invite.message"), $("inviteBtn")); });
 
@@ -1414,7 +1427,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   $("playNow").addEventListener("click", () => { $("tour").hidden = true; S.tourSeen = true; S.mode = modeId; saveLocal(); show("game"); });
 
   /* ---------- boot ---------- */
-  function renderAll() { applyText(); renderVariants(); renderSettings(); renderModes(); renderLeaderboard(); renderAccount(); paint(); }
+  function renderAll() { applyText(); renderSignState(); renderVariants(); renderSettings(); renderModes(); renderLeaderboard(); renderAccount(); paint(); }
   buildBoard(); renderAll();
   if (!S.tourSeen) openTour();
   useDict();
