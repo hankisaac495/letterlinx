@@ -194,8 +194,8 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 #go:active { transform: translateY(4px); box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 60%, #000), 0 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent); }
 
 /* Results */
-#results { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; text-align: center; }
-#finalScore { font-size: clamp(4rem, 26vw, 7rem); font-weight: 800; line-height: 1; color: var(--brand); }
+#results { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 9px; text-align: center; }
+#finalScore { font-size: clamp(3rem, min(26vw, 10vh), 7rem); font-weight: 800; line-height: 1; color: var(--brand); }
 .badge { align-self: center; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: .8rem; padding: 5px 12px; border-radius: 99px; }
 .wordlist { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-content: flex-start; }
 .wordlist li { background: var(--surface); border-radius: 10px; padding: 6px 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
@@ -220,8 +220,18 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .variant .vgo { background: var(--accent); color: var(--accent-ink); font-weight: 800; padding: 6px 14px; border-radius: 10px; }
 .variant[aria-pressed="true"] .vgo { background: var(--brand); color: var(--surface); }
 /* results: the word list takes only the room it needs; the share box sits centred in the space above Play Again */
-.grow.fit { flex: 0 1 auto; }
-.sharewrap { flex: 1 0 auto; display: flex; align-items: center; padding-block: 6px; }
+.grow.fit { flex: 0 1 auto; min-height: 44px; }
+/* very short screens (iPhone SE): the boxes keep their headings and buttons, without the explanation line */
+@media (max-height: 600px) { .sharebox .sharetext span { display: none; } .sharebox, .sharebox.signbox { padding-block: 10px; } }
+.overmeta { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 12px; }
+.overmeta .badge { align-self: center; }
+#results { overflow-y: auto; }
+#again { position: sticky; bottom: 0; }
+.sharewrap { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: center; gap: 8px; padding-block: 6px; }
+.sharebox.signbox { box-shadow: inset 0 0 0 2px var(--bad); padding: 12px 14px; }
+.sharebox.signbox .sharetext strong { font-size: 1.05rem; }
+.sharebox.signbox .sharetext span { font-size: .9rem; }
+.sharebox.signbox .btn { background: var(--bad); color: var(--on-state); }
 .sharebox { width: 100%; display: flex; align-items: center; gap: 13px; text-align: left; background: var(--surface); border-radius: 15px; padding: 14px 16px;
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--brand) 35%, transparent); }
 .sharetext { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
@@ -271,6 +281,8 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .pcard .acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; align-items: center; }
 .pcard .acts .ask { font-size: .85rem; font-weight: 700; flex-basis: 100%; }
 .btn.small.danger.solid { box-shadow: none; }
+.lbguest { font-size: 1rem; line-height: 1.45; color: var(--ink); margin-top: -4px; }
+.lbguest a { color: var(--brand); font-weight: 800; }
 .note { font-size: .85rem; color: var(--muted); }
 .scorebtn { width: 100%; border: 0; background: transparent; text-align: left; display: flex; align-items: center; gap: 12px; padding: 12px 0; }
 .scorebtn .rank, td.rank { width: 1.6em; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -387,12 +399,18 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     <div id="results" hidden>
       <div class="eyebrow" id="overTitle">Time's up · your score</div>
       <div class="num" id="finalScore">0</div>
-      <div class="badge" id="newHigh" hidden>New best today</div>
-      <div class="eyebrow" id="wordCount">Words</div>
+      <div class="overmeta">
+        <div class="badge" id="newHigh" hidden>New best today</div>
+        <div class="eyebrow" id="wordCount">Words</div>
+      </div>
       <div class="grow fit"><ul class="wordlist" id="finalWords"></ul></div>
       <div class="sharewrap"><div class="sharebox" id="shareBox" hidden>
         <div class="sharetext"><strong data-t="share.title">Share this score</strong><span data-t="share.text">Challenge a friend to beat this score!</span></div>
         <button class="btn" id="shareBtn" type="button" data-t="share.button">Share</button>
+      </div>
+      <div class="sharebox signbox" id="signBox" hidden>
+        <div class="sharetext"><strong data-t="sign.title">Sign In or Register!</strong><span data-t="sign.text">You must be signed in for your score to appear on the leaderboard.</span></div>
+        <button class="btn" id="signBtn" type="button" data-t="sign.button">Account</button>
       </div></div>
       <button class="btn primary block" id="again" type="button" data-t="over.again">Play Again</button>
     </div>
@@ -452,6 +470,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <div class="longest"><span data-t="stats.longest">All-time longest word</span><b id="stLongest">—</b></div>
     </div>
     <h2 id="lbTitle">Today's leaderboard</h2>
+    <p class="lbguest" id="lbGuest" hidden></p>
     <div class="panel">
       <table><thead><tr><th class="rank">#</th><th data-t="lb.name">Screen name</th><th data-t="lb.score">Score</th></tr></thead><tbody id="players"></tbody></table>
       <p class="empty" id="playersEmpty" hidden></p>
@@ -1003,7 +1022,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     // sharing: game number, score and the longest word found (the first one, if several are equally long)
     const longest = words.reduce((a, w) => w.length > a.length ? w : a, "");
     shareText = !score ? "" : daily ? t("share.message", { game: roundGame, score, word: longest }) : t("share.messageBooster", { score, word: longest });
-    $("shareBox").hidden = !shareText; $("shareBtn").textContent = t("share.button");
+    $("shareBox").hidden = !shareText; $("signBox").hidden = !!S.account; $("shareBtn").textContent = t("share.button");
     $("finalScore").textContent = score; $("newHigh").hidden = !isHigh;
     $("wordCount").textContent = nWords(words.length);
     fillWords($("finalWords"), words, t("over.none"));
@@ -1021,6 +1040,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       btn.textContent = t("share.copied"); setTimeout(() => { btn.textContent = t("share.button"); }, 2500);
     } catch (e) { if (e && e.name !== "AbortError") btn.textContent = t("share.failed"); }
   }
+  $("signBtn").addEventListener("click", () => show("account"));
   $("shareBtn").addEventListener("click", () => { if (!shareText) return; track("share", { game_language: mode.lang, share_type: "score" }); share(shareText, $("shareBtn")); });
   $("inviteBtn").addEventListener("click", () => { track("share", { game_language: mode.lang, share_type: "game" }); share(t("invite.message"), $("inviteBtn")); });
 
@@ -1155,7 +1175,14 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       lbState === "local" ? t("lb.local")
       : syncFailed ? t("lb.syncFailed")
       : S.account && S.account.verified === false ? t("lb.unverified")
-      : !S.account ? t("lb.guest") : "";
+      : "";
+    // guests: a prompt above the table; the bracketed word in the text becomes a link to the Account tab
+    $("lbGuest").hidden = !!S.account; $("lbGuest").textContent = "";
+    if (!S.account) {
+      const [before, link, after] = t("lb.guest").split(/\[|\]/), a = document.createElement("a");
+      a.href = "#"; a.textContent = link; a.addEventListener("click", (e) => { e.preventDefault(); show("account"); });
+      $("lbGuest").append(before, a, after || "");
+    }
   }
 
   $("lbTabs").addEventListener("click", (e) => {
