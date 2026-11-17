@@ -42,6 +42,14 @@ a { color: var(--brand); font-weight: 700; text-underline-offset: 2px; }
   .play { padding: 8px 12px; font-size: .9rem; }
   .subnav a { font-size: .88rem; padding: 6px 9px; }
 }
+/* header buttons: Play and Donate; "Play the game" shortens to "Play Now" where space is tight */
+.topbtns { display: flex; gap: 8px; flex: none; }
+.play.donate { background: var(--brand); color: var(--surface); box-shadow: 0 3px 0 color-mix(in srgb, var(--brand) 60%, #000); }
+.play .short { display: none; }
+@media (max-width: 480px) { .play .long { display: none; } .play .short { display: inline; } }
+@media (max-width: 360px) {
+  .brand > span:last-child { display: none; }           /* the tile logo alone links home */
+}
 main { padding-block: 28px 40px; }
 h1 { font-size: 2rem; font-weight: 900; line-height: 1.15; margin: 0 0 6px; text-wrap: balance; }
 h2 { font-size: 1.3rem; font-weight: 800; margin: 32px 0 6px; text-wrap: balance; }
