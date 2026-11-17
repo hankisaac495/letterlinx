@@ -36,13 +36,14 @@ function gtag(){dataLayer.push(arguments);}
 <meta name="twitter:image" content="https://www.letterlinx.com/og-image.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":["VideoGame","WebApplication"],"name":"LetterLinx","alternateName":"Letra Linx","url":"https://www.letterlinx.com/","description":"Play LetterLinx free in your browser: link neighbouring letter tiles to spell words and score as many points as you can in 60 seconds. English and Spanish, with leaderboards.","image":"https://www.letterlinx.com/og-image.png","applicationCategory":"GameApplication","genre":"Word game","operatingSystem":"Any","browserRequirements":"Requires JavaScript","inLanguage":["en","es"],"playMode":"SinglePlayer","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","inLanguage":"en","mainEntity":[{"@type":"Question","name":"How do you play LetterLinx?","acceptedAnswer":{"@type":"Answer","text":"Tap GO, then drag across neighbouring tiles (across, up, down or diagonally) to spell a word of 2 or more letters. Lift your finger to play it. Used tiles disappear, the letters above slide down and new letters drop in at the top."}},{"@type":"Question","name":"What are Linx Daily and Brain Booster?","acceptedAnswer":{"@type":"Answer","text":"They are the two ways to play. Linx Daily gives every player the same letters, with a new numbered game each day at midnight and a leaderboard for that day. Brain Booster deals a fresh random board every time you play, so you can chase your all-time best. Switch between them on the Games tab."}},{"@type":"Question","name":"How is the score worked out?","acceptedAnswer":{"@type":"Answer","text":"By word length: 2 letters score 1 point, 3 letters 3, 4 letters 5, 5 letters 10, 6 letters 15, 7 letters 25, 8 letters 35, and 9 or more letters 50."}},{"@type":"Question","name":"Is LetterLinx free?","acceptedAnswer":{"@type":"Answer","text":"Yes. You can play without an account. A free account saves your score history and puts you on the leaderboard."}},{"@type":"Question","name":"Can I play in Spanish?","acceptedAnswer":{"@type":"Answer","text":"Yes. Choose Español in Settings to play Letra Linx, with Spanish letters including Ñ, a Spanish dictionary and its own leaderboard."}}]}]}</script>
 <!-- seo:end -->
-<meta name="theme-color" content="#0C6B7A">
+<meta name="theme-color" content="#E7EFF2">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="LetterLinx">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap">
@@ -442,6 +443,10 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
         <div class="seg" id="audioSeg"><button type="button" data-v="on" data-t="set.on">On</button><button type="button" data-v="off" data-t="set.off">Off</button></div></div>
     </div>
     <p class="note" data-t="set.note">Language changes the letters, the dictionary and the text. Each language has its own scores and leaderboard.</p>
+    <div class="sharebox installbox" id="installBox" hidden>
+      <div class="sharetext"><strong data-t="install.title">Get the app</strong><span id="installText"></span></div>
+      <button class="btn" id="installBtn" type="button" data-t="install.button" hidden>Install</button>
+    </div>
     <button class="btn primary" id="replayTour" type="button" data-t="set.tour">Replay the welcome tour</button>
     <div class="sitelinks" role="navigation" data-t-label="links.label" aria-label="More about LetterLinx">
       <a href="/about/" data-t="links.about">About</a>
@@ -1150,11 +1155,36 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   }
   $("nav").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) show(b.dataset.go); });
 
+  /* ---------- install as an app ----------
+     Browser bars only go away when the game is opened from the home screen. Android and desktop Chrome offer an
+     install prompt the page can trigger; iPhone and iPad need the player to use Share > Add to Home Screen. */
+  const installed = () => (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+  let installPrompt = null;
+  function renderInstall() {
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const show = !installed() && (installPrompt || ios);
+    $("installBox").hidden = !show;
+    if (!show) return;
+    $("installBtn").hidden = !installPrompt;
+    $("installText").textContent = installPrompt ? t("install.text") : t("install.ios");
+  }
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installPrompt = e; renderInstall(); });
+  window.addEventListener("appinstalled", () => { installPrompt = null; track("app_installed", {}); renderInstall(); });
+  $("installBtn").addEventListener("click", async () => {
+    if (!installPrompt) return;
+    const p = installPrompt; installPrompt = null;
+    try { await p.prompt(); const r = await p.userChoice; track("install_prompt", { outcome: r && r.outcome }); } catch (e) {}
+    renderInstall();
+  });
+  if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+
   /* ---------- settings ---------- */
   const sysDark = () => window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
   function renderSettings() {
     $("adminLink").hidden = !(S.account && S.account.admin);
     if (S.theme) document.documentElement.dataset.theme = S.theme;
+    const darkNow = (document.documentElement.dataset.theme || (sysDark() ? "dark" : "light")) === "dark";
+    document.querySelector('meta[name="theme-color"]').setAttribute("content", darkNow ? "#0B1C22" : "#E7EFF2");   // phone status bar
     const eff = S.theme || (sysDark() ? "dark" : "light");
     document.querySelectorAll("#themeSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === eff)));
     document.querySelectorAll("#audioSeg button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.v === "on") === !!S.audio)));
@@ -1441,7 +1471,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   $("playNow").addEventListener("click", () => { $("tour").hidden = true; S.tourSeen = true; S.mode = modeId; saveLocal(); show("game"); });
 
   /* ---------- boot ---------- */
-  function renderAll() { applyText(); renderSignState(); renderVariants(); renderSettings(); renderModes(); renderLeaderboard(); renderAccount(); paint(); }
+  function renderAll() { applyText(); renderSignState(); renderInstall(); renderVariants(); renderSettings(); renderModes(); renderLeaderboard(); renderAccount(); paint(); }
   buildBoard(); renderAll();
   if (!S.tourSeen) openTour();
   useDict();

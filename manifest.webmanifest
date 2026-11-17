@@ -1,12 +1,18 @@
 {
+  "id": "/",
   "name": "LetterLinx",
   "short_name": "LetterLinx",
   "description": "A one-minute word hunt. Link neighbouring letters to spell words and beat the clock.",
+  "lang": "en",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#E7EFF2",
-  "theme_color": "#F5B10F",
+  "theme_color": "#E7EFF2",
+  "categories": [
+    "games",
+    "education"
+  ],
   "icons": [
     {
       "src": "icon-192.png",

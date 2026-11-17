@@ -14,6 +14,13 @@ A one-minute word hunt for phones and desktops. Drag across neighbouring tiles t
 - `api/` – Vercel functions: accounts, score history, leaderboard (Postgres)
 - `dev-server.js` – runs the site and the API locally
 
+## Installing as an app
+
+`manifest.webmanifest` and `sw.js` let players add the game to their home screen, where it opens full screen
+without browser bars. The service worker caches nothing, so every visit loads the latest version. Settings shows
+a "Get the app" box: an Install button where the browser offers one (Android, desktop Chrome), or Add to Home
+Screen instructions on iPhone and iPad. It is hidden once the game is running as an installed app.
+
 ## Search engines and analytics
 
 - The search tags in `index.html` (title, description, canonical, Open Graph, structured data) and the whole
