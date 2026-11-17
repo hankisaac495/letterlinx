@@ -32,7 +32,7 @@ window.LLX_I18N = {
     "stats.title": "My stats", "stats.played": "Played", "stats.top": "Top score", "stats.streak": "Current streak", "stats.max": "Max streak", "stats.longest": "All-time longest word",
     "lb.noneBooster": "No scores yet. Play a round to be first.",
     "share.messageBooster": "See if you can beat my LetterLinx Brain Booster score: Score: {score}, Longest Word: {word}",
-    "invite.text": "Loving Letter Linx? Share it with friends!",
+    "invite.text": "Loving LetterLinx? Share it with friends!",
     "donate.title": "Support Literacy Advocates", "donate.button": "Donate", "donate.visit": "Visit Literacy.net",
     "donate.text": "LetterLinx is made possible by Literacy Advocates, a trusted provider of research-backed resources for parents and educators.",
     "invite.message": "I'm playing LetterLinx, a free one-minute word game. Link letters, beat the clock:",
