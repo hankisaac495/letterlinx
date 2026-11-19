@@ -992,7 +992,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   function paint() {
     $("goTitle").hidden = $("go").hidden;
     $("goName").textContent = t("v." + variant + ".name");
-    $("goSub").hidden = variant !== "daily"; $("goSub").textContent = t("lb.game", { game: gameNo });
+    $("goSub").hidden = variant !== "daily"; $("goSub").textContent = t("lb.game", { game: gameNo }) + " • " +
+      dateOfGame(gameNo).toLocaleDateString(mode.lang, { month: "long", day: "numeric", year: "numeric" });
     for (let i = 0; i < N; i++) {
       const t = tiles[i], st = mark.get(i);
       t.classList.toggle("sel", !st && path.includes(i));
