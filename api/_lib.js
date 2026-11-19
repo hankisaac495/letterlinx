@@ -36,6 +36,17 @@ create table if not exists games (
 create index if not exists games_mode_score_idx on games (mode, score desc);
 create index if not exists games_player_idx on games (player_id, mode, score desc);
 alter table games add column if not exists game integer;
+alter table players add column if not exists email_opt_in boolean not null default false;
+alter table players add column if not exists opt_in_at timestamptz;
+alter table players add column if not exists lang text not null default 'en';
+alter table players add column if not exists unsub_token text;
+update players set unsub_token = replace(gen_random_uuid()::text, '-', '') where unsub_token is null;
+create table if not exists weekly_sent (
+  player_id uuid not null references players (id) on delete cascade,
+  week text not null,
+  sent_at timestamptz not null default now(),
+  primary key (player_id, week)
+);
 create index if not exists games_daily_idx on games (mode, game, score desc);
 alter table players add column if not exists email_verified boolean not null default false;
 create table if not exists email_codes (
@@ -122,16 +133,29 @@ const MAIL_FROM = process.env.EMAIL_FROM || "LetterLinx <no-reply@letterlinx.com
 const MAIL_URL = process.env.RESEND_API_URL || "https://api.resend.com/emails";
 const CODE_MINUTES = 15, CODE_TRIES = 5;
 
-async function sendMail(to, subject, text) {
+async function sendMail(to, subject, text, extra) {
   try {
     const r = await fetch(MAIL_URL, {
       method: "POST",
       headers: { Authorization: "Bearer " + process.env.RESEND_API_KEY, "content-type": "application/json" },
-      body: JSON.stringify({ from: MAIL_FROM, to: [to], subject, text }),
+      body: JSON.stringify({ from: MAIL_FROM, to: [to], subject, text, ...(extra || {}) }),
     });
     if (!r.ok) console.error("mail failed", r.status, (await r.text()).slice(0, 300));
     return r.ok;
   } catch (e) { console.error("mail failed", e.message); return false; }
+}
+
+// Up to 100 emails in one request to the email service's batch endpoint.
+async function sendBatch(list) {
+  try {
+    const r = await fetch(MAIL_URL.replace(/\/emails$/, "/emails/batch"), {
+      method: "POST",
+      headers: { Authorization: "Bearer " + process.env.RESEND_API_KEY, "content-type": "application/json" },
+      body: JSON.stringify(list.map((m) => ({ from: MAIL_FROM, to: [m.to], subject: m.subject, text: m.text, html: m.html, headers: m.headers }))),
+    });
+    if (!r.ok) console.error("batch mail failed", r.status, (await r.text()).slice(0, 300));
+    return r.ok;
+  } catch (e) { console.error("batch mail failed", e.message); return false; }
 }
 
 // Tells the team inbox that someone registered. Never blocks or fails the sign-up.
@@ -183,6 +207,7 @@ const isAdminEmail = (email) => ADMINS.has(String(email || "").toLowerCase());
 const adminProblem = (player) => !ADMINS.size ? "ADMIN_EMAILS is not set on this deployment"
   : !isAdminEmail(player.email) ? "this account's email is not in ADMIN_EMAILS"
   : "this account's email has not been confirmed with its 6-digit code";
+const langOf = (x) => (x === "es" ? "es" : "en");
 const isAdmin = (player) => !!player && isAdminEmail(player.email) && (player.email_verified || !MAIL_ON);
 
 /* what the page gets about the signed-in player: profile + top 5 rounds per game version */
@@ -206,7 +231,7 @@ async function profile(p, player) {
   return {
     boost,
     account: { first: player.first_name, last: player.last_name, email: player.email, screenName: player.screen_name,
-      verified: player.email_verified || !MAIL_ON, admin: isAdmin(player) },
+      verified: player.email_verified || !MAIL_ON, admin: isAdmin(player), emailOptIn: !!player.email_opt_in },
     tops,
   };
 }
@@ -238,4 +263,4 @@ async function saveGames(p, playerId, list) {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const clean = (s, n) => String(s == null ? "" : s).trim().slice(0, n);
 
-module.exports = { route, body, hashPassword, checkPassword, startSession, endSession, currentPlayer, profile, saveGames, EMAIL, clean, modes, gameNumberUTC, MAIL_ON, sendCode, useCode, notifySignup, isAdmin, isAdminEmail, adminProblem };
+module.exports = { route, body, hashPassword, checkPassword, startSession, endSession, currentPlayer, profile, saveGames, EMAIL, clean, modes, gameNumberUTC, MAIL_ON, sendMail, sendBatch, langOf, sendCode, useCode, notifySignup, isAdmin, isAdminEmail, adminProblem };

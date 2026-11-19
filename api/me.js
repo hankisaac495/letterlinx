@@ -16,8 +16,12 @@ module.exports = L.route(async (req, res, p) => {
       // a changed email has to be confirmed again
       const changed = email.toLowerCase() !== player.email.toLowerCase();
       const r = await p.query(
-        "update players set first_name = $1, last_name = $2, email = $3, email_verified = email_verified and not $5 where id = $4 returning *",
-        [L.clean(b.first, 40), L.clean(b.last, 40), email, player.id, changed]);
+        `update players set first_name = $1, last_name = $2, email = $3, email_verified = email_verified and not $5,
+           email_opt_in = coalesce($6, email_opt_in),
+           opt_in_at = case when $6 is true and not email_opt_in then now() when $6 is false then null else opt_in_at end,
+           lang = coalesce($7, lang)
+         where id = $4 returning *`,
+        [L.clean(b.first, 40), L.clean(b.last, 40), email, player.id, changed, typeof b.optIn === "boolean" ? b.optIn : null, b.lang ? L.langOf(b.lang) : null]);
       let emailSent = true;
       if (changed && L.MAIL_ON) {
         await p.query("delete from email_codes where player_id = $1", [player.id]);

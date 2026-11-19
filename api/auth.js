@@ -50,8 +50,9 @@ module.exports = L.route(async (req, res, p) => {
     let player;
     try {
       const r = await p.query(
-        "insert into players (first_name, last_name, email, screen_name, password_hash) values ($1, $2, $3, $4, $5) returning *",
-        [L.clean(b.first, 40), L.clean(b.last, 40), email, screenName, await L.hashPassword(password)]);
+        `insert into players (first_name, last_name, email, screen_name, password_hash, email_opt_in, opt_in_at, lang, unsub_token)
+         values ($1, $2, $3, $4, $5, $6, case when $6 then now() end, $7, replace(gen_random_uuid()::text, '-', '')) returning *`,
+        [L.clean(b.first, 40), L.clean(b.last, 40), email, screenName, await L.hashPassword(password), b.optIn === true, L.langOf(b.lang)]);
       player = r.rows[0];
     } catch (e) {
       if (e.code === "23505") return res.status(409).json({ error: /screen_name/.test(e.constraint || "") ? "name_taken" : "email_taken" });
@@ -68,6 +69,7 @@ module.exports = L.route(async (req, res, p) => {
     const r = await p.query("select * from players where lower(email) = lower($1)", [email]);
     const player = r.rows[0];
     if (!player || !(await L.checkPassword(password, player.password_hash))) return res.status(401).json({ error: "bad_credentials" });
+    if (b.lang) await p.query("update players set lang = $1 where id = $2", [L.langOf(b.lang), player.id]);   // emails follow the language they play in
     await L.saveGames(p, player.id, b.games);
     await L.startSession(res, p, player.id);
     return res.status(200).json(await L.profile(p, player));

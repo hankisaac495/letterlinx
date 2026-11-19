@@ -1,8 +1,35 @@
 {
   "redirects": [
-    { "source": "/es", "destination": "/es/", "permanent": true },
-    { "source": "/about", "destination": "/about/", "permanent": true },
-    { "source": "/contact", "destination": "/contact/", "permanent": true },
-    { "source": "/privacy", "destination": "/privacy/", "permanent": true }
-  ]
+    {
+      "source": "/es",
+      "destination": "/es/",
+      "permanent": true
+    },
+    {
+      "source": "/about",
+      "destination": "/about/",
+      "permanent": true
+    },
+    {
+      "source": "/contact",
+      "destination": "/contact/",
+      "permanent": true
+    },
+    {
+      "source": "/privacy",
+      "destination": "/privacy/",
+      "permanent": true
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/weekly-email",
+      "schedule": "0 14 * * 1"
+    }
+  ],
+  "functions": {
+    "api/weekly-email.js": {
+      "maxDuration": 60
+    }
+  }
 }

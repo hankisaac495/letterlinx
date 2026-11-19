@@ -59,6 +59,20 @@ DATABASE_URL=postgres://user:password@localhost:5432/letterlinx npm run dev
 
 Open http://localhost:3000.
 
+## Weekly stats email
+
+Players who tick "Email me my weekly stats…" when registering (or later on the Account screen) get an email every
+Monday at 14:00 UTC: their rounds, days played, best scores and longest word for the week, the week's top scores,
+and a Play now button. It's sent in the language they play in, and only to confirmed email addresses.
+
+- Vercel Cron calls `GET /api/weekly-email` on the schedule in `vercel.json`. It only runs with a `CRON_SECRET`
+  environment variable set in Vercel, which Vercel sends with the request.
+- Each player gets at most one email per week, even if the job runs twice.
+- Every email has an unsubscribe link (`/api/unsubscribe`) and one-click unsubscribe headers.
+- Set `EMAIL_POSTAL_ADDRESS` to add your mailing address to the footer; US law requires one in emails with offers.
+- Admins can preview their own email or send themselves a test from the admin dashboard.
+- The email itself is built in `api/_weekly.js`.
+
 ## Admin dashboard
 
 Set `ADMIN_EMAILS` in Vercel to a comma-separated list of email addresses. A player who registers with one of

@@ -334,6 +334,8 @@ td { padding: 10px 0; border-top: 1px solid var(--line); overflow-wrap: anywhere
 th:last-child, td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
 tr.me td { color: var(--brand); font-weight: 700; }
 form { display: flex; flex-direction: column; gap: 14px; }
+label.check { flex-direction: row; align-items: flex-start; gap: 10px; color: var(--ink); font-size: .92rem; font-weight: 600; line-height: 1.4; cursor: pointer; }
+label.check input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--brand); }
 label { display: flex; flex-direction: column; gap: 6px; font-size: .85rem; font-weight: 600; color: var(--muted); }
 input[type="text"], input[type="email"], input[type="password"] { background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; font-size: 1rem; color: var(--ink); width: 100%; }
 input:read-only { background: var(--surface-2); color: var(--muted); }
@@ -560,6 +562,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <label id="screenRow"><span data-t="f.screen">Screen name</span><input type="text" id="fScreen" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
       <label id="codeRow" hidden><span data-t="f.code">Code from the email</span><input type="text" id="fReset" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>
       <label id="passRow"><span id="passLabel">Password</span><input type="password" id="fPass" maxlength="200" autocomplete="new-password"></label>
+      <label class="check" id="optRow"><input type="checkbox" id="fOptIn"><span data-t="f.optIn">Email me my weekly stats and occasional special offers. You can unsubscribe any time.</span></label>
       <div class="msg" id="acctMsg" role="status"></div>
       <button class="btn primary" type="submit" id="acctSave">Create account</button>
       <button class="linkbtn" id="forgotBtn" type="button" data-t="acct.forgot" hidden>Forgot password?</button>
@@ -579,6 +582,10 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     <p class="msg" id="adminMsg" role="status"></p>
     <div id="adminLeaders"></div>
     <div class="tiles" id="adminTotals"></div>
+    <div class="sharebox donatebox">
+      <div class="sharetext"><strong>Weekly stats email</strong><span id="weeklyMsg">Sent on Mondays to players who opted in. Preview yours or send yourself a test.</span></div>
+      <div class="donatebtns"><a class="btn" id="weeklyPreview" href="/api/weekly-email?preview=1" target="_blank" rel="noopener">Preview</a><button class="btn" id="weeklyTest" type="button">Send me a test</button></div>
+    </div>
     <div class="adminhead"><h2>Players</h2><span class="note" id="adminCount"></span></div>
     <input type="text" id="adminSearch" placeholder="Search name, screen name or email" aria-label="Search players" autocomplete="off">
     <ul class="plain" id="adminPlayers"></ul>
@@ -1400,7 +1407,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     document.querySelectorAll("#acctSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === (v === "register" ? "register" : "login"))));
     const intro = !!v && v !== "login"; $("acctIntro").hidden = !intro; $("acctIntro").textContent = intro ? t("acct.intro." + v) : "";
     $("nameRow").hidden = !!v && v !== "register"; $("screenRow").hidden = !!v && v !== "register";
-    $("passRow").hidden = !!a || v === "forgot"; $("codeRow").hidden = v !== "reset";
+    $("passRow").hidden = !!a || v === "forgot";
+    $("optRow").hidden = !a && v !== "register"; if (a) $("fOptIn").checked = !!a.emailOptIn; $("codeRow").hidden = v !== "reset";
     $("passLabel").textContent = v === "reset" ? t("f.newpass") : t("f.pass");
     $("fPass").autocomplete = v === "login" ? "current-password" : "new-password";
     $("fFirst").value = a?.first || ""; $("fLast").value = a?.last || ""; $("fEmail").value = a?.email || $("fEmail").value;
@@ -1422,8 +1430,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     const password = $("fPass").value, screenName = $("fScreen").value.trim(), v = S.account ? "save" : acctView;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return msg(t("err.bad_email"), "err");
     let url = "/api/auth", method = "POST", body;
-    if (v === "save") { url = "/api/me"; method = "PATCH"; body = { first, last, email, lang: mode.lang }; }
-    else if (v === "login") { if (!password) return msg(t("msg.enterPassword"), "err"); body = { action: "login", email, password, games: localGames() }; }
+    if (v === "save") { url = "/api/me"; method = "PATCH"; body = { first, last, email, lang: mode.lang, optIn: $("fOptIn").checked }; }
+    else if (v === "login") { if (!password) return msg(t("msg.enterPassword"), "err"); body = { action: "login", email, password, games: localGames(), lang: mode.lang }; }
     else if (v === "forgot") body = { action: "forgot", email, lang: mode.lang };
     else if (v === "reset") {
       if (!/^\d{6}$/.test($("fReset").value.trim())) return msg(t("msg.enterCode"), "err");
@@ -1432,7 +1440,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     } else {
       if (!/^[A-Za-z0-9_.-]{3,16}$/.test(screenName)) return msg(t("err.bad_name"), "err");
       if (password.length < 8) return msg(t("err.bad_password"), "err");
-      body = { action: "register", first, last, email, screenName, password, games: localGames(), lang: mode.lang };
+      body = { action: "register", first, last, email, screenName, password, games: localGames(), lang: mode.lang, optIn: $("fOptIn").checked };
     }
     $("acctSave").disabled = true; msg(t("msg.working"));
     try {
@@ -1514,7 +1522,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       leaders.appendChild(card);
     }
     const t = d.totals;
-    for (const [n, label] of [[t.players, "players"], [t.confirmed, "confirmed"], [t.players_7d, "new in 7 days"], [t.rounds, "rounds played"], [t.rounds_7d, "rounds in 7 days"]]) {
+    for (const [n, label] of [[t.players, "players"], [t.confirmed, "confirmed"], [t.players_7d, "new in 7 days"], [t.rounds, "rounds played"], [t.rounds_7d, "rounds in 7 days"], [t.subscribers, "get weekly email"]]) {
       const tile = el("div"); tile.appendChild(el("b", null, n)); tile.appendChild(el("span", null, label)); totals.appendChild(tile);
     }
     const q = $("adminSearch").value.trim().toLowerCase();
@@ -1524,6 +1532,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       const li = el("li", "pcard"), name = el("div", "name", p.screenName);
       name.appendChild(el("span", "tag" + (p.confirmed ? " ok" : ""), p.confirmed ? "confirmed" : "unconfirmed"));
       if (p.admin) name.appendChild(el("span", "tag admin", "admin"));
+      if (p.optIn) name.appendChild(el("span", "tag ok", "emails"));
       li.appendChild(name);
       li.appendChild(el("div", "line", [fullName(p), p.email].filter(Boolean).join(" · ")));
       li.appendChild(el("div", "line", "Joined " + day(p.joined) + " · " + p.rounds + (p.rounds === 1 ? " round" : " rounds") + " · last played " + day(p.lastPlayed)));
@@ -1558,6 +1567,12 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   $("adminLink").addEventListener("click", openAdmin);
   $("adminBack").addEventListener("click", () => show("settings"));
   $("adminSearch").addEventListener("input", renderAdmin);
+  $("weeklyTest").addEventListener("click", async () => {
+    $("weeklyTest").disabled = true; $("weeklyMsg").textContent = "Sending…";
+    try { const r = await call("/api/weekly-email", "POST", { action: "test" }); $("weeklyMsg").textContent = r.ok ? "Test sent to " + r.data.to + "." : "The test couldn't be sent. Try again shortly."; }
+    catch (e) { $("weeklyMsg").textContent = "Can't reach the server. Check your connection and try again."; }
+    finally { $("weeklyTest").disabled = false; }
+  });
 
   /* ---------- tour ---------- */
   const slides = $("slides");
