@@ -62,7 +62,7 @@ Open http://localhost:3000.
 ## Weekly stats email
 
 Players who tick "Email me my weekly stats…" when registering (or later on the Account screen) get an email every
-Monday at 14:00 UTC: their rounds, days played, best scores and longest word for the week, the week's top scores,
+Monday at 15:00 UTC (10am Eastern in winter, 11am in summer): their rounds, days played, best scores and longest word for the week, the week's top scores,
 and a Play now button. It's sent in the language they play in, and only to confirmed email addresses.
 
 - Vercel Cron calls `GET /api/weekly-email` on the schedule in `vercel.json`. It only runs with a `CRON_SECRET`
