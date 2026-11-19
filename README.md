@@ -12,6 +12,7 @@ A one-minute word hunt for phones and desktops. Drag across neighbouring tiles t
 - `words.js` – English dictionary (about 270,000 words, 2–15 letters)
 - `words-es.js` – Spanish dictionary (about 366,000 words, 2–10 letters, no accents, Ñ kept)
 - `api/` – Vercel functions: accounts, score history, leaderboard (Postgres)
+- `tools/demo-video/` – records scripted gameplay clips for videos (see its README); clips go in `media/videos/`
 - `dev-server.js` – runs the site and the API locally
 
 ## Installing as an app

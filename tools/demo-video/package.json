@@ -1,0 +1,10 @@
+{
+  "name": "letterlinx-demo-video",
+  "private": true,
+  "description": "Records scripted gameplay clips of LetterLinx for videos and tutorials.",
+  "scripts": {
+    "plan": "node record.js plan",
+    "film": "node record.js film"
+  },
+  "dependencies": { "wordlist-english": "1.2.1" }
+}
