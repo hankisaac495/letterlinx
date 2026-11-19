@@ -14,7 +14,7 @@ const TEXT = {
     remind: "Today's Linx Daily is Game #{game}. Everyone gets the same letters. Can you top the leaderboard?",
     play: "Play now", why: "You're getting this because you asked for weekly stats and offers from LetterLinx.",
     unsub: "Unsubscribe", orAccount: "or change this on the Account tab.", made: "LetterLinx is made by Literacy Advocates and 495 Digital.",
-    top: "LETTER", home: "/",
+    home: "/",
   },
   es: {
     subjectPlayed: "Tu semana en Letra Linx: {rounds} rondas, mejor puntuación {best}",
@@ -25,7 +25,7 @@ const TEXT = {
     remind: "El Linx Diario de hoy es el Juego #{game}. Todos tienen las mismas letras. ¿Puedes llegar a lo más alto de la clasificación?",
     play: "Jugar ahora", why: "Recibes este correo porque pediste estadísticas semanales y ofertas de Letra Linx.",
     unsub: "Darse de baja", orAccount: "o cámbialo en la pestaña Cuenta.", made: "Letra Linx es una creación de Literacy Advocates y 495 Digital.",
-    top: "LETRA", home: "/es/",
+    home: "/es/",
   },
 };
 const fill = (s, v) => s.replace(/\{(\w+)\}/g, (m, k) => (v[k] != null ? v[k] : m));
@@ -72,7 +72,6 @@ function render(player, week, champs, opts) {
 
   // HTML: tables and inline styles, which every mail app understands
   const font = "font-family:Nunito,'Segoe UI',Helvetica,Arial,sans-serif;";
-  const tile = (ch) => `<td style="width:38px;height:38px;background:#F2A900;border-radius:9px;text-align:center;vertical-align:middle;${font}font-size:20px;font-weight:900;color:#2B1E00;">${ch}</td><td style="width:6px;"></td>`;
   const stat = (n, label) => `<td width="50%" style="padding:6px;"><div style="background:#E7EFF2;border-radius:12px;padding:14px 10px;text-align:center;">
       <div style="${font}font-size:28px;font-weight:900;color:#10303B;line-height:1.1;">${esc(n)}</div>
       <div style="${font}font-size:13px;color:#4B6772;margin-top:4px;">${esc(label)}</div></div></td>`;
@@ -87,8 +86,8 @@ function render(player, week, champs, opts) {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#E7EFF2;"><tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border-radius:18px;">
   <tr><td align="center" style="padding:28px 24px 8px;">
-    <div style="${font}font-size:15px;font-weight:900;letter-spacing:6px;color:#10303B;margin-bottom:8px;">${T.top}</div>
-    <table role="presentation" cellpadding="0" cellspacing="0"><tr>${["L", "I", "N", "X"].map(tile).join("")}</tr></table>
+    <img src="${SITE}/${lang === "es" ? "email-logo-es.png" : "email-logo.png"}" width="${lang === "es" ? 207 : 212}" height="48" alt="${lang === "es" ? "Letra Linx" : "LetterLinx"}"
+      style="display:block;border:0;outline:none;height:48px;width:auto;${font}font-size:22px;font-weight:900;color:#10303B;">
   </td></tr>
   <tr><td style="padding:16px 28px 4px;${font}color:#10303B;">
     <p style="margin:0 0 6px;font-size:18px;font-weight:800;">${esc(fill(T.hi, { name }))}</p>
