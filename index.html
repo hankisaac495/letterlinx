@@ -78,6 +78,9 @@ body { background: var(--bg); color: var(--ink); font-family: var(--body); font-
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 button, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
+/* no grey tap-highlight box on iPhone and iPad, and no built-in Safari button styling */
+button, a, label, input, .tile, #board { -webkit-tap-highlight-color: rgba(0, 0, 0, 0); }
+button { -webkit-appearance: none; appearance: none; }
 :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
 h1, h2, h3, p { margin: 0; }
 h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap: balance; }
@@ -199,9 +202,11 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
   padding: 10px 22px; box-shadow: 0 4px 14px var(--shade); text-align: center; }
 .gotitle strong { font-family: var(--display); font-weight: 900; font-size: clamp(1.5rem, 8cqw, 2.4rem); line-height: 1.1; color: var(--ink); }
 .gotitle span { font-size: clamp(.9rem, 4.2cqw, 1.15rem); font-weight: 700; color: var(--muted); }
-#go { position: relative; display: block; width: min(46cqw, 190px); aspect-ratio: 1; border-radius: 50%; border: 0;
+#go { position: relative; display: block; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); -webkit-touch-callout: none;
+  -webkit-user-select: none; user-select: none; touch-action: manipulation; outline: none; width: min(46cqw, 190px); aspect-ratio: 1; border-radius: 50%; border: 0;
   background: var(--accent); color: var(--accent-ink); font-family: var(--display); font-weight: 800; font-size: clamp(2rem, 13cqw, 3.4rem);
   box-shadow: 0 6px 0 color-mix(in srgb, var(--accent) 60%, #000), 0 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent); }
+#go:focus-visible { outline: 3px solid var(--brand); outline-offset: 6px; }
 #go:active { transform: translateY(4px); box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 60%, #000), 0 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent); }
 
 /* Results */
