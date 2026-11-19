@@ -191,13 +191,17 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 @keyframes fallBg { from { transform: translateY(calc(var(--drop, 1) * -111.11%)); } }
 @keyframes pulse { 50% { opacity: .45; } }
 
-.gostack { position: absolute; z-index: 5; display: flex; flex-direction: column; align-items: center; gap: 18px; pointer-events: none; }
+/* GO sits at the exact centre of the board, placed explicitly (not by flex alignment, which Safari can get wrong
+   after the button is hidden and shown again); the game title floats just above it */
+.gostack { position: absolute; z-index: 5; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none; }
 .gostack > * { pointer-events: auto; }
-.gotitle { display: flex; flex-direction: column; align-items: center; gap: 2px; background: var(--surface); border-radius: 16px;
+.gotitle { position: absolute; left: 50%; bottom: calc(100% + 18px); transform: translateX(-50%); width: max-content;
+  max-width: calc(min(100cqw, 100cqh * var(--bc, 6) / var(--br, 10)) - 16px);   /* never wider than the board */
+  display: flex; flex-direction: column; align-items: center; gap: 2px; background: var(--surface); border-radius: 16px;
   padding: 10px 22px; box-shadow: 0 4px 14px var(--shade); text-align: center; }
 .gotitle strong { font-family: var(--display); font-weight: 900; font-size: clamp(1.5rem, 8cqw, 2.4rem); line-height: 1.1; color: var(--ink); }
 .gotitle span { font-size: clamp(.9rem, 4.2cqw, 1.15rem); font-weight: 700; color: var(--muted); }
-#go { position: relative; width: min(46cqw, 190px); aspect-ratio: 1; border-radius: 50%; border: 0;
+#go { position: relative; display: block; width: min(46cqw, 190px); aspect-ratio: 1; border-radius: 50%; border: 0;
   background: var(--accent); color: var(--accent-ink); font-family: var(--display); font-weight: 800; font-size: clamp(2rem, 13cqw, 3.4rem);
   box-shadow: 0 6px 0 color-mix(in srgb, var(--accent) 60%, #000), 0 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent); }
 #go:active { transform: translateY(4px); box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 60%, #000), 0 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent); }
@@ -952,6 +956,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     const vc = wide ? ROWS : COLS, vr = wide ? COLS : ROWS;
     board.classList.toggle("wide", wide);
     board.style.setProperty("--cols", vc); board.style.setProperty("--rows", vr);
+    $("boardwrap").style.setProperty("--bc", vc); $("boardwrap").style.setProperty("--br", vr);
     board.setAttribute("aria-label", t("board.label", { cols: vc, rows: vr }));
     trail.setAttribute("viewBox", "0 0 " + vc + " " + vr);
     tiles.forEach((el, i) => { const [x, y] = spot(i); el.style.gridColumn = x + 1; el.style.gridRow = y + 1; });
