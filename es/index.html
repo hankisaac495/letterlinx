@@ -191,7 +191,13 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 @keyframes fallBg { from { transform: translateY(calc(var(--drop, 1) * -111.11%)); } }
 @keyframes pulse { 50% { opacity: .45; } }
 
-#go { position: absolute; z-index: 5; width: min(46cqw, 190px); aspect-ratio: 1; border-radius: 50%; border: 0;
+.gostack { position: absolute; z-index: 5; display: flex; flex-direction: column; align-items: center; gap: 18px; pointer-events: none; }
+.gostack > * { pointer-events: auto; }
+.gotitle { display: flex; flex-direction: column; align-items: center; gap: 2px; background: var(--surface); border-radius: 16px;
+  padding: 10px 22px; box-shadow: 0 4px 14px var(--shade); text-align: center; }
+.gotitle strong { font-family: var(--display); font-weight: 900; font-size: clamp(1.5rem, 8cqw, 2.4rem); line-height: 1.1; color: var(--ink); }
+.gotitle span { font-size: clamp(.9rem, 4.2cqw, 1.15rem); font-weight: 700; color: var(--muted); }
+#go { position: relative; width: min(46cqw, 190px); aspect-ratio: 1; border-radius: 50%; border: 0;
   background: var(--accent); color: var(--accent-ink); font-family: var(--display); font-weight: 800; font-size: clamp(2rem, 13cqw, 3.4rem);
   box-shadow: 0 6px 0 color-mix(in srgb, var(--accent) 60%, #000), 0 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent); }
 #go:active { transform: translateY(4px); box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 60%, #000), 0 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent); }
@@ -426,7 +432,10 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <div id="board">
         <svg id="trail" viewBox="0 0 7 11" preserveAspectRatio="none" aria-hidden="true"><polyline class="base" points=""/><polyline class="dash" points=""/></svg>
       </div>
-      <button id="go" type="button" data-t="go">¡YA!</button>
+      <div class="gostack">
+        <div class="gotitle" id="goTitle"><strong id="goName"></strong><span id="goSub" hidden></span></div>
+        <button id="go" type="button" data-t="go">¡YA!</button>
+      </div>
     </div>
     <div id="results" hidden>
       <div class="eyebrow" id="overTitle">Time's up · your score</div>
@@ -983,6 +992,9 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const pts = (arr) => arr.map((i) => { const [x, y] = spot(i); return (x + .5) + "," + (y + .5); }).join(" ");
 
   function paint() {
+    $("goTitle").hidden = $("go").hidden;
+    $("goName").textContent = t("v." + variant + ".name");
+    $("goSub").hidden = variant !== "daily"; $("goSub").textContent = t("lb.game", { game: gameNo });
     for (let i = 0; i < N; i++) {
       const t = tiles[i], st = mark.get(i);
       t.classList.toggle("sel", !st && path.includes(i));
