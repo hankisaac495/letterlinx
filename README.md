@@ -69,7 +69,8 @@ and a Play now button. It's sent in the language they play in, and only to confi
   environment variable set in Vercel, which Vercel sends with the request.
 - Each player gets at most one email per week, even if the job runs twice.
 - Every email has an unsubscribe link (`/api/unsubscribe`) and one-click unsubscribe headers.
-- Set `EMAIL_POSTAL_ADDRESS` to add your mailing address to the footer; US law requires one in emails with offers.
+- The footer includes the mailing address US law requires in emails with offers (350 Beverly Road, Suite 115-450,
+  McLean, VA 22101). Set `EMAIL_POSTAL_ADDRESS` in Vercel to change it.
 - Admins can preview their own email or send themselves a test from the admin dashboard.
 - The email itself is built in `api/_weekly.js`.
 

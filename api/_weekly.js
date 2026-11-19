@@ -68,7 +68,7 @@ function render(player, week, champs, opts) {
   const subject = played ? fill(T.subjectPlayed, { rounds: week.rounds, best }) : fill(T.subjectIdle, { game });
   const playUrl = SITE + T.home + "?utm_source=weekly_email&utm_medium=email&utm_campaign=weekly_stats";
   const unsubUrl = SITE + "/api/unsubscribe?t=" + player.unsub_token;
-  const address = process.env.EMAIL_POSTAL_ADDRESS || "";
+  const address = process.env.EMAIL_POSTAL_ADDRESS || "350 Beverly Road, Suite 115-450, McLean, VA 22101";   // required in emails with offers
 
   // HTML: tables and inline styles, which every mail app understands
   const font = "font-family:Nunito,'Segoe UI',Helvetica,Arial,sans-serif;";
