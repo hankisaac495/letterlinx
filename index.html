@@ -244,8 +244,11 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .wfrank { text-align: center; font-weight: 800; color: var(--ink); margin: 0; }
 .wfas { text-align: center; color: var(--muted); font-size: .9rem; margin: 0; }
 .wfnick { display: flex; flex-direction: column; gap: 6px; }
+.wfnick .rowform { display: flex; align-items: stretch; }
 .wfnick .rowform input { letter-spacing: normal; }
+.wfnick .rowform .btn { flex: none; padding-inline: 22px; }
 .wfnick .msg:empty { display: none; }
+#wfShareBox { margin-top: 4px; }
 .lbhints { color: var(--muted); font-weight: 600; font-size: .75em; white-space: nowrap; }
 .tile.miss::before, .tile.miss span { animation: shake .3s linear; }
 #word.miss { background: var(--surface-2); color: var(--muted); }
@@ -531,6 +534,10 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
           <table><thead><tr><th class="rank">#</th><th data-t="lb.name">Screen name</th><th data-t="lb.time">Time</th></tr></thead><tbody id="wfTop"></tbody></table>
         </div>
       </div>
+      <div class="sharebox" id="wfShareBox">
+        <div class="sharetext"><strong data-t="wf.shareTitle">Share your time</strong><span data-t="wf.shareText">Challenge a friend to beat it!</span></div>
+        <button class="btn" id="wfShareBtn" type="button" data-t="share.button">Share</button>
+      </div>
       <p class="wfnext" id="wfDoneNext"></p>
     </div>
     <div id="results" hidden>
@@ -813,7 +820,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   };
   const nWords = (n) => n === 1 ? t("words.one") : t("words.many", { n });
   function applyText() {
-    document.documentElement.lang = mode.lang; document.title = t("app.title");
+    document.documentElement.lang = mode.lang; document.title = /\/wordfinder\/?$/.test(location.pathname) ? t("wf.pageTitle") : t("app.title");
     document.querySelectorAll("[data-t]").forEach((el) => { el.textContent = t(el.dataset.t); });
     document.querySelectorAll("[data-t-label]").forEach((el) => { el.setAttribute("aria-label", t(el.dataset.tLabel)); });
     $("restartBtn").title = t("hud.restart");
@@ -859,7 +866,10 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const bestIn = (game) => games().find((g) => g.game === game)?.score || 0;
   /* game variations: "daily" (Linx Daily, same letters for everyone) and "booster" (Brain Booster, random boards) */
   const VARIANTS = ["daily", "booster", "wordfinder"];
-  let variant = VARIANTS.includes(S.variant) ? S.variant : "daily";
+  // /wordfinder and /es/wordfinder (the WordFinder share link) open straight into WordFinder
+  const pageVariant = /^(\/es)?\/wordfinder(\/|$)/.test(location.pathname) ? "wordfinder" : null;
+  let variant = pageVariant || (VARIANTS.includes(S.variant) ? S.variant : "daily");
+  if (pageVariant) S.variant = pageVariant;
   const boosts = () => S.boost[modeId] || [];                     // this player's five best Brain Booster rounds
   const best = () => variant === "daily" ? bestIn(gameNo) : boosts()[0]?.score || 0;
   /* Brain Booster stats. Kept on the device for everyone; a signed-in player's come from their saved rounds. */
@@ -1250,13 +1260,28 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   /* Share the round: the phone's share sheet where there is one, otherwise copy the text */
   let shareText = "";
   const shareUrl = () => location.origin + (mode.lang === "es" ? "/es/" : "/");
-  async function share(text, btn) {
+  // copy to the clipboard, with the older copy command for browsers without the clipboard API
+  async function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return; }
+    const ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;opacity:0;top:0;left:0";
+    document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand("copy"); ta.remove();
+    if (!ok) throw new Error("copy failed");
+  }
+  // full: the text already ends with its own link (WordFinder), otherwise the game's link is added after it
+  async function share(text, btn, full) {
+    const msg = full ? text : text + " " + shareUrl();
     try {
       // the link goes inside the text: given a separate link, some apps (Messages among them) send only the link
-      if (navigator.share) { await navigator.share({ text: text + " " + shareUrl() }); return; }
-      await navigator.clipboard.writeText(text + " " + shareUrl());
+      if (navigator.share) { await navigator.share({ text: msg }); return; }
+      await copyText(msg);
       btn.textContent = t("share.copied"); setTimeout(() => { btn.textContent = t("share.button"); }, 2500);
-    } catch (e) { if (e && e.name !== "AbortError") btn.textContent = t("share.failed"); }
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+      try { await copyText(msg); btn.textContent = t("share.copied"); }                       // share sheet failed: copy instead
+      catch (e2) { btn.textContent = t("share.failed"); }
+      setTimeout(() => { btn.textContent = t("share.button"); }, 2500);
+    }
   }
   $("signBtn").addEventListener("click", () => show("account"));
   $("donateBtn").addEventListener("click", () => track("donate_click", { game_language: mode.lang }));
@@ -1516,6 +1541,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       li.append(strong, hint); ol.appendChild(li);
     });
     $("wfDoneNext").textContent = t("wf.next", { time: untilMidnight() });
+    $("wfShareBtn").textContent = t("share.button");
     wfRenderBoard(); paint();
   }
 
@@ -1544,6 +1570,18 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     if (x.hints) { const s = document.createElement("small"); s.className = "lbhints"; s.textContent = " " + t(x.hints === 1 ? "wf.hint1" : "wf.hintsN", { n: x.hints }); c.appendChild(s); }
     tr.append(a, b, c); return tr;
   }
+  /* the share text: puzzle number, topic and time, never the words, with the WordFinder link on its own line */
+  function wfShareText() {
+    const pl = wf.play, h = pl.hints.length;
+    return t("wf.num", { n: wf.num }) + " · " + wf.topic + "\n⏱ " + clockText(pl.totalMs) + " ("
+      + (h ? t(h === 1 ? "wf.hint1" : "wf.hintsN", { n: h }) : t("wf.noHintsShort")) + ")\n"
+      + location.origin + (wf.lang === "es" ? "/es/wordfinder" : "/wordfinder");
+  }
+  $("wfShareBtn").addEventListener("click", () => {
+    if (!wf || !wf.play || !wf.play.done) return;
+    track("share", { game_language: wf.lang, game_variant: "wordfinder", share_type: "score" });
+    share(wfShareText(), $("wfShareBtn"), true);
+  });
   $("wfNickForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const nick = $("wfNick").value.trim(), msg = $("wfNickMsg");
@@ -1822,6 +1860,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   function setVariant(v) {
     if (phase === "playing" && variant !== "wordfinder") return;
     if (v !== variant) { variant = S.variant = v; saveLocal(); track("variant_change", { game_variant: v }); }
+    // leaving WordFinder on its own page: go back to the main address so a reload opens the chosen game
+    if (pageVariant && v !== pageVariant && /wordfinder/.test(location.pathname)) history.replaceState(null, "", location.pathname.replace(/wordfinder\/?$/, ""));
     reset(); show("game");
   }
 

@@ -16,6 +16,10 @@ http.createServer(async (req, res) => {
     res.json = (j) => { res.setHeader("content-type", "application/json"); res.end(JSON.stringify(j)); };
     return require(file)(req, res);
   }
+  // like the redirects in vercel.json: a folder without its trailing slash goes to the slashed address
+  if (!path.extname(url.pathname) && !url.pathname.endsWith("/") && fs.existsSync(path.join(__dirname, url.pathname, "index.html"))) {
+    res.statusCode = 308; res.setHeader("location", url.pathname + "/" + url.search); return res.end();
+  }
   const rel = path.normalize(url.pathname.endsWith("/") ? url.pathname + "index.html" : url.pathname).replace(/^[/\\]+/, "");
   const file = path.join(__dirname, rel);
   if (!file.startsWith(__dirname) || rel.startsWith("api") || rel.startsWith("node_modules") || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.statusCode = 404; return res.end("not found"); }

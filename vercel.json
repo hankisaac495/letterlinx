@@ -19,6 +19,16 @@
       "source": "/privacy",
       "destination": "/privacy/",
       "permanent": true
+    },
+    {
+      "source": "/wordfinder",
+      "destination": "/wordfinder/",
+      "permanent": true
+    },
+    {
+      "source": "/es/wordfinder",
+      "destination": "/es/wordfinder/",
+      "permanent": true
     }
   ],
   "crons": [
