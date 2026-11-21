@@ -143,4 +143,4 @@ async function stats(p, lang, day, me, dev) {
     average: times.length ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : null, current, max, days: days.slice(-120) };
 }
 
-module.exports = { MIN_MS, W, PEN, COLS, ROWS, COUNT, dayOk, pastOk, device, readDevice, puzzleFor, findPlay, playView, checkNickname, leaderboard, stats, PLAY };
+module.exports = { storedWords, utcToday, MIN_MS, W, PEN, COLS, ROWS, COUNT, dayOk, pastOk, device, readDevice, puzzleFor, findPlay, playView, checkNickname, leaderboard, stats, PLAY };

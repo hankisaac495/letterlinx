@@ -689,6 +689,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <div class="sharetext"><strong>Weekly stats email</strong><span id="weeklyMsg">Sent on Mondays to players who opted in. Preview yours or send yourself a test.</span></div>
       <div class="donatebtns"><a class="btn" id="weeklyPreview" href="/api/weekly-email?preview=1" target="_blank" rel="noopener">Preview</a><button class="btn" id="weeklyTest" type="button">Send me a test</button></div>
     </div>
+    <div id="wfAdmin"></div>
     <div class="adminhead"><h2>Players</h2><span class="note" id="adminCount"></span></div>
     <input type="text" id="adminSearch" placeholder="Search name, screen name or email" aria-label="Search players" autocomplete="off">
     <ul class="plain" id="adminPlayers"></ul>
@@ -2048,7 +2049,16 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     } catch (e) { amsg("Can't reach the server. Check your connection and try again.", "err"); }
     await loadAdmin(); if (S.account) { try { const me = await call("/api/me", "GET"); if (me.ok) adopt(me.data); } catch (e) {} } loadPlayers();
   }
-  const openAdmin = (e) => { if (e) e.preventDefault(); amsg(""); adminAsk = null; show("admin"); loadAdmin(); };
+  // the WordFinder puzzle admin lives in wf-admin.js, downloaded the first time an admin opens the dashboard
+  let wfAdmin = null, wfAdminLoading = null;
+  function openWfAdmin() {
+    if (wfAdmin) return wfAdmin.reload();
+    if (!wfAdminLoading) wfAdminLoading = new Promise((ok, no) => {
+      const sc = document.createElement("script"); sc.src = "wf-admin.js"; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc);
+    }).then(() => { wfAdmin = window.LLX_WF_ADMIN($("wfAdmin"), { call }); })
+      .catch(() => { wfAdminLoading = null; $("wfAdmin").textContent = "The WordFinder puzzle tools couldn't load. Reload the page to try again."; });
+  }
+  const openAdmin = (e) => { if (e) e.preventDefault(); amsg(""); adminAsk = null; show("admin"); loadAdmin(); openWfAdmin(); };
   $("adminOpen").addEventListener("click", openAdmin);
   $("adminLink").addEventListener("click", openAdmin);
   $("adminBack").addEventListener("click", () => show("settings"));

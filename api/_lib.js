@@ -75,6 +75,7 @@ create table if not exists wf_puzzles (
   updated_at timestamptz not null default now()
 );
 create unique index if not exists wf_puzzles_live_key on wf_puzzles (lang, day) where status = 'approved';
+create unique index if not exists wf_puzzles_draft_key on wf_puzzles (lang, day) where status = 'draft';
 create index if not exists wf_puzzles_backup_idx on wf_puzzles (lang, created_at) where status = 'backup';
 -- one ranked attempt per account (or per device for guests) per language per day; times come from the database clock
 create table if not exists wf_plays (
