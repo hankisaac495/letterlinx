@@ -197,3 +197,15 @@ test("failures explain which word is the problem", () => {
   const junk = W.generateBoard(["NEW ZEALAND", "PERU"], "en", "x");
   assert.ok(!junk.ok); assert.match(junk.error, /NEW ZEALAND/);
 });
+
+test("sample puzzles validate and generate boards in both languages", () => {
+  const samples = require("../wordfinder-samples.js");
+  assert.ok(samples.length >= 4);
+  for (const s of samples) for (const lang of ["en", "es"]) {
+    const p = s[lang], v = W.validatePuzzle(p, lang);
+    assert.ok(v.ok, s.id + " " + lang + ": " + JSON.stringify(v.errors));
+    const b = W.generateBoard(v.words.map(w => w.key), lang, s.id + ":" + lang);
+    assert.ok(b.ok, s.id + " " + lang + " board");
+    v.words.forEach(w => assert.ok(W.findPath(b.grid, w.key, b.cols, b.rows), s.id + " " + w.key));
+  }
+});

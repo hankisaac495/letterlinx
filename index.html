@@ -227,6 +227,53 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .longest { background: var(--surface); border-radius: 14px; padding: 12px 16px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .longest span { color: var(--muted); font-size: .9rem; }
 .longest b { font-size: 1.3rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; overflow-wrap: anywhere; }
+/* Linx WordFinder: found-word colours from the Okabe-Ito colour-blind-safe palette, each with readable ink */
+:root { --wf1: #0072B2; --wf1i: #FFFFFF; --wf2: #E69F00; --wf2i: #2B1E00; --wf3: #009E73; --wf3i: #FFFFFF;
+  --wf4: #CC79A7; --wf4i: #2B1E00; --wf5: #D55E00; --wf5i: #FFFFFF; --wf6: #56B4E9; --wf6i: #10303B; }
+.tile.wf::before { background: var(--wfc); box-shadow: 0 2px 0 color-mix(in srgb, var(--wfc) 55%, #000); }
+.tile.wf span { color: var(--wfi); }
+.tile.wf.sel::before { background: var(--accent); }
+.tile.wf.sel span { color: var(--accent-ink); }
+.tile.wffill::before, .tile.wffill span { animation: wffill .28s ease-out both; animation-delay: var(--d, 0ms); }
+@keyframes wffill { 0% { transform: scale(.55); } 60% { transform: scale(1.1); } 100% { transform: scale(1); } }
+.tile .wfb { position: absolute; z-index: 3; top: 2%; left: 2%; width: 38cqw; height: 38cqw; border-radius: 50%; display: grid; place-items: center;
+  background: var(--surface); color: var(--ink); font-size: 26cqw; font-weight: 900; line-height: 1; box-shadow: 0 1px 3px var(--shade); }
+.tile span.wfb, .tile.wf span.wfb { color: var(--ink); }
+.tile.miss::before, .tile.miss span { animation: shake .3s linear; }
+#word.miss { background: var(--surface-2); color: var(--muted); }
+.wfhintbtn { flex: none; border: 0; border-radius: 12px; padding: 8px 12px; font-weight: 800; font-size: .85rem; background: var(--accent); color: var(--accent-ink);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 60%, #000); white-space: nowrap; }
+.wfhintbtn:disabled { opacity: .45; box-shadow: none; }
+.wfrow { display: flex; align-items: center; gap: 8px; min-height: 34px; }
+.wfcount { flex: none; font-weight: 800; font-size: .85rem; color: var(--muted); }
+.wfchips { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 5px; }
+.wfchip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px 3px 3px; border-radius: 99px; background: var(--wfc); color: var(--wfi);
+  font-weight: 800; font-size: .8rem; letter-spacing: .03em; }
+.wfchip.new { animation: chipin .3s ease-out; }
+.wfchip b, .wfwords b, .wfhintlist b { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--surface); color: var(--ink); font-size: .72rem; font-weight: 900; }
+@keyframes chipin { from { transform: translateY(-6px) scale(.8); opacity: 0; } }
+.wfmute { flex: none; border: 0; background: var(--surface-2); border-radius: 50%; width: 34px; height: 34px; display: grid; place-items: center; color: var(--ink); }
+.wfmute svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.wfbanner { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--accent); color: var(--accent-ink);
+  border-radius: 12px; padding: 8px 8px 8px 14px; font-weight: 800; }
+.wfbanner .btn { background: var(--ink); color: var(--bg); }
+.gotitle em { font-style: normal; font-family: var(--display); font-weight: 900; font-size: clamp(1.6rem, 9cqw, 2.6rem); line-height: 1.1; color: var(--brand); margin-top: 4px; }
+.gobelow { position: absolute; top: calc(100% + 16px); left: -50cqw; right: -50cqw; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  font-weight: 700; font-size: .9rem; color: var(--muted); pointer-events: auto; }
+.gobelow .seg button { padding: 6px 14px; }
+#wfResults { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; text-align: center; padding-bottom: 12px; }
+#wfResults h2 { font-size: 1.6rem; color: var(--brand); }
+#wfDoneTime { font-size: clamp(3rem, min(22vw, 10vh), 5.5rem); font-weight: 800; line-height: 1; }
+.wfbreak { color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
+.wfwords { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.wfwords li { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; background: var(--surface); border-radius: 12px; padding: 8px 12px; }
+.wfwords strong { justify-self: start; background: var(--wfc); color: var(--wfi); border-radius: 8px; padding: 2px 10px; letter-spacing: .05em; font-weight: 900; }
+.wfwords span { grid-column: 2; color: var(--muted); font-size: .88rem; }
+.wfnext { color: var(--muted); font-weight: 700; }
+.wfhintlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.wfhintlist li { background: var(--surface); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+.wfhintlist .lbl { font-size: .75rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.wfhintlist .got { font-weight: 900; color: var(--wfc); }
 /* past daily leaderboards: date bar and calendar */
 #lbMode { font-size: .88rem; font-weight: 800; color: var(--ink); }
 .lbdate { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: -6px; }
@@ -436,17 +483,35 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <div class="stat"><div class="eyebrow" data-t="hud.time">Time</div><div class="num" id="time">1:00</div></div>
       <div id="word" class="hint" aria-live="polite">Best score: 0</div>
       <div class="stat right"><div class="eyebrow" data-t="hud.score">Score</div><div class="num" id="score">0</div></div>
+      <button id="wfHintBtn" class="wfhintbtn" type="button" hidden></button>
       <button id="restartBtn" type="button" data-t-label="hud.restart" aria-label="Restart" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg></button>
     </div>
     <div class="bar" id="bar"><i></i></div>
+    <div class="wfbanner" id="wfBanner" hidden><span data-t="wf.banner">A new puzzle is ready.</span><button class="btn small" id="wfBannerBtn" type="button" data-t="wf.bannerBtn">Play it</button></div>
+    <div class="wfrow" id="wfRow" hidden>
+      <div class="wfchips" id="wfChips"></div>
+      <button class="wfmute" id="wfMute" type="button" data-t-label="wf.mute" aria-label="Sound on or off"></button>
+    </div>
     <div class="boardwrap" id="boardwrap">
       <div id="board">
         <svg id="trail" viewBox="0 0 7 11" preserveAspectRatio="none" aria-hidden="true"><polyline class="base" points=""/><polyline class="dash" points=""/></svg>
       </div>
       <div class="gostack">
-        <div class="gotitlewrap"><div class="gotitle" id="goTitle"><strong id="goName"></strong><span id="goSub" hidden></span></div></div>
+        <div class="gotitlewrap"><div class="gotitle" id="goTitle"><strong id="goName"></strong><span id="goSub" hidden></span><em id="goTopic" hidden></em></div></div>
+        <div class="gobelow" id="goBelow" hidden>
+          <span id="wfStreak"></span><span id="wfNext"></span>
+          <div class="seg langSeg" data-t-label="set.lang" aria-label="Language"></div>
+        </div>
         <button id="go" type="button" data-t="go">GO</button>
       </div>
+    </div>
+    <div id="wfResults" hidden>
+      <div class="eyebrow" id="wfDoneTitle"></div>
+      <h2 id="wfDoneTopic"></h2>
+      <div class="num" id="wfDoneTime"></div>
+      <div class="wfbreak" id="wfDoneBreak"></div>
+      <ol class="wfwords" id="wfDoneWords"></ol>
+      <p class="wfnext" id="wfDoneNext"></p>
     </div>
     <div id="results" hidden>
       <div class="eyebrow" id="overTitle">Time's up · your score</div>
@@ -676,6 +741,14 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   </div>
 </div>
 
+<div class="overlay" id="wfHints" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="wfHintsTitle">
+    <header><h2 id="wfHintsTitle"></h2><button class="x" id="wfHintsClose" type="button" data-t-label="modal.close" aria-label="Close">✕</button></header>
+    <ol class="wfhintlist" id="wfHintList"></ol>
+    <button class="btn primary" id="wfHintMore" type="button"></button>
+  </div>
+</div>
+
 <div class="overlay" id="notice" hidden>
   <div class="modal notice" role="dialog" aria-modal="true" aria-labelledby="noticeTitle">
     <h2 id="noticeTitle"></h2>
@@ -688,6 +761,9 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 </div>
 
 <script src="modes.js"></script>
+<script src="wordfinder-blocklist.js"></script>
+<script src="wordfinder.js"></script>
+<script src="wordfinder-samples.js"></script>
 <script src="i18n.js"></script>
 <script>
 (() => {
@@ -763,7 +839,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const games = () => S.tops[modeId] || [];                       // this player's best round in each daily game
   const bestIn = (game) => games().find((g) => g.game === game)?.score || 0;
   /* game variations: "daily" (Linx Daily, same letters for everyone) and "booster" (Brain Booster, random boards) */
-  const VARIANTS = ["daily", "booster"];
+  const VARIANTS = ["daily", "booster", "wordfinder"];
   let variant = VARIANTS.includes(S.variant) ? S.variant : "daily";
   const boosts = () => S.boost[modeId] || [];                     // this player's five best Brain Booster rounds
   const best = () => variant === "daily" ? bestIn(gameNo) : boosts()[0]?.score || 0;
@@ -938,6 +1014,13 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const ding = () => { tone(1318.5, .35, "sine", .22); tone(1975.5, .5, "sine", .14, .07); };
   const buzz = () => { tone(110, .28, "sawtooth", .16); tone(116, .28, "square", .08); };
   const tick = () => tone(1100, .05, "square", .12);
+  // WordFinder: a soft wooden tock that rises with each tile, a chime on a find, a muted thud on a miss
+  const tock = (n) => { tone(420 + Math.min(n, 12) * 28, .06, "triangle", .14); tone(1260 + Math.min(n, 12) * 60, .02, "sine", .03); };
+  const thud = () => { tone(130, .16, "sine", .2); tone(95, .2, "triangle", .1, .02); };
+  const chime = (all) => {
+    [659.25, 830.61, 987.77].forEach((f, k) => tone(f, .28, "sine", .16, k * .06));
+    if (all) [1318.5, 1661.2, 1975.5, 2637].forEach((f, k) => tone(f, .35, "sine", .12, .22 + k * .07));
+  };
 
   /* ---------- game ---------- */
   const board = $("board"), trail = $("trail"), [lineA, lineB] = trail.querySelectorAll("polyline");
@@ -1028,8 +1111,9 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     else if (dictFailed) { w.className = "hint"; w.textContent = t("hint.failed"); }
     else if (!DICT) { w.className = "hint"; w.textContent = t("hint.loading"); }
     else { w.className = "hint"; w.textContent = variant === "daily" ? t("hint.best", { n: best(), game: gameNo }) : t("hint.bestBooster", { n: best() }); }
-    $("go").classList.toggle("wait", !DICT);
+    $("go").classList.toggle("wait", !DICT && variant !== "wordfinder");
     $("score").textContent = score;
+    wfPaint();
   }
 
   function setLetter(i, l, fresh) {
@@ -1086,7 +1170,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     $("nav").classList.remove("locked"); renderModes();
     $("time").textContent = fmt(mode.seconds * 1000); $("time").classList.remove("low");
     $("bar").classList.remove("low"); $("bar").firstElementChild.style.transform = "";
-    paint();
+    $("wfResults").hidden = true;
+    if (variant === "wordfinder") wfEnter(); else { if (wf) wfLeave(); paint(); }
   }
 
   function clock() {
@@ -1176,7 +1261,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     const i = tileAt(e, false); if (i < 0 || mark.has(i) || locked.has(i)) return;
     e.preventDefault(); wake(); pointerId = e.pointerId;
     try { board.setPointerCapture(e.pointerId); } catch (err) {}
-    path = [i]; paint();
+    path = [i]; if (variant === "wordfinder") tock(1); paint();
   });
   board.addEventListener("pointermove", (e) => {
     if (e.pointerId !== pointerId || !path.length) return;
@@ -1185,13 +1270,14 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     if (i === last) return;
     if (path.length > 1 && i === path[path.length - 2]) { path.pop(); paint(); return; }
     if (path.includes(i) || mark.has(i) || locked.has(i) || !adjacent(last, i)) return;
-    path.push(i); paint();
+    path.push(i); if (variant === "wordfinder") tock(path.length); paint();
   });
   const release = (e) => { if (e.pointerId !== pointerId) return; pointerId = null; submit(); };
   board.addEventListener("pointerup", release);
   board.addEventListener("pointercancel", release);
 
   function submit() {
+    if (variant === "wordfinder") return wfSubmit();
     const p = path; path = [];
     if (phase !== "playing" || p.length < mode.minLength) { paint(); return; }
     const word = p.map((i) => letters[i]).join(""), key = word.toLowerCase();
@@ -1212,17 +1298,235 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     }, ok ? 420 : 380);
   }
 
-  $("go").addEventListener("click", start);
+  $("go").addEventListener("click", () => (variant === "wordfinder" ? wfStart() : start()));
   $("again").addEventListener("click", reset);
   $("restartBtn").addEventListener("click", reset); // drops the round unscored; GO starts the next one
 
+  /* ---------- Linx WordFinder ----------
+     A daily word hunt on a static board: six hidden words on one topic, a count-up timer, hints at +30s.
+     Phase 3: puzzles come from the built-in samples and boards are built here; phase 4 moves both to the server. */
+  const WF = window.LLX_WF, WF_LAUNCH = "2026-11-21", WF_PENALTY = 30000;
+  if (!S.wf || typeof S.wf !== "object") S.wf = {};             // "lang:YYYY-MM-DD" -> { startedAt, found: [{ i, path, at }], hints: [i], doneAt }
+  if (!S.wfDone || typeof S.wfDone !== "object") S.wfDone = {}; // lang -> dates completed, for the streak
+  const wfColor = (n) => ["var(--wf" + (n % 6 + 1) + ")", "var(--wf" + (n % 6 + 1) + "i)"];
+  const localKey = (d) => dayKey(d || new Date());
+  const daysBetween = (a, b) => { const p = (k) => { const x = k.split("-"); return Date.UTC(+x[0], x[1] - 1, +x[2]); }; return Math.round((p(b) - p(a)) / 86400000); };
+  const wfNumber = (date) => Math.max(1, daysBetween(WF_LAUNCH, date) + 1);
+  const clockText = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = String(s % 60).padStart(2, "0");
+    return h ? h + ":" + String(m).padStart(2, "0") + ":" + x : m + ":" + x; };
+  const untilMidnight = () => { const n = new Date(), m = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1); return clockText(m - n); };
+  let wf = null, wfTimer = 0;                                    // wf: the puzzle on screen
+
+  function wfLoad(date) {
+    const lang = mode.lang === "es" ? "es" : "en", all = window.LLX_WF_SAMPLES;
+    const sample = all[((daysBetween(WF_LAUNCH, date) % all.length) + all.length) % all.length], p = sample[lang];
+    const board = WF.generateBoard(p.words, lang, sample.id + ":" + lang);
+    return { date, lang, id: sample.id, num: wfNumber(date), topic: p.topic, grid: board.grid,
+      words: p.words.map((w) => ({ display: WF.normalizeWord(w.word).display, key: WF.normalizeWord(w.word).key, hint: w.hint })) };
+  }
+  const wfStateKey = () => wf.lang + ":" + wf.date;
+  const wfState = () => S.wf[wfStateKey()] || null;
+  const wfElapsed = (st) => st ? ((st.doneAt || Date.now()) - st.startedAt) : 0;
+  const wfTotal = (st) => st ? wfElapsed(st) + WF_PENALTY * st.hints.length : 0;
+  function wfStreak() {
+    const days = new Set(S.wfDone[mode.lang === "es" ? "es" : "en"] || []);
+    let d = new Date(), n = 0;
+    if (!days.has(localKey(d))) d.setDate(d.getDate() - 1);     // still alive if yesterday was the last one played
+    while (days.has(localKey(d))) { n++; d.setDate(d.getDate() - 1); }
+    return n;
+  }
+  function wfSave() {
+    const keys = Object.keys(S.wf).sort((a, b) => a.split(":")[1] < b.split(":")[1] ? 1 : -1);
+    keys.slice(60).forEach((k) => delete S.wf[k]);               // keep the last couple of months
+    saveLocal();
+  }
+
+  // entering WordFinder (or returning to it): start screen, an in-progress game, or the finished result
+  function wfEnter() {
+    clearInterval(wfTimer);
+    wf = wfLoad(localKey());
+    tiles.forEach((tl) => { tl.style.removeProperty("--wfc"); tl.style.removeProperty("--wfi"); tl.querySelector(".wfb")?.remove(); });
+    $("wfBanner").hidden = true;
+    const st = wfState();
+    if (st && st.doneAt) wfShowResults(false);
+    else if (st && st.startedAt) wfReveal(false);
+    wfTimer = setInterval(wfTickClock, 500); wfTickClock(); paint();
+  }
+  function wfLeave() { clearInterval(wfTimer); wf = null; $("wfResults").hidden = true; $("wfRow").hidden = true; $("wfBanner").hidden = true; $("goBelow").hidden = true; }
+
+  function wfStart() {
+    if (!wf || wfState()) return;
+    wake();
+    S.wf[wfStateKey()] = { startedAt: Date.now(), found: [], hints: [] }; wfSave();
+    track("round_start", { game_language: wf.lang, game_variant: "wordfinder" });
+    wfReveal(true);
+  }
+  // show the board and run the clock
+  function wfReveal(fresh) {
+    phase = "playing"; letters = wf.grid.slice();
+    for (let i = 0; i < N; i++) setLetter(i, letters[i], fresh);
+    $("go").hidden = true; $("results").hidden = true; $("wfResults").hidden = true; $("boardwrap").hidden = false;
+    wfPaintFound(null); paint();
+  }
+
+  function wfTickClock() {
+    if (!wf) return;
+    const st = wfState();
+    $("time").textContent = clockText(st && st.startedAt ? wfTotal(st) : 0);
+    $("wfNext").textContent = t("wf.next", { time: untilMidnight() });
+    if (!$("wfResults").hidden) $("wfDoneNext").textContent = t("wf.next", { time: untilMidnight() });
+    // a new day: offer the new puzzle rather than swapping the board mid-game
+    if (localKey() !== wf.date) $("wfBanner").hidden = false;
+  }
+  $("wfBannerBtn").addEventListener("click", () => { reset(); });
+
+  // colours and number badges on found tiles; the newest find fills in along its path
+  function wfPaintFound(newest) {
+    const st = wfState(), owner = new Array(N).fill(-1);
+    (st ? st.found : []).forEach((f, n) => f.path.forEach((i) => { owner[i] = n; }));
+    tiles.forEach((tl, i) => {
+      tl.classList.toggle("wf", owner[i] >= 0);
+      if (owner[i] >= 0) { const [c, ink] = wfColor(owner[i]); tl.style.setProperty("--wfc", c); tl.style.setProperty("--wfi", ink); }
+      tl.querySelector(".wfb")?.remove();
+    });
+    (st ? st.found : []).forEach((f, n) => { const b = document.createElement("span"); b.className = "wfb"; b.textContent = n + 1; tiles[f.path[0]].appendChild(b); });
+    if (newest) newest.path.forEach((i, k) => {
+      const tl = tiles[i]; tl.classList.remove("wffill"); void tl.offsetWidth;
+      tl.style.setProperty("--d", Math.round(k * Math.min(45, 300 / newest.path.length)) + "ms"); tl.classList.add("wffill");
+    });
+  }
+
+  function wfSubmit() {
+    const p = path; path = [];
+    const st = wfState();
+    if (!wf || !st || st.doneAt || p.length < WF.LIMITS.minLen) { paint(); return; }
+    const spelled = WF.spellPath(wf.grid, p, COLS), round = roundId;
+    const idx = wf.words.findIndex((w) => w.key === spelled);
+    if (idx >= 0 && !st.found.some((f) => f.i === idx)) {
+      const find = { i: idx, path: p, at: Date.now() };
+      st.found.push(find); wfSave();
+      chime(st.found.length === 6);
+      fb = { text: wf.words[idx].display, kind: "good", pts: p };
+      wfPaintFound(find); paint();
+      setTimeout(() => { if (fb && fb.pts === p) { fb = null; paint(); } }, 420);
+      if (st.found.length === 6) { st.doneAt = find.at; wfSave(); wfFinish(); }
+      return;
+    }
+    // a gentle miss: soft thud and a small shake, no penalty
+    thud();
+    const text = idx >= 0 ? t("word.already", { word: wf.words[idx].display }) : spelled;
+    const mine = fb = { text, kind: "miss", pts: p };
+    p.forEach((i) => mark.set(i, "miss")); paint();
+    setTimeout(() => { if (round !== roundId) return; p.forEach((i) => mark.delete(i)); if (fb === mine) fb = null; paint(); }, 360);
+  }
+
+  function wfFinish() {
+    const done = S.wfDone[wf.lang] = S.wfDone[wf.lang] || [];
+    if (!done.includes(wf.date)) { done.push(wf.date); S.wfDone[wf.lang] = done.slice(-400); }
+    saveLocal();
+    track("round_end", { game_language: wf.lang, game_variant: "wordfinder", time_seconds: Math.round(wfTotal(wfState()) / 1000), hints: wfState().hints.length });
+    setTimeout(() => { if (wf) wfShowResults(true); }, 700);
+  }
+
+  function wfShowResults() {
+    const st = wfState();
+    phase = "over"; letters = wf.grid.slice();
+    $("boardwrap").hidden = true; $("results").hidden = true; $("wfResults").hidden = false; $("go").hidden = true;
+    $("wfDoneTitle").textContent = t("wf.num", { n: wf.num }) + " · " + new Date(wf.date + "T12:00").toLocaleDateString(mode.lang, { month: "long", day: "numeric", year: "numeric" });
+    $("wfDoneTopic").textContent = wf.topic;
+    $("wfDoneTime").textContent = clockText(wfTotal(st));
+    $("wfDoneBreak").textContent = st.hints.length
+      ? t("wf.breakdown", { base: clockText(wfElapsed(st)), pen: clockText(WF_PENALTY * st.hints.length), total: clockText(wfTotal(st)) })
+      : t("wf.noHintsUsed");
+    const ol = $("wfDoneWords"); ol.textContent = "";
+    st.found.forEach((f, n) => {
+      const w = wf.words[f.i], li = document.createElement("li"), [c, ink] = wfColor(n);
+      li.style.setProperty("--wfc", c); li.style.setProperty("--wfi", ink);
+      const strong = document.createElement("strong"), b = document.createElement("b"), hint = document.createElement("span");
+      b.textContent = n + 1; strong.append(b, " " + w.display); hint.textContent = w.hint;
+      li.append(strong, hint); ol.appendChild(li);
+    });
+    $("wfDoneNext").textContent = t("wf.next", { time: untilMidnight() });
+    paint();
+  }
+
+  /* hints: each reveals one more unfound word's clue and adds 30 seconds */
+  function wfHintable() { const st = wfState(); return st ? wf.words.map((w, i) => i).filter((i) => !st.found.some((f) => f.i === i) && !st.hints.includes(i)) : []; }
+  function wfHint() {
+    const st = wfState(), pool = wfHintable();
+    if (!st || st.doneAt || !pool.length) return;
+    st.hints.push(pool[Math.floor(Math.random() * pool.length)]); wfSave();
+    track("hint", { game_variant: "wordfinder" });
+    wfTickClock(); wfRenderHints(); $("wfHints").hidden = false;
+  }
+  function wfRenderHints() {
+    const st = wfState();
+    $("wfHintsTitle").textContent = wf.topic;
+    const ol = $("wfHintList"); ol.textContent = "";
+    (st ? st.hints : []).forEach((i, k) => {
+      const li = document.createElement("li"), lbl = document.createElement("span"), txt = document.createElement("span");
+      lbl.className = "lbl"; lbl.textContent = t("wf.hintN", { n: k + 1 }); txt.textContent = wf.words[i].hint;
+      li.append(lbl, txt);
+      const n = st.found.findIndex((f) => f.i === i);
+      if (n >= 0) { const got = document.createElement("span"), [c] = wfColor(n); got.className = "got"; got.style.setProperty("--wfc", c); got.textContent = "✓ " + wf.words[i].display; li.appendChild(got); }
+      ol.appendChild(li);
+    });
+    const more = wfHintable().length > 0 && st && !st.doneAt;
+    $("wfHintMore").hidden = !more; $("wfHintMore").textContent = t("wf.another");
+  }
+  $("wfHintBtn").addEventListener("click", () => { if (wfHintable().length) wfHint(); else { wfRenderHints(); $("wfHints").hidden = false; } });
+  $("wfHintMore").addEventListener("click", wfHint);
+  $("wfHintsClose").addEventListener("click", () => { $("wfHints").hidden = true; });
+  $("wfHints").addEventListener("click", (e) => { if (e.target === $("wfHints")) $("wfHints").hidden = true; });
+
+  // WordFinder's parts of the screen, refreshed with every paint
+  function wfPaint() {
+    const on = variant === "wordfinder" && !!wf, st = on ? wfState() : null, playing = on && phase === "playing";
+    document.querySelector(".hud .stat.right").hidden = on;
+    $("goBelow").hidden = !on || !$("go") || $("go").hidden;
+    $("goTopic").hidden = !on;
+    $("wfRow").hidden = !playing;
+    $("wfHintBtn").hidden = !playing;
+    if (!on) return;
+    $("restartBtn").hidden = true;
+    $("goName").textContent = t("v.wordfinder.name");
+    $("goSub").hidden = false;
+    $("goSub").textContent = "#" + wf.num + " • " + new Date(wf.date + "T12:00").toLocaleDateString(mode.lang, { month: "long", day: "numeric", year: "numeric" });
+    $("goTopic").textContent = wf.topic;
+    $("wfStreak").textContent = t("wf.streak", { n: wfStreak() });
+    const found = st ? st.found.length : 0;
+    $("bar").firstElementChild.style.transform = "scaleX(" + (st && st.startedAt ? found / 6 : 1) + ")";
+    const chips = $("wfChips"), sig = wf.lang + wf.date + ":" + found;
+    if (chips.dataset.sig !== sig) {                            // rebuilt only when a word is found, so only the new chip animates
+      const grew = chips.dataset.sig && chips.dataset.sig.split(":")[0] === sig.split(":")[0] && +chips.dataset.sig.split(":")[1] === found - 1;
+      chips.dataset.sig = sig; chips.textContent = "";
+      (st ? st.found : []).forEach((f, n) => {
+        const c = document.createElement("span"), b = document.createElement("b"), [col, ink] = wfColor(n);
+        c.className = "wfchip" + (grew && n === found - 1 ? " new" : ""); c.style.setProperty("--wfc", col); c.style.setProperty("--wfi", ink);
+        b.textContent = n + 1; c.append(b, wf.words[f.i].display); chips.appendChild(c);
+      });
+    }
+    const left = wfHintable().length;
+    $("wfHintBtn").disabled = !left; $("wfHintBtn").textContent = left ? t("wf.hint") : t("wf.noHints");
+    $("wfMute").innerHTML = S.audio
+      ? '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>'
+      : '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+    tiles.forEach((tl, i) => tl.classList.toggle("miss", mark.get(i) === "miss"));
+    const w = $("word");
+    if (!path.length && !fb) {
+      w.className = "hint";
+      w.textContent = phase === "playing" ? t("wf.found", { n: found }) : st && st.doneAt ? t("wf.solved") : t("wf.ready");
+    } else if (fb && fb.kind === "miss") w.className = "miss";
+  }
+  $("wfMute").addEventListener("click", () => { S.audio = !S.audio; saveLocal(); renderSettings(); if (S.audio) { wake(); chime(false); } paint(); });
+
   /* ---------- navigation ---------- */
   function show(name) {
-    if (phase === "playing" && name !== "game") return;
+    if (phase === "playing" && variant !== "wordfinder" && name !== "game") return;
     for (const s of ["game", "games", "settings", "leaderboard", "account", "admin"]) $("s-" + s).hidden = s !== name;
     document.querySelectorAll("#nav button").forEach((b) => b.dataset.go === (name === "admin" ? "settings" : name) ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
     if (name === "account") renderAccount();
-    if (name === "leaderboard") { lbTab = variant; lbGame = null; players = null; lbState = "loading"; renderLeaderboard(); loadPlayers(); if (lbTab === "booster") loadStats(); }
+    if (name === "leaderboard") { lbTab = variant === "wordfinder" ? "daily" : variant; lbGame = null; players = null; lbState = "loading"; renderLeaderboard(); loadPlayers(); if (lbTab === "booster") loadStats(); }
     if (name === "games") renderVariants();
   }
   $("nav").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) show(b.dataset.go); });
@@ -1380,13 +1684,15 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       const add = (cls, text) => { const n = document.createElement("span"); n.className = cls; n.textContent = text; b.appendChild(n); };
       add("vname", t("v." + v + ".name")); add("vgo", v === variant ? t("games.playing") : t("games.play"));
       add("vtext", t("v." + v + ".text"));
-      add("vmeta", v === "daily" ? t("lb.game", { game: gameNo }) + " · " + t("games.best", { n: bestIn(gameNo) }) : t("games.best", { n: boosts()[0]?.score || 0 }));
+      add("vmeta", v === "daily" ? t("lb.game", { game: gameNo }) + " · " + t("games.best", { n: bestIn(gameNo) })
+        : v === "wordfinder" ? t("wf.num", { n: wfNumber(localKey()) }) + " · " + t("wf.streak", { n: wfStreak() })
+        : t("games.best", { n: boosts()[0]?.score || 0 }));
       b.addEventListener("click", () => setVariant(v));
       box.appendChild(b);
     }
   }
   function setVariant(v) {
-    if (phase === "playing") return;
+    if (phase === "playing" && variant !== "wordfinder") return;
     if (v !== variant) { variant = S.variant = v; saveLocal(); track("variant_change", { game_variant: v }); }
     reset(); show("game");
   }
@@ -1602,6 +1908,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   /* ---------- boot ---------- */
   function renderAll() { applyText(); renderSignState(); renderInstall(); renderVariants(); renderSettings(); renderModes(); renderLeaderboard(); renderAccount(); paint(); }
   buildBoard(); renderAll();
+  if (variant === "wordfinder") wfEnter();                    // straight into the day's puzzle, resumed if it was started
   if (!S.tourSeen) openTour();
   useDict();
   initCloud();
