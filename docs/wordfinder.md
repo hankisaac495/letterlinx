@@ -81,8 +81,25 @@ titles and link previews.
 - Swap two days (both languages, neither started), move to the backup pool, reject, assign a backup to a day,
   and create puzzles by hand for a day or for the pool.
 
+## Writing puzzles with Claude (phase 7)
+
+- Server only: `api/_wf_ai.js` (the content guidelines are the `GUIDE` text there) and the `ai_*` actions in
+  `api/wf-admin.js`. The key (`ANTHROPIC_API_KEY`) stays in Vercel; without it the buttons are off with a note.
+- Model: Claude Opus 5.5 (`WF_AI_MODEL` can override it), structured JSON output, effort "medium", and
+  Anthropic's server-side fallback so a mistaken refusal is retried on another model.
+- "Write <month> with Claude": one request plans a topic for every empty day from today on (avoiding topics from
+  the last 90 days, the coming months and the backup pool; easier early in the week, harder at weekends), then one
+  request per day writes English and Spanish. Each result is checked against the rules and must make a board; a
+  day that breaks a rule gets one more try with the problems listed, then is saved as "needs fixing" (no board,
+  can't be approved). Everything is saved as drafts with source "ai"; nothing goes live until approved.
+- In the editor: "Write with Claude" fills both languages (not saved until you save), and each word has
+  "↻ word" (a different word and hint) and "↻ hint" (a new hint for the same word).
+- Each request is one short call so it finishes inside Vercel's 60-second limit; the browser runs the month day
+  by day and can be stopped. Rough cost: about 10 cents a day, $3–4 a month.
+- Tests use a local stand-in for the Claude API (`test/wordfinder-ai.test.js`), so no key or network is needed.
+
 ## Setup needed later
 
 - Phase 4: ideally a separate Neon database branch for Vercel previews, so test data stays out of the live database.
-- Phase 7: `ANTHROPIC_API_KEY` in Vercel (server only).
+- Phase 7: `ANTHROPIC_API_KEY` in Vercel (server only), for Production and Preview. Optional: `WF_AI_MODEL`.
 - Launch date for puzzle #1: to be decided. It is `LAUNCH` in `wordfinder.js` (now 2026-11-21, provisional).

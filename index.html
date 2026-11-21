@@ -927,8 +927,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const wfToday = () => Math.max(1, window.LLX_WF.numberOf(dayKey(new Date())));
   let wfLbStats = null;
   let online = false, players = null, lbState = "loading", syncFailed = false;
-  async function call(path, method, body) {
-    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 10000);
+  async function call(path, method, body, wait) {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), wait || 10000);
     try {
       const r = await fetch(path, { method, signal: ctl.signal, credentials: "same-origin",
         headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined });

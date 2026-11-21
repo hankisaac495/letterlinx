@@ -56,10 +56,22 @@
 .wfa-colhead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .wfa-col select { background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 11px; font: inherit; color: var(--ink); }
 .wfa-two { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
-.wfa-words { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.wfa-words li { display: grid; grid-template-columns: minmax(8.5em, 2fr) minmax(0, 5fr); gap: 6px; padding-left: 10px; border-left: 5px solid var(--wfc); }
+.wfa-words { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.wfa-gen { background: var(--surface); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.wfa-gen .note { margin: 0; }
+.wfa-genlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; max-height: 260px; overflow-y: auto; font-size: .85rem; }
+.wfa-genlist li { display: grid; grid-template-columns: 1.4em 4.5em 1fr; gap: 6px; }
+.wfa-genlist .st { font-weight: 800; text-align: center; }
+.wfa-genlist li.ok .st { color: var(--good); } .wfa-genlist li.problems .st, .wfa-genlist li.failed .st { color: var(--bad); }
+.wfa-genlist li.writing { font-weight: 700; } .wfa-genlist li.waiting { color: var(--muted); }
+.pill.problem { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--ink); border: 1px dashed var(--bad); }
+.wfa-ai { display: flex; gap: 4px; }
+.wfa-ai .btn { padding: 4px 8px; font-size: .75rem; white-space: nowrap; }
+.wfa-edhead .acts { display: flex; gap: 8px; }
+.wfa-words li { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "w ai" "h h"; gap: 4px 6px; padding-left: 10px; border-left: 5px solid var(--wfc); }
+.wfa-words li .w { grid-area: w; } .wfa-words li .h { grid-area: h; } .wfa-words li .wfa-ai { grid-area: ai; }
 .wfa-words li.bad input { border-color: var(--bad); }
-@media (max-width: 520px) { .wfa-words li { grid-template-columns: 1fr; gap: 4px; } }
+.wfa-words li { align-items: center; }
 .wfa-words .lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .wfa-words input { padding: 9px 10px; font-size: .9rem; }
 .wfa-words .w input { text-transform: uppercase; font-weight: 700; }
@@ -81,6 +93,7 @@
     if (!document.getElementById("wfaCss")) { const st = document.createElement("style"); st.id = "wfaCss"; st.textContent = CSS; document.head.appendChild(st); }
     const call = ctx.call;
     let data = null, month = null, swap = null, msgText = "", msgCls = "", editor = null;
+    let gen = null;   // a month being written by Claude: { month, phase, list: [{ day, en, es, difficulty, state, note }], stop }
 
     const root = el("div", "wfa");
     box.textContent = ""; box.appendChild(root);
@@ -146,6 +159,8 @@
         root.appendChild(s);
       }
 
+      root.appendChild(drawGen(first));
+
       // calendar
       const cal = el("div", "wfa-cal");
       ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach((w) => cal.appendChild(el("div", "wd", w)));
@@ -162,8 +177,9 @@
           const pz = data.puzzles.filter((x) => x.day === d && x.lang === lang);
           const live = pz.find((x) => x.status === "approved"), draft = pz.find((x) => x.status === "draft");
           const shown = live || draft, future = d >= data.today;
-          const pill = el("span", "pill " + (live ? "approved" : draft ? "draft" : future ? "missing" : "none"),
-            lang.toUpperCase() + (shown ? " " + (shown.locked ? "🔒" : "") + shown.topic : future ? " missing" : " —"));
+          const bad = !live && draft && draft.problems.length;
+          const pill = el("span", "pill " + (live ? "approved" : bad ? "problem" : draft ? "draft" : future ? "missing" : "none"),
+            lang.toUpperCase() + (shown ? " " + (shown.locked ? "🔒" : bad ? "⚠ " : "") + shown.topic : future ? " missing" : " —"));
           if (live && /sample|backup/.test(live.source)) pill.classList.add("auto");
           pill.title = shown ? LANGS[lang] + ": " + shown.topic + " · " + STATUS[shown.status] + (shown.source !== "manual" ? " · " + shown.source : "") + (shown.plays ? " · " + shown.plays + " plays" : "") : LANGS[lang] + ": no puzzle";
           cell.appendChild(pill);
@@ -178,7 +194,7 @@
       }
       root.appendChild(cal);
       const legend = el("div", "wfa-legend");
-      [["approved", "Approved"], ["draft", "Draft (not live)"], ["missing", "Missing"], ["approved auto", "Filled from backup or sample"]].forEach(([c, t]) => {
+      [["approved", "Approved"], ["draft", "Draft (not live)"], ["problem", "Needs fixing"], ["missing", "Missing"], ["approved auto", "Filled from backup or sample"]].forEach(([c, t]) => {
         const s = el("span"); s.append(el("i", "pill " + c), t); legend.appendChild(s);
       });
       legend.appendChild(el("span", null, "🔒 live or played: can't be changed"));
@@ -222,6 +238,90 @@
       if (await post({ action: "swap", a: s.a, b: s.b })) { say("Swapped " + longDay(s.a) + " and " + longDay(s.b) + ".", "ok"); load(); }
     }
 
+    /* ---------- writing a month with Claude ----------
+       One request plans the topics, then one request per day writes both languages. Each day is saved as a draft;
+       a day whose result breaks a rule gets one more attempt with the problems listed, then is saved for fixing. */
+    function drawGen(first) {
+      const box = el("div", "wfa-gen");
+      const name = first.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+      if (!data.ai) {
+        box.appendChild(el("p", "note", "Writing puzzles with Claude is switched off until ANTHROPIC_API_KEY is added in Vercel (Settings → Environment Variables) and the site is redeployed."));
+        const b = btn("Write " + name + " with Claude", "", () => {}); b.disabled = true; box.appendChild(b);
+        return box;
+      }
+      if (!gen || gen.month !== data.month) {
+        box.appendChild(el("p", "note", "Claude writes draft puzzles (both languages) for every empty day of " + name + " from today on, avoiding topics used in the last 90 days. About 10 cents a day. Nothing goes live until you approve it."));
+        box.appendChild(btn("Write " + name + " with Claude", "solid", startGen));
+        return box;
+      }
+      const done = gen.list.filter((x) => x.state !== "waiting" && x.state !== "writing").length;
+      box.appendChild(el("strong", null, gen.phase === "planning" ? "Planning topics for " + name + "…"
+        : gen.phase === "writing" ? "Writing day " + Math.min(done + 1, gen.list.length) + " of " + gen.list.length + "…"
+        : gen.phase === "stopped" ? "Stopped after " + done + " of " + gen.list.length + " days."
+        : gen.phase === "failed" ? "Stopped: " + gen.error
+        : !gen.list.length ? "Nothing to write for " + name + "."
+        : "Done: " + gen.list.filter((x) => x.state === "ok").length + " ready to review, " + gen.list.filter((x) => x.state === "problems").length + " need fixing, " + gen.list.filter((x) => x.state === "failed").length + " failed."));
+      if (gen.note) box.appendChild(el("p", "note", gen.note));
+      if (gen.list.length) {
+        const ul = el("ul", "wfa-genlist");
+        gen.list.forEach((x) => {
+          const li = el("li", x.state);
+          li.append(el("span", "st", { waiting: "·", writing: "…", ok: "✓", problems: "⚠", failed: "✕", skipped: "–" }[x.state]),
+            el("span", "d", shortDay(x.day)), el("span", "t", (x.en || "?") + " / " + (x.es || "?") + (x.note ? " — " + x.note : "")));
+          ul.appendChild(li);
+        });
+        box.appendChild(ul);
+      }
+      const acts = el("div", "acts");
+      if (gen.phase === "planning" || gen.phase === "writing") acts.appendChild(btn("Stop", "", () => { gen.stop = true; }));
+      else acts.appendChild(btn("Close", "", () => { gen = null; render(); }));
+      box.appendChild(acts);
+      return box;
+    }
+    async function startGen() {
+      const g = gen = { month: data.month, phase: "planning", list: [], stop: false };
+      render();
+      const plan = await aiPost({ action: "ai_plan", month: g.month });
+      if (gen !== g) return;
+      if (!plan) { g.phase = "failed"; g.error = msgText; msgText = ""; return render(); }
+      if (plan.partial && plan.partial.length) g.note = "Skipped " + plan.partial.map(shortDay).join(", ") + ": one language already has a puzzle. Use the editor for those.";
+      if (!plan.topics.length) { g.phase = "done"; g.note = (g.note ? g.note + " " : "") + "Every day from today on already has puzzles."; return render(); }
+      g.list = plan.topics.map((x) => ({ ...x, state: "waiting" }));
+      g.phase = "writing"; render();
+      for (const x of g.list) {
+        if (g.stop) { g.phase = "stopped"; break; }
+        x.state = "writing"; render();
+        let r = await aiPost({ action: "ai_day", save: false, day: x.day, en: x.en, es: x.es, difficulty: x.difficulty });
+        // a result that breaks a rule gets one more try with the problems spelled out
+        const problems = r ? [...(r.en.ok ? [] : r.en.errors.map((e) => "English: " + e)), ...(r.es.ok ? [] : r.es.errors.map((e) => "Spanish: " + e))] : [];
+        if (r && problems.length && !g.stop) r = await aiPost({ action: "ai_day", save: true, day: x.day, en: x.en, es: x.es, difficulty: x.difficulty, fix: problems });
+        else if (r) r = await saveGenerated(x, r);
+        if (gen !== g) return;
+        if (!r) { x.state = "failed"; x.note = msgText; msgText = ""; }
+        else if (r.skipped) x.state = "skipped";
+        else {
+          x.en = (r.en.puzzle && r.en.puzzle.topic) || x.en; x.es = (r.es.puzzle && r.es.puzzle.topic) || x.es;
+          x.state = r.en.ok && r.es.ok ? "ok" : "problems";
+          if (x.state === "problems") x.note = [...r.en.errors, ...r.es.errors][0];
+        }
+        render();
+      }
+      if (g.phase === "writing") g.phase = "done";
+      render(); load();
+    }
+    // the first attempt is checked before saving, so a good result is stored straight away without a second call
+    async function saveGenerated(x, r) {
+      return aiPost({ action: "ai_day", save: true, day: x.day, en: r.en.puzzle.topic, es: r.es.puzzle.topic, difficulty: x.difficulty, reuse: { en: r.en, es: r.es } });
+    }
+    async function aiPost(body) {
+      try {
+        const r = await call("/api/wf-admin", "POST", body, 62000);
+        if (r.ok) return r.data;
+        msgText = (r.data && r.data.message) || "Claude couldn't write this one. Try again.";
+      } catch (e) { msgText = "No answer from the server (it may have timed out). Try again."; }
+      return null;
+    }
+
     /* ---------- editor: one day (English and Spanish side by side) or a backup puzzle ---------- */
     function openDay(d) {
       const ids = {};
@@ -261,14 +361,42 @@
       const panel = el("div", "wfa-panel"); overlay.appendChild(panel);
       const head = el("div", "wfa-edhead");
       const title = editor.pool ? "Backup puzzle" : longDay(editor.day) + " · #" + W.numberOf(editor.day);
-      head.append(el("h2", null, title), btn("Close", "", closeEditor));
+      const tools = el("div", "acts");
+      const open = Object.values(editor.cols).filter((c) => !(c.pz && c.pz.locked));
+      if (open.length) {
+        const ai = btn(editor.busy ? "Claude is writing…" : "✨ Write with Claude", "", writeWithClaude);
+        ai.disabled = !data.ai || !!editor.busy;
+        ai.title = data.ai ? "Fills in " + open.map((c) => LANGS[c.lang]).join(" and ") + " using the topics typed (or Claude's choice if empty). Not saved until you save." : "Add ANTHROPIC_API_KEY in Vercel to use Claude.";
+        tools.appendChild(ai);
+      }
+      tools.appendChild(btn("Close", "", closeEditor));
+      head.append(el("h2", null, title), tools);
       panel.appendChild(head);
       panel.setAttribute("aria-label", title);
+      if (editor.aiMsg) panel.appendChild(el("p", "msg " + editor.aiCls, editor.aiMsg));
       if (!editor.pool) panel.appendChild(el("p", "note", "Each language is saved and approved on its own. Saving changes to an approved puzzle takes it back to draft until it's approved again."));
       else panel.appendChild(el("p", "note", "Backup puzzles have no day; they fill any day that has no approved puzzle. Each language is a separate backup."));
       const cols = el("div", "wfa-cols"); panel.appendChild(cols);
       for (const c of Object.values(editor.cols)) cols.appendChild(drawCol(c));
       panel.querySelector("input:not([disabled])")?.focus();
+    }
+
+    async function writeWithClaude() {
+      const cols = Object.values(editor.cols).filter((c) => !(c.pz && c.pz.locked)), ed = editor;
+      const first = cols[0].form, get = (l) => (editor.cols[l] ? editor.cols[l].form.topic : "");
+      ed.busy = true; ed.aiMsg = ""; drawEditor();
+      const r = await aiPost({ action: "ai_day", save: false, day: editor.day || undefined, en: get("en"), es: get("es"), difficulty: first.difficulty });
+      if (editor !== ed) return;
+      ed.busy = false;
+      if (!r) { ed.aiMsg = msgText; ed.aiCls = "err"; msgText = ""; return drawEditor(); }
+      for (const c of cols) {
+        const x = r[c.lang];
+        c.form.topic = x.puzzle.topic; c.form.words = x.puzzle.words.slice(0, 6);
+        while (c.form.words.length < 6) c.form.words.push({ word: "", hint: "" });
+        c.form.seed = x.seed; c.dirty = true; c.msg = ""; 
+      }
+      ed.aiMsg = "Claude's suggestion is filled in below. Check it, change anything you like, then save."; ed.aiCls = "ok";
+      drawEditor();
     }
 
     function drawCol(c) {
@@ -296,6 +424,22 @@
         const li = el("li"); li.style.setProperty("--wfc", COLORS[i]);
         li.append(field("Word " + (i + 1), w.word, (v) => { w.word = v; }, { maxLength: 16, cls: "w", ph: "Word" }),
           field("Hint " + (i + 1), w.hint, (v) => { w.hint = v; }, { maxLength: W.LIMITS.maxHint, cls: "h", ph: "Hint" }));
+        // ask Claude for a different word (with its hint), or just a new hint for this word
+        const ai = el("div", "wfa-ai");
+        const one = (part, label, aria) => {
+          const b = btn(label, "", async () => {
+            if (!f.topic.trim()) { c.msg = "Type the topic first."; c.msgCls = "err"; return redraw(); }
+            b.disabled = true; b.textContent = "…";
+            const r = await aiPost({ action: "ai_item", lang: c.lang, topic: f.topic, words: f.words, index: i, part });
+            if (!r) { c.msg = msgText; c.msgCls = "err"; msgText = ""; return redraw(); }
+            w.word = r.word; w.hint = r.hint; c.dirty = true; c.msg = ""; redraw();
+          });
+          b.title = aria; b.setAttribute("aria-label", aria + " (" + (i + 1) + ")");
+          b.disabled = locked || !data.ai || (part === "hint" && !w.word.trim());
+          return b;
+        };
+        ai.append(one("word", "↻ word", "New word from Claude"), one("hint", "↻ hint", "New hint from Claude"));
+        li.appendChild(ai);
         words.appendChild(li);
       });
       col.appendChild(words);
