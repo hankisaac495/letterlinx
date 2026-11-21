@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "node dev-server.js",
-    "pages": "node build-pages.js"
+    "pages": "node build-pages.js",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "pg": "^8.13.0"
