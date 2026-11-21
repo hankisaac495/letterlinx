@@ -43,8 +43,23 @@ titles and link previews.
 7. AI month generation.
 8. Polish: Spanish text, accessibility, reduced motion, animation timing, end-to-end tests.
 
+## How the server side works (phase 4)
+
+- `api/wordfinder.js` is the only endpoint; `api/_wf.js` holds the logic. Tables `wf_puzzles` and `wf_plays` are
+  created automatically on first use, like the other tables.
+- Puzzle for a day: the approved puzzle for that language and date; otherwise the oldest puzzle in the backup pool
+  takes the day; otherwise one of the built-in samples (`api/_wf_samples.js`, never served to browsers).
+- The board is sent only after GO; the words only once all six are found. Each drag is checked on the server and
+  timed by the database clock. A day more than one away from the server's UTC date is refused.
+- One attempt per language per day: per account when signed in, per device (a random `llx_wfg` cookie) otherwise.
+  A game started as a guest becomes the player's if they sign in that day.
+- Leaderboard: fastest total time (hints included), ties to whoever finished first. Confirmed members, or guests
+  who add a nickname. Nicknames: 2–20 letters or numbers, not a member's screen name, not on the blocklist.
+  Solves under 5 seconds are kept but never ranked.
+- Stats (played, best time, current and max streak) come from the same table, per account or per device.
+
 ## Setup needed later
 
 - Phase 4: ideally a separate Neon database branch for Vercel previews, so test data stays out of the live database.
 - Phase 7: `ANTHROPIC_API_KEY` in Vercel (server only).
-- Launch date for puzzle #1: to be decided.
+- Launch date for puzzle #1: to be decided. It is `LAUNCH` in `wordfinder.js` (now 2026-11-21, provisional).

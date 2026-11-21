@@ -239,6 +239,14 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .tile .wfb { position: absolute; z-index: 3; top: 2%; left: 2%; width: 38cqw; height: 38cqw; border-radius: 50%; display: grid; place-items: center;
   background: var(--surface); color: var(--ink); font-size: 26cqw; font-weight: 900; line-height: 1; box-shadow: 0 1px 3px var(--shade); }
 .tile span.wfb, .tile.wf span.wfb { color: var(--ink); }
+#word.wait { opacity: .75; }
+.wflb { width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 4px; text-align: left; }
+.wfrank { text-align: center; font-weight: 800; color: var(--ink); margin: 0; }
+.wfas { text-align: center; color: var(--muted); font-size: .9rem; margin: 0; }
+.wfnick { display: flex; flex-direction: column; gap: 6px; }
+.wfnick .rowform input { letter-spacing: normal; }
+.wfnick .msg:empty { display: none; }
+.lbhints { color: var(--muted); font-weight: 600; font-size: .75em; white-space: nowrap; }
 .tile.miss::before, .tile.miss span { animation: shake .3s linear; }
 #word.miss { background: var(--surface-2); color: var(--muted); }
 .wfhintbtn { flex: none; border: 0; border-radius: 12px; padding: 8px 12px; font-weight: 800; font-size: .85rem; background: var(--accent); color: var(--accent-ink);
@@ -511,6 +519,18 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <div class="num" id="wfDoneTime"></div>
       <div class="wfbreak" id="wfDoneBreak"></div>
       <ol class="wfwords" id="wfDoneWords"></ol>
+      <div class="wflb">
+        <p class="wfrank" id="wfRank"></p>
+        <form id="wfNickForm" class="wfnick" novalidate hidden>
+          <label for="wfNick" data-t="wf.nickLabel">Nickname for the leaderboard</label>
+          <div class="rowform"><input type="text" id="wfNick" maxlength="20" autocomplete="nickname" spellcheck="false"><button class="btn primary" id="wfNickSave" type="submit" data-t="wf.nickSave">Join</button></div>
+          <p class="msg err" id="wfNickMsg" aria-live="polite"></p>
+        </form>
+        <p class="wfas" id="wfAs" hidden></p>
+        <div class="panel" id="wfTopBox" hidden>
+          <table><thead><tr><th class="rank">#</th><th data-t="lb.name">Screen name</th><th data-t="lb.time">Time</th></tr></thead><tbody id="wfTop"></tbody></table>
+        </div>
+      </div>
       <p class="wfnext" id="wfDoneNext"></p>
     </div>
     <div id="results" hidden>
@@ -586,7 +606,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   <!-- LEADERBOARD -->
   <section class="screen scroll" id="s-leaderboard" hidden>
-    <div class="seg center" id="lbTabs"><button type="button" data-v="daily" data-t="lb.tab.daily">Daily</button><button type="button" data-v="booster" data-t="lb.tab.booster">Brain Booster</button></div>
+    <div class="seg center" id="lbTabs"><button type="button" data-v="daily" data-t="lb.tab.daily">Daily</button><button type="button" data-v="booster" data-t="lb.tab.booster">Brain Booster</button><button type="button" data-v="wordfinder" data-t="lb.tab.wordfinder">WordFinder</button></div>
     <p class="eyebrow" id="lbMode" hidden></p>
     <div class="lbdate" id="lbDate" hidden>
       <button class="btn primary" id="calOpen" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.500" y="5" width="17" height="15" rx="2.500"/><path d="M3.500 10h17M8 3v4M16 3v4"/></svg><span id="calLabel"></span></button>
@@ -600,12 +620,12 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
         <div><b id="stStreak">0</b><span data-t="stats.streak">Current streak</span></div>
         <div><b id="stMax">0</b><span data-t="stats.max">Max streak</span></div>
       </div>
-      <div class="longest"><span data-t="stats.longest">All-time longest word</span><b id="stLongest">—</b></div>
+      <div class="longest" id="stLongestRow"><span data-t="stats.longest">All-time longest word</span><b id="stLongest">—</b></div>
     </div>
     <h2 id="lbTitle">Today's leaderboard</h2>
     <p class="lbguest" id="lbGuest" hidden></p>
     <div class="panel">
-      <table><thead><tr><th class="rank">#</th><th data-t="lb.name">Screen name</th><th data-t="lb.score">Score</th></tr></thead><tbody id="players"></tbody></table>
+      <table><thead><tr><th class="rank">#</th><th data-t="lb.name">Screen name</th><th id="lbScoreH" data-t="lb.score">Score</th></tr></thead><tbody id="players"></tbody></table>
       <p class="empty" id="playersEmpty" hidden></p>
     </div>
     <p class="note" id="lbNote"></p>
@@ -763,7 +783,6 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 <script src="modes.js"></script>
 <script src="wordfinder-blocklist.js"></script>
 <script src="wordfinder.js"></script>
-<script src="wordfinder-samples.js"></script>
 <script src="i18n.js"></script>
 <script>
 (() => {
@@ -892,7 +911,10 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   /* ---------- server: accounts, score history, leaderboard ---------- */
   let lbTab = VARIANTS.includes(S.variant) ? S.variant : "daily";
   let lbGame = null;                                                // a past daily game picked on the calendar; null follows today
-  const viewGame = () => lbGame ?? gameNo;   // which leaderboard tab is showing
+  // the game number on show: a Linx Daily game, or a WordFinder puzzle number on the WordFinder tab
+  const viewGame = () => lbGame ?? (lbTab === "wordfinder" ? wfToday() : gameNo);
+  const wfToday = () => Math.max(1, window.LLX_WF.numberOf(dayKey(new Date())));
+  let wfLbStats = null;
   let online = false, players = null, lbState = "loading", syncFailed = false;
   async function call(path, method, body) {
     const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 10000);
@@ -934,12 +956,26 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     renderLeaderboard();
   }
   async function loadPlayers() {
+    if (lbTab === "wordfinder") return loadWfPlayers();
     try {
       const r = await call("/api/leaderboard?mode=" + encodeURIComponent(modeId) + (lbTab === "daily" ? "&game=" + viewGame() : "&variant=booster"), "GET");
       if (!r.ok || !Array.isArray(r.data?.players)) throw 0;
       players = r.data.players.filter((p) => typeof p.screenName === "string" && typeof p.best === "number");
       online = true; lbState = "live";
     } catch (e) { lbState = "local"; }
+    renderLeaderboard();
+  }
+  async function loadWfPlayers() {
+    const lang = mode.lang === "es" ? "es" : "en", n = viewGame();
+    try {
+      const r = await call("/api/wordfinder?lb=1&lang=" + lang + "&day=" + window.LLX_WF.dayOf(n), "GET");
+      if (lbTab !== "wordfinder" || viewGame() !== n) return;
+      if (!r.ok || !Array.isArray(r.data?.players)) throw 0;
+      players = r.data.players.map((x) => ({ screenName: String(x.name), best: x.ms, hints: x.hints, me: !!x.me }));
+      wfLbStats = r.data.stats || null;
+      if (wfLbStats && Array.isArray(wfLbStats.days)) { S.wfDone[lang] = wfLbStats.days; saveLocal(); }
+      online = true; lbState = "live";
+    } catch (e) { if (lbTab === "wordfinder") lbState = "local"; }
     renderLeaderboard();
   }
   function signedOutLocally() { S.account = null; S.tops = {}; S.boost = {}; S.bstats = {}; S.pending = []; serverStats = null; saveLocal(); renderAll(); }
@@ -1304,62 +1340,81 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   /* ---------- Linx WordFinder ----------
      A daily word hunt on a static board: six hidden words on one topic, a count-up timer, hints at +30s.
-     Phase 3: puzzles come from the built-in samples and boards are built here; phase 4 moves both to the server. */
-  const WF = window.LLX_WF, WF_LAUNCH = "2026-11-21", WF_PENALTY = 30000;
-  if (!S.wf || typeof S.wf !== "object") S.wf = {};             // "lang:YYYY-MM-DD" -> { startedAt, found: [{ i, path, at }], hints: [i], doneAt }
-  if (!S.wfDone || typeof S.wfDone !== "object") S.wfDone = {}; // lang -> dates completed, for the streak
+     The server holds the answers and the clock: the board arrives when GO starts the game, each drag is checked
+     there, and the words are only sent once all six are found. */
+  const WF = window.LLX_WF, WF_PENALTY = WF.LIMITS.penaltyMs, WF_COUNT = WF.LIMITS.words;
+  if (!S.wfDone || typeof S.wfDone !== "object") S.wfDone = {}; // lang -> dates solved (from the server), for the streak and calendar
+  delete S.wf;                                                  // phase-3 local games are no longer used
   const wfColor = (n) => ["var(--wf" + (n % 6 + 1) + ")", "var(--wf" + (n % 6 + 1) + "i)"];
   const localKey = (d) => dayKey(d || new Date());
-  const daysBetween = (a, b) => { const p = (k) => { const x = k.split("-"); return Date.UTC(+x[0], x[1] - 1, +x[2]); }; return Math.round((p(b) - p(a)) / 86400000); };
-  const wfNumber = (date) => Math.max(1, daysBetween(WF_LAUNCH, date) + 1);
+  const keyDate = (k) => { const p = k.split("-"); return new Date(+p[0], p[1] - 1, +p[2]); };
+  const wfNumber = (day) => Math.max(1, WF.numberOf(day));
+  const wfLang = () => (mode.lang === "es" ? "es" : "en");
   const clockText = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = String(s % 60).padStart(2, "0");
     return h ? h + ":" + String(m).padStart(2, "0") + ":" + x : m + ":" + x; };
   const untilMidnight = () => { const n = new Date(), m = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1); return clockText(m - n); };
-  let wf = null, wfTimer = 0;                                    // wf: the puzzle on screen
+  // wf: the puzzle on screen { day, lang, num, topic, grid, play, lb, stats, loading, error, clock0, misses }
+  let wf = null, wfTimer = 0, wfQueue = Promise.resolve();
 
-  function wfLoad(date) {
-    const lang = mode.lang === "es" ? "es" : "en", all = window.LLX_WF_SAMPLES;
-    const sample = all[((daysBetween(WF_LAUNCH, date) % all.length) + all.length) % all.length], p = sample[lang];
-    const board = WF.generateBoard(p.words, lang, sample.id + ":" + lang);
-    return { date, lang, id: sample.id, num: wfNumber(date), topic: p.topic, grid: board.grid,
-      words: p.words.map((w) => ({ display: WF.normalizeWord(w.word).display, key: WF.normalizeWord(w.word).key, hint: w.hint })) };
-  }
-  const wfStateKey = () => wf.lang + ":" + wf.date;
-  const wfState = () => S.wf[wfStateKey()] || null;
-  const wfElapsed = (st) => st ? ((st.doneAt || Date.now()) - st.startedAt) : 0;
-  const wfTotal = (st) => st ? wfElapsed(st) + WF_PENALTY * st.hints.length : 0;
+  const wfElapsed = () => { const pl = wf && wf.play; return !pl ? 0 : pl.done ? pl.baseMs : Date.now() - wf.clock0; };
+  const wfTotal = () => { const pl = wf && wf.play; return !pl ? 0 : pl.done ? pl.totalMs : wfElapsed() + WF_PENALTY * pl.hints.length; };
+  const wfHintsLeft = () => { const pl = wf && wf.play; return !pl || pl.done ? 0 : WF_COUNT - new Set([...pl.found.map((f) => f.i), ...pl.hints.map((h) => h.i)]).size; };
   function wfStreak() {
-    const days = new Set(S.wfDone[mode.lang === "es" ? "es" : "en"] || []);
+    const days = new Set(S.wfDone[wfLang()] || []);
     let d = new Date(), n = 0;
-    if (!days.has(localKey(d))) d.setDate(d.getDate() - 1);     // still alive if yesterday was the last one played
+    if (!days.has(localKey(d))) d.setDate(d.getDate() - 1);     // still alive if yesterday was the last one solved
     while (days.has(localKey(d))) { n++; d.setDate(d.getDate() - 1); }
     return n;
   }
-  function wfSave() {
-    const keys = Object.keys(S.wf).sort((a, b) => a.split(":")[1] < b.split(":")[1] ? 1 : -1);
-    keys.slice(60).forEach((k) => delete S.wf[k]);               // keep the last couple of months
-    saveLocal();
+  const wfApi = (body) => call("/api/wordfinder", "POST", { lang: wf.lang, day: wf.day, ...body }).catch(() => null);
+
+  // take the server's view of the puzzle and this player's game
+  function wfAdopt(d) {
+    wf.topic = d.topic; wf.num = d.number;
+    if (d.grid) wf.grid = d.grid;
+    if (d.leaderboard) wf.lb = d.leaderboard;
+    if (d.stats) {
+      wf.stats = d.stats;
+      if (Array.isArray(d.stats.days)) { S.wfDone[wf.lang] = d.stats.days; saveLocal(); }
+    }
+    if (d.play) { wf.play = d.play; wf.clock0 = Date.now() - d.play.elapsed; }
   }
 
   // entering WordFinder (or returning to it): start screen, an in-progress game, or the finished result
   function wfEnter() {
     clearInterval(wfTimer);
-    wf = wfLoad(localKey());
-    tiles.forEach((tl) => { tl.style.removeProperty("--wfc"); tl.style.removeProperty("--wfi"); tl.querySelector(".wfb")?.remove(); });
-    $("wfBanner").hidden = true;
-    const st = wfState();
-    if (st && st.doneAt) wfShowResults(false);
-    else if (st && st.startedAt) wfReveal(false);
+    const day = localKey();
+    wf = { day, lang: wfLang(), num: wfNumber(day), topic: "", loading: true, error: null, play: null, misses: new Set() };
+    tiles.forEach((tl) => { tl.classList.remove("wf", "wffill"); tl.style.removeProperty("--wfc"); tl.style.removeProperty("--wfi"); tl.querySelector(".wfb")?.remove(); });
+    $("wfBanner").hidden = true; $("wfResults").hidden = true; $("wfChips").dataset.sig = "";
     wfTimer = setInterval(wfTickClock, 500); wfTickClock(); paint();
+    wfLoad();
   }
-  function wfLeave() { clearInterval(wfTimer); wf = null; $("wfResults").hidden = true; $("wfRow").hidden = true; $("wfBanner").hidden = true; $("goBelow").hidden = true; }
+  async function wfLoad() {
+    const me = wf; me.loading = true; me.error = null; paint();
+    const r = await call("/api/wordfinder?lang=" + me.lang + "&day=" + me.day, "GET").catch(() => null);
+    if (wf !== me) return;
+    me.loading = false;
+    if (!r || !r.ok) { me.error = r && r.data && r.data.error === "bad_day" ? "clock" : "offline"; paint(); return; }
+    wfAdopt(r.data);
+    if (me.play && me.play.done) wfShowResults();
+    else if (me.play) wfReveal(false);
+    else paint();
+  }
+  function wfLeave() { clearInterval(wfTimer); wf = null; $("wfResults").hidden = true; $("wfRow").hidden = true; $("wfBanner").hidden = true; $("goBelow").hidden = true; $("go").disabled = false; }
 
-  function wfStart() {
-    if (!wf || wfState()) return;
-    wake();
-    S.wf[wfStateKey()] = { startedAt: Date.now(), found: [], hints: [] }; wfSave();
-    track("round_start", { game_language: wf.lang, game_variant: "wordfinder" });
-    wfReveal(true);
+  async function wfStart() {
+    if (!wf || wf.starting) return;
+    if (wf.error || wf.loading) { if (!wf.loading) wfLoad(); return; }
+    if (wf.play) return;
+    wake(); const me = wf; me.starting = true; paint();
+    const r = await wfApi({ action: "start", nickname: S.account ? undefined : S.wfNick || undefined });
+    if (wf !== me) return;
+    me.starting = false;
+    if (!r || !r.ok || !r.data.play) { me.error = "offline"; paint(); return; }
+    wfAdopt(r.data);
+    track("round_start", { game_language: me.lang, game_variant: "wordfinder" });
+    if (me.play.done) wfShowResults(); else wfReveal(true);
   }
   // show the board and run the clock
   function wfReveal(fresh) {
@@ -1371,151 +1426,207 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   function wfTickClock() {
     if (!wf) return;
-    const st = wfState();
-    $("time").textContent = clockText(st && st.startedAt ? wfTotal(st) : 0);
+    $("time").textContent = clockText(wfTotal());
     $("wfNext").textContent = t("wf.next", { time: untilMidnight() });
     if (!$("wfResults").hidden) $("wfDoneNext").textContent = t("wf.next", { time: untilMidnight() });
     // a new day: offer the new puzzle rather than swapping the board mid-game
-    if (localKey() !== wf.date) $("wfBanner").hidden = false;
+    if (localKey() !== wf.day) $("wfBanner").hidden = false;
   }
   $("wfBannerBtn").addEventListener("click", () => { reset(); });
 
   // colours and number badges on found tiles; the newest find fills in along its path
   function wfPaintFound(newest) {
-    const st = wfState(), owner = new Array(N).fill(-1);
-    (st ? st.found : []).forEach((f, n) => f.path.forEach((i) => { owner[i] = n; }));
+    const found = wf && wf.play ? wf.play.found : [], owner = new Array(N).fill(-1);
+    found.forEach((f, n) => f.path.forEach((i) => { owner[i] = n; }));
     tiles.forEach((tl, i) => {
       tl.classList.toggle("wf", owner[i] >= 0);
       if (owner[i] >= 0) { const [c, ink] = wfColor(owner[i]); tl.style.setProperty("--wfc", c); tl.style.setProperty("--wfi", ink); }
       tl.querySelector(".wfb")?.remove();
     });
-    (st ? st.found : []).forEach((f, n) => { const b = document.createElement("span"); b.className = "wfb"; b.textContent = n + 1; tiles[f.path[0]].appendChild(b); });
+    found.forEach((f, n) => { const b = document.createElement("span"); b.className = "wfb"; b.textContent = n + 1; tiles[f.path[0]].appendChild(b); });
     if (newest) newest.path.forEach((i, k) => {
       const tl = tiles[i]; tl.classList.remove("wffill"); void tl.offsetWidth;
       tl.style.setProperty("--d", Math.round(k * Math.min(45, 300 / newest.path.length)) + "ms"); tl.classList.add("wffill");
     });
   }
 
+  // a dragged word: obvious misses are answered here, everything else is checked by the server
   function wfSubmit() {
     const p = path; path = [];
-    const st = wfState();
-    if (!wf || !st || st.doneAt || p.length < WF.LIMITS.minLen) { paint(); return; }
-    const spelled = WF.spellPath(wf.grid, p, COLS), round = roundId;
-    const idx = wf.words.findIndex((w) => w.key === spelled);
-    if (idx >= 0 && !st.found.some((f) => f.i === idx)) {
-      const find = { i: idx, path: p, at: Date.now() };
-      st.found.push(find); wfSave();
-      chime(st.found.length === 6);
-      fb = { text: wf.words[idx].display, kind: "good", pts: p };
+    const pl = wf && wf.play;
+    if (!pl || pl.done || p.length < WF.LIMITS.minLen) { paint(); return; }
+    const spelled = WF.spellPath(wf.grid, p, COLS);
+    const known = pl.found.find((f) => WF.normalizeWord(f.word).key === spelled);
+    if (known) return wfMiss(p, t("word.already", { word: known.word }));
+    if (!spelled || wf.misses.has(spelled)) return wfMiss(p, spelled || "");
+    const mine = fb = { text: spelled, kind: "wait", pts: p };      // the trail stays lit while the server checks
+    p.forEach((i) => mark.set(i, "wait")); paint();
+    wfQueue = wfQueue.then(() => wfCheck(p, spelled, mine));
+  }
+  async function wfCheck(p, spelled, mine) {
+    const me = wf, r = await wfApi({ action: "find", path: p });
+    if (wf !== me) return;
+    p.forEach((i) => { if (mark.get(i) === "wait") mark.delete(i); });
+    if (fb === mine) fb = null;
+    if (!r || !r.ok) return wfMiss(p, t("wf.offline"));
+    wfAdopt(r.data);
+    if (r.data.hit) {
+      const find = me.play.found.find((f) => f.i === r.data.i);
+      chime(me.play.found.length === WF_COUNT);
+      const good = fb = { text: find.word, kind: "good", pts: p };
       wfPaintFound(find); paint();
-      setTimeout(() => { if (fb && fb.pts === p) { fb = null; paint(); } }, 420);
-      if (st.found.length === 6) { st.doneAt = find.at; wfSave(); wfFinish(); }
+      setTimeout(() => { if (fb === good) { fb = null; paint(); } }, 420);
+      if (me.play.done) wfFinish();
       return;
     }
-    // a gentle miss: soft thud and a small shake, no penalty
+    if (r.data.already != null) { const f = me.play.found.find((x) => x.i === r.data.already); return wfMiss(p, t("word.already", { word: f ? f.word : spelled })); }
+    me.misses.add(spelled);
+    wfMiss(p, spelled);
+  }
+  // a gentle miss: soft thud and a small shake, no penalty
+  function wfMiss(p, text) {
     thud();
-    const text = idx >= 0 ? t("word.already", { word: wf.words[idx].display }) : spelled;
-    const mine = fb = { text, kind: "miss", pts: p };
+    const round = roundId, mine = fb = { text, kind: "miss", pts: p };
     p.forEach((i) => mark.set(i, "miss")); paint();
-    setTimeout(() => { if (round !== roundId) return; p.forEach((i) => mark.delete(i)); if (fb === mine) fb = null; paint(); }, 360);
+    setTimeout(() => { if (round !== roundId) return; p.forEach((i) => { if (mark.get(i) === "miss") mark.delete(i); }); if (fb === mine) fb = null; paint(); }, 360);
   }
 
   function wfFinish() {
-    const done = S.wfDone[wf.lang] = S.wfDone[wf.lang] || [];
-    if (!done.includes(wf.date)) { done.push(wf.date); S.wfDone[wf.lang] = done.slice(-400); }
-    saveLocal();
-    track("round_end", { game_language: wf.lang, game_variant: "wordfinder", time_seconds: Math.round(wfTotal(wfState()) / 1000), hints: wfState().hints.length });
-    setTimeout(() => { if (wf) wfShowResults(true); }, 700);
+    track("round_end", { game_language: wf.lang, game_variant: "wordfinder", time_seconds: Math.round(wf.play.totalMs / 1000), hints: wf.play.hints.length });
+    setTimeout(() => { if (wf && wf.play && wf.play.done) wfShowResults(); }, 700);
   }
 
   function wfShowResults() {
-    const st = wfState();
-    phase = "over"; letters = wf.grid.slice();
+    const pl = wf.play;
+    phase = "over"; if (wf.grid) letters = wf.grid.slice();
+    $("wfHints").hidden = true;
     $("boardwrap").hidden = true; $("results").hidden = true; $("wfResults").hidden = false; $("go").hidden = true;
-    $("wfDoneTitle").textContent = t("wf.num", { n: wf.num }) + " · " + new Date(wf.date + "T12:00").toLocaleDateString(mode.lang, { month: "long", day: "numeric", year: "numeric" });
+    $("wfDoneTitle").textContent = t("wf.num", { n: wf.num }) + " · " + keyDate(wf.day).toLocaleDateString(mode.lang, { month: "long", day: "numeric", year: "numeric" });
     $("wfDoneTopic").textContent = wf.topic;
-    $("wfDoneTime").textContent = clockText(wfTotal(st));
-    $("wfDoneBreak").textContent = st.hints.length
-      ? t("wf.breakdown", { base: clockText(wfElapsed(st)), pen: clockText(WF_PENALTY * st.hints.length), total: clockText(wfTotal(st)) })
+    $("wfDoneTime").textContent = clockText(pl.totalMs);
+    $("wfDoneBreak").textContent = pl.hints.length
+      ? t("wf.breakdown", { base: clockText(pl.baseMs), pen: clockText(WF_PENALTY * pl.hints.length), total: clockText(pl.totalMs) })
       : t("wf.noHintsUsed");
     const ol = $("wfDoneWords"); ol.textContent = "";
-    st.found.forEach((f, n) => {
-      const w = wf.words[f.i], li = document.createElement("li"), [c, ink] = wfColor(n);
+    pl.found.forEach((f, n) => {
+      const w = pl.words[f.i], li = document.createElement("li"), [c, ink] = wfColor(n);
       li.style.setProperty("--wfc", c); li.style.setProperty("--wfi", ink);
       const strong = document.createElement("strong"), b = document.createElement("b"), hint = document.createElement("span");
-      b.textContent = n + 1; strong.append(b, " " + w.display); hint.textContent = w.hint;
+      b.textContent = n + 1; strong.append(b, " " + w.word); hint.textContent = w.hint;
       li.append(strong, hint); ol.appendChild(li);
     });
     $("wfDoneNext").textContent = t("wf.next", { time: untilMidnight() });
-    paint();
+    wfRenderBoard(); paint();
   }
 
+  /* the end screen's rank, top 10 and (for guests) the nickname form */
+  function wfRenderBoard() {
+    const lb = wf.lb || { players: [], total: 0, rank: null }, pl = wf.play;
+    const rank = $("wfRank");
+    rank.textContent = lb.rank ? t("wf.rank", { rank: lb.rank, total: lb.total })
+      : pl.guest && !pl.nickname ? t("wf.joinPrompt")
+      : S.account && S.account.verified === false ? t("lb.unverified") : "";
+    const tb = $("wfTop"); tb.textContent = "";
+    lb.players.slice(0, 10).forEach((x, i) => tb.appendChild(wfRow(i + 1, x)));
+    $("wfTopBox").hidden = !lb.players.length;
+    $("wfNickForm").hidden = !(pl.guest && !pl.nickname);
+    $("wfNick").value = $("wfNick").value || S.wfNick || "";
+    $("wfAs").hidden = !(pl.guest && pl.nickname);
+    $("wfAs").textContent = pl.nickname ? t("wf.playingAs", { name: pl.nickname }) : "";
+  }
+  // one leaderboard row: rank, name, time (with hints used)
+  function wfRow(n, x) {
+    const tr = document.createElement("tr"); if (x.me) tr.className = "me";
+    const a = document.createElement("td"), b = document.createElement("td"), c = document.createElement("td");
+    a.className = "rank"; a.textContent = n;
+    b.textContent = x.me ? t("lb.you", { name: String(x.name).slice(0, 24) }) : String(x.name).slice(0, 24);
+    c.textContent = clockText(x.ms);
+    if (x.hints) { const s = document.createElement("small"); s.className = "lbhints"; s.textContent = " " + t(x.hints === 1 ? "wf.hint1" : "wf.hintsN", { n: x.hints }); c.appendChild(s); }
+    tr.append(a, b, c); return tr;
+  }
+  $("wfNickForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const nick = $("wfNick").value.trim(), msg = $("wfNickMsg");
+    if (!wf || !wf.play) return;
+    $("wfNickSave").disabled = true; msg.textContent = "";
+    const r = await wfApi({ action: "nickname", nickname: nick });
+    $("wfNickSave").disabled = false;
+    if (!r) { msg.textContent = t("wf.offline"); return; }
+    if (!r.ok) { msg.textContent = t({ nick_taken: "wf.nickTaken", nick_blocked: "wf.nickBlocked" }[r.data && r.data.error] || "wf.nickBad"); return; }
+    S.wfNick = nick; saveLocal();
+    wfAdopt(r.data); wfRenderBoard();
+    track("wf_nickname", {});
+  });
+
   /* hints: each reveals one more unfound word's clue and adds 30 seconds */
-  function wfHintable() { const st = wfState(); return st ? wf.words.map((w, i) => i).filter((i) => !st.found.some((f) => f.i === i) && !st.hints.includes(i)) : []; }
-  function wfHint() {
-    const st = wfState(), pool = wfHintable();
-    if (!st || st.doneAt || !pool.length) return;
-    st.hints.push(pool[Math.floor(Math.random() * pool.length)]); wfSave();
-    track("hint", { game_variant: "wordfinder" });
-    wfTickClock(); wfRenderHints(); $("wfHints").hidden = false;
+  async function wfHint() {
+    const pl = wf && wf.play;
+    if (!pl || pl.done || wf.hinting || !wfHintsLeft()) return;
+    const me = wf; me.hinting = true; paint();
+    const r = await wfApi({ action: "hint" });
+    if (wf !== me) return;
+    me.hinting = false;
+    if (r && r.ok) { wfAdopt(r.data); track("hint", { game_variant: "wordfinder" }); }
+    wfTickClock(); wfRenderHints(); $("wfHints").hidden = false; paint();
   }
   function wfRenderHints() {
-    const st = wfState();
-    $("wfHintsTitle").textContent = wf.topic;
+    const pl = wf && wf.play;
+    $("wfHintsTitle").textContent = wf ? wf.topic : "";
     const ol = $("wfHintList"); ol.textContent = "";
-    (st ? st.hints : []).forEach((i, k) => {
+    (pl ? pl.hints : []).forEach((h, k) => {
       const li = document.createElement("li"), lbl = document.createElement("span"), txt = document.createElement("span");
-      lbl.className = "lbl"; lbl.textContent = t("wf.hintN", { n: k + 1 }); txt.textContent = wf.words[i].hint;
+      lbl.className = "lbl"; lbl.textContent = t("wf.hintN", { n: k + 1 }); txt.textContent = h.hint;
       li.append(lbl, txt);
-      const n = st.found.findIndex((f) => f.i === i);
-      if (n >= 0) { const got = document.createElement("span"), [c] = wfColor(n); got.className = "got"; got.style.setProperty("--wfc", c); got.textContent = "✓ " + wf.words[i].display; li.appendChild(got); }
+      const n = pl.found.findIndex((f) => f.i === h.i);
+      if (n >= 0) { const got = document.createElement("span"), [c] = wfColor(n); got.className = "got"; got.style.setProperty("--wfc", c); got.textContent = "✓ " + pl.found[n].word; li.appendChild(got); }
       ol.appendChild(li);
     });
-    const more = wfHintable().length > 0 && st && !st.doneAt;
-    $("wfHintMore").hidden = !more; $("wfHintMore").textContent = t("wf.another");
+    $("wfHintMore").hidden = !wfHintsLeft(); $("wfHintMore").textContent = t("wf.another");
   }
-  $("wfHintBtn").addEventListener("click", () => { if (wfHintable().length) wfHint(); else { wfRenderHints(); $("wfHints").hidden = false; } });
+  $("wfHintBtn").addEventListener("click", () => { if (wfHintsLeft()) wfHint(); else { wfRenderHints(); $("wfHints").hidden = false; } });
   $("wfHintMore").addEventListener("click", wfHint);
   $("wfHintsClose").addEventListener("click", () => { $("wfHints").hidden = true; });
   $("wfHints").addEventListener("click", (e) => { if (e.target === $("wfHints")) $("wfHints").hidden = true; });
 
   // WordFinder's parts of the screen, refreshed with every paint
   function wfPaint() {
-    const on = variant === "wordfinder" && !!wf, st = on ? wfState() : null, playing = on && phase === "playing";
+    const on = variant === "wordfinder" && !!wf, pl = on ? wf.play : null, playing = on && phase === "playing";
     document.querySelector(".hud .stat.right").hidden = on;
     $("goBelow").hidden = !on || !$("go") || $("go").hidden;
-    $("goTopic").hidden = !on;
+    $("goTopic").hidden = !on || !wf.topic;
     $("wfRow").hidden = !playing;
     $("wfHintBtn").hidden = !playing;
+    $("go").disabled = on && (wf.loading || !!wf.starting);
     if (!on) return;
     $("restartBtn").hidden = true;
     $("goName").textContent = t("v.wordfinder.name");
     $("goSub").hidden = false;
-    $("goSub").textContent = "#" + wf.num + " • " + new Date(wf.date + "T12:00").toLocaleDateString(mode.lang, { month: "long", day: "numeric", year: "numeric" });
+    $("goSub").textContent = "#" + wf.num + " • " + keyDate(wf.day).toLocaleDateString(mode.lang, { month: "long", day: "numeric", year: "numeric" });
     $("goTopic").textContent = wf.topic;
     $("wfStreak").textContent = t("wf.streak", { n: wfStreak() });
-    const found = st ? st.found.length : 0;
-    $("bar").firstElementChild.style.transform = "scaleX(" + (st && st.startedAt ? found / 6 : 1) + ")";
-    const chips = $("wfChips"), sig = wf.lang + wf.date + ":" + found;
+    const found = pl ? pl.found.length : 0;
+    $("bar").firstElementChild.style.transform = "scaleX(" + (pl ? found / WF_COUNT : 1) + ")";
+    const chips = $("wfChips"), sig = wf.lang + wf.day + ":" + found;
     if (chips.dataset.sig !== sig) {                            // rebuilt only when a word is found, so only the new chip animates
       const grew = chips.dataset.sig && chips.dataset.sig.split(":")[0] === sig.split(":")[0] && +chips.dataset.sig.split(":")[1] === found - 1;
       chips.dataset.sig = sig; chips.textContent = "";
-      (st ? st.found : []).forEach((f, n) => {
+      (pl ? pl.found : []).forEach((f, n) => {
         const c = document.createElement("span"), b = document.createElement("b"), [col, ink] = wfColor(n);
         c.className = "wfchip" + (grew && n === found - 1 ? " new" : ""); c.style.setProperty("--wfc", col); c.style.setProperty("--wfi", ink);
-        b.textContent = n + 1; c.append(b, wf.words[f.i].display); chips.appendChild(c);
+        b.textContent = n + 1; c.append(b, f.word); chips.appendChild(c);
       });
     }
-    const left = wfHintable().length;
-    $("wfHintBtn").disabled = !left; $("wfHintBtn").textContent = left ? t("wf.hint") : t("wf.noHints");
+    const left = wfHintsLeft();
+    $("wfHintBtn").disabled = !left || !!wf.hinting; $("wfHintBtn").textContent = left ? t("wf.hint") : t("wf.noHints");
     $("wfMute").innerHTML = S.audio
       ? '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>'
       : '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
-    tiles.forEach((tl, i) => tl.classList.toggle("miss", mark.get(i) === "miss"));
+    tiles.forEach((tl, i) => { tl.classList.toggle("miss", mark.get(i) === "miss"); if (mark.get(i) === "wait") tl.classList.add("sel"); });
     const w = $("word");
     if (!path.length && !fb) {
       w.className = "hint";
-      w.textContent = phase === "playing" ? t("wf.found", { n: found }) : st && st.doneAt ? t("wf.solved") : t("wf.ready");
+      w.textContent = wf.error === "clock" ? t("wf.clock") : wf.error ? t("wf.offline") : wf.loading || wf.starting ? t("hint.loading")
+        : phase === "playing" ? t("wf.found", { n: found }) : pl && pl.done ? t("wf.solved") : t("wf.ready");
     } else if (fb && fb.kind === "miss") w.className = "miss";
   }
   $("wfMute").addEventListener("click", () => { S.audio = !S.audio; saveLocal(); renderSettings(); if (S.audio) { wake(); chime(false); } paint(); });
@@ -1526,7 +1637,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     for (const s of ["game", "games", "settings", "leaderboard", "account", "admin"]) $("s-" + s).hidden = s !== name;
     document.querySelectorAll("#nav button").forEach((b) => b.dataset.go === (name === "admin" ? "settings" : name) ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
     if (name === "account") renderAccount();
-    if (name === "leaderboard") { lbTab = variant === "wordfinder" ? "daily" : variant; lbGame = null; players = null; lbState = "loading"; renderLeaderboard(); loadPlayers(); if (lbTab === "booster") loadStats(); }
+    if (name === "leaderboard") { lbTab = variant; lbGame = null; players = null; wfLbStats = null; lbState = "loading"; renderLeaderboard(); loadPlayers(); if (lbTab === "booster") loadStats(); }
     if (name === "games") renderVariants();
   }
   $("nav").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) show(b.dataset.go); });
@@ -1572,15 +1683,23 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   /* ---------- leaderboard ---------- */
   const dateFmt = (at) => { try { return new Date(at).toLocaleDateString(mode.lang === "en" ? undefined : mode.lang, { month: "short", day: "numeric", year: "numeric" }); } catch (e) { return ""; } };
   function renderLeaderboard() {
-    const many = Object.keys(M.modes).length > 1, daily = lbTab === "daily";
+    const many = Object.keys(M.modes).length > 1, daily = lbTab === "daily", wfT = lbTab === "wordfinder", cal = daily || wfT;
     document.querySelectorAll("#lbTabs button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === lbTab)));
-    const vg = viewGame(), past = daily && vg !== gameNo;
-    $("lbMode").hidden = false; $("lbMode").textContent = (daily ? t("v.daily.name") + " · " + t("lb.game", { game: vg }) : t("v.booster.name")) + (many ? " · " + mode.name : "");
-    $("lbTitle").textContent = !daily ? t("lb.titleBooster") : past ? t("lb.titleDay", { date: longDate(dateOfGame(vg)) }) : t("lb.title");
-    $("lbDate").hidden = !daily; $("calToday").hidden = !past; $("calLabel").textContent = longDate(dateOfGame(vg));
+    const vg = viewGame(), past = cal && vg !== calTodayN();
+    $("lbMode").hidden = false;
+    $("lbMode").textContent = (daily ? t("v.daily.name") + " · " + t("lb.game", { game: vg }) : wfT ? t("wf.num", { n: vg }) : t("v.booster.name")) + (many ? " · " + mode.name : "");
+    $("lbTitle").textContent = !cal ? t("lb.titleBooster") : past ? t("lb.titleDay", { date: longDate(calDateOf(vg)) }) : t("lb.title");
+    $("lbDate").hidden = !cal; $("calToday").hidden = !past; $("calLabel").textContent = longDate(calDateOf(vg));
     $("lbMine").textContent = t("lb.top5");
     $("lbMineBox").hidden = !daily; $("myStats").hidden = daily;
-    if (!daily) {
+    $("stLongestRow").hidden = wfT;
+    $("stTop").nextElementSibling.textContent = wfT ? t("stats.best") : t("stats.top");
+    $("lbScoreH").textContent = wfT ? t("lb.time") : t("lb.score");
+    if (wfT) {
+      const st = wfLbStats || { played: 0, best: null, current: 0, max: 0 };
+      $("stPlayed").textContent = st.played; $("stTop").textContent = st.best == null ? "—" : clockText(st.best);
+      $("stStreak").textContent = st.current; $("stMax").textContent = st.max;
+    } else if (!daily) {
       const st = myStats();
       $("stPlayed").textContent = st.played; $("stTop").textContent = st.top; $("stStreak").textContent = st.current; $("stMax").textContent = st.max;
       $("stLongest").textContent = st.longest || "—";
@@ -1598,10 +1717,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     });
 
     const me = S.account?.screenName;
-    let list = lbState === "live" ? players : me ? [{ screenName: me, best: daily ? bestIn(vg) : boosts()[0]?.score || 0 }] : [];
+    let list = lbState === "live" ? players : me && !wfT ? [{ screenName: me, best: daily ? bestIn(vg) : boosts()[0]?.score || 0 }] : [];
     list = (list || []).filter((p) => p.best > 0);                    // players without a score are not listed
     const tb = $("players"); tb.textContent = "";
-    (list || []).forEach((p, i) => {
+    if (wfT) list.forEach((p, i) => tb.appendChild(wfRow(i + 1, { name: p.screenName, ms: p.best, hints: p.hints, me: p.me })));
+    else (list || []).forEach((p, i) => {
       const tr = document.createElement("tr"); if (p.screenName === me) tr.className = "me";
       [i + 1, p.screenName === me ? t("lb.you", { name: p.screenName.slice(0, 24) }) : p.screenName.slice(0, 24), p.best].forEach((v, k) => {
         const td = document.createElement("td"); if (k === 0) td.className = "rank"; td.textContent = v; tr.appendChild(td);
@@ -1609,7 +1729,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       tb.appendChild(tr);
     });
     const empty = $("playersEmpty"); empty.hidden = !!(list && list.length);
-    empty.textContent = lbState === "loading" ? t("lb.loading") : !daily ? t("lb.noneBooster") : past ? t("lb.noneDay") : t("lb.none");
+    empty.textContent = lbState === "loading" ? t("lb.loading") : wfT ? (past ? t("lb.noneDay") : t("lb.noneWf")) : !daily ? t("lb.noneBooster") : past ? t("lb.noneDay") : t("lb.none");
     $("lbNote").textContent =
       lbState === "local" ? t("lb.local")
       : syncFailed ? t("lb.syncFailed")
@@ -1618,7 +1738,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     // guests: a prompt above the table; the bracketed word in the text becomes a link to the Account tab
     $("lbGuest").hidden = !!S.account; $("lbGuest").textContent = "";
     if (!S.account) {
-      const [before, link, after] = t("lb.guest").split(/\[|\]/), a = document.createElement("a");
+      const [before, link, after] = t(wfT ? "lb.guestWf" : "lb.guest").split(/\[|\]/), a = document.createElement("a");
       a.href = "#"; a.textContent = link; a.addEventListener("click", (e) => { e.preventDefault(); show("account"); });
       $("lbGuest").append(before, a, after || "");
     }
@@ -1626,21 +1746,29 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   $("lbTabs").addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b || b.dataset.v === lbTab) return;
-    lbTab = b.dataset.v; players = null; lbState = "loading"; renderLeaderboard(); loadPlayers(); if (lbTab === "booster") loadStats();
+    lbTab = b.dataset.v; lbGame = null; players = null; wfLbStats = null; lbState = "loading"; renderLeaderboard(); loadPlayers(); if (lbTab === "booster") loadStats();
   });
 
   /* ---------- calendar of past daily games ---------- */
   const startDate = () => { const p = M.daily.start.split("-"); return new Date(+p[0], p[1] - 1, +p[2]); };
   const dateOfGame = (n) => { const d = startDate(); d.setDate(d.getDate() + (n - M.daily.first)); return d; };
   const longDate = (d) => d.toLocaleDateString(mode.lang, { month: "short", day: "numeric", year: "numeric" });
+  // the calendar serves the Linx Daily tab (game numbers from M.daily) and the WordFinder tab (puzzle numbers from its launch)
+  const calWf = () => lbTab === "wordfinder";
+  const calStart = () => (calWf() ? keyDate(WF.LAUNCH) : startDate());
+  const calNumOf = (d) => (calWf() ? WF.numberOf(dayKey(d)) : M.gameNumber(d));
+  const calDateOf = (n) => (calWf() ? keyDate(WF.dayOf(n)) : dateOfGame(n));
+  const calTodayN = () => (calWf() ? wfToday() : gameNo);
+  const calLabelOf = (n) => (calWf() ? "#" + n : t("lb.game", { game: n }));
+  const calPlayed = () => (calWf() ? new Set((S.wfDone[mode.lang === "es" ? "es" : "en"] || []).map(WF.numberOf)) : new Set(games().map((g) => g.game)));
   let calMonth = null;                                              // first day of the month on show
   function renderCalendar() {
-    const first = new Date(calMonth.getFullYear(), calMonth.getMonth(), 1), today = new Date(), start = startDate();
+    const first = new Date(calMonth.getFullYear(), calMonth.getMonth(), 1), today = new Date(), start = calStart();
     $("calMonth").textContent = first.toLocaleDateString(mode.lang, { month: "long", year: "numeric" });
     $("calPrev").disabled = first <= new Date(start.getFullYear(), start.getMonth(), 1);
     $("calNext").disabled = first >= new Date(today.getFullYear(), today.getMonth(), 1);
     const grid = $("calGrid"); grid.textContent = "";
-    const mondayFirst = mode.lang !== "en", played = new Set(games().map((g) => g.game)), vg = viewGame();
+    const mondayFirst = mode.lang !== "en", played = calPlayed(), vg = viewGame();
     for (let i = 0; i < 7; i++) {                                   // weekday initials in the player's language
       const d = new Date(2026, 10, 1 + i + (mondayFirst ? 1 : 0));   // 1 Nov 2026 is a Sunday
       const w = document.createElement("div"); w.className = "wd"; w.textContent = d.toLocaleDateString(mode.lang, { weekday: "narrow" }); grid.appendChild(w);
@@ -1649,28 +1777,28 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     for (let i = 0; i < lead; i++) grid.appendChild(document.createElement("span"));
     const days = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
     for (let day = 1; day <= days; day++) {
-      const d = new Date(first.getFullYear(), first.getMonth(), day), n = M.gameNumber(d), b = document.createElement("button");
+      const d = new Date(first.getFullYear(), first.getMonth(), day), n = calNumOf(d), b = document.createElement("button");
       const ok = d >= start && d <= today;
       b.type = "button"; b.textContent = day; b.disabled = !ok;
-      b.setAttribute("aria-label", longDate(d) + (ok ? " · " + t("lb.game", { game: n }) : ""));
+      b.setAttribute("aria-label", longDate(d) + (ok ? " · " + calLabelOf(n) : ""));
       b.setAttribute("aria-pressed", String(ok && n === vg));
-      if (n === gameNo && d.toDateString() === today.toDateString()) b.classList.add("today");
+      if (n === calTodayN() && d.toDateString() === today.toDateString()) b.classList.add("today");
       if (ok && played.has(n)) b.classList.add("played");
       if (ok) b.addEventListener("click", () => pickGame(n));
       grid.appendChild(b);
     }
   }
   function openCalendar() {
-    const d = dateOfGame(viewGame()); calMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+    const d = calDateOf(viewGame()); calMonth = new Date(d.getFullYear(), d.getMonth(), 1);
     renderCalendar(); $("calendar").hidden = false; $("calClose").focus();
   }
   function pickGame(n) {
-    lbGame = n === gameNo ? null : n; $("calendar").hidden = true;
+    lbGame = n === calTodayN() ? null : n; $("calendar").hidden = true;
     players = null; lbState = "loading"; renderLeaderboard(); loadPlayers();
-    track("past_leaderboard", { game: n });
+    track("past_leaderboard", { game: n, game_variant: lbTab });
   }
   $("calOpen").addEventListener("click", openCalendar);
-  $("calToday").addEventListener("click", () => pickGame(gameNo));
+  $("calToday").addEventListener("click", () => pickGame(calTodayN()));
   $("calClose").addEventListener("click", () => { $("calendar").hidden = true; });
   $("calendar").addEventListener("click", (e) => { if (e.target === $("calendar")) $("calendar").hidden = true; });
   $("calPrev").addEventListener("click", () => { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1); renderCalendar(); });

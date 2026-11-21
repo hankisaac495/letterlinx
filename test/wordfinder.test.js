@@ -199,7 +199,7 @@ test("failures explain which word is the problem", () => {
 });
 
 test("sample puzzles validate and generate boards in both languages", () => {
-  const samples = require("../wordfinder-samples.js");
+  const samples = require("../api/_wf_samples.js");
   assert.ok(samples.length >= 4);
   for (const s of samples) for (const lang of ["en", "es"]) {
     const p = s[lang], v = W.validatePuzzle(p, lang);

@@ -58,6 +58,46 @@ create table if not exists email_codes (
   expires_at timestamptz not null,
   primary key (player_id, purpose)
 );
+-- Linx WordFinder: one puzzle per language per day once approved; puzzles with no day wait in the backup pool
+create table if not exists wf_puzzles (
+  id bigserial primary key,
+  lang text not null,
+  day date,
+  topic text not null,
+  difficulty text not null default 'medium',
+  words jsonb not null,               -- [{ word, hint, display, key }]
+  grid jsonb not null,                -- the board's letters, row by row
+  paths jsonb not null,               -- one tile path per word, as placed by the generator
+  seed text not null,
+  status text not null default 'draft', -- draft, approved, backup or rejected
+  source text not null default 'manual',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create unique index if not exists wf_puzzles_live_key on wf_puzzles (lang, day) where status = 'approved';
+create index if not exists wf_puzzles_backup_idx on wf_puzzles (lang, created_at) where status = 'backup';
+-- one ranked attempt per account (or per device for guests) per language per day; times come from the database clock
+create table if not exists wf_plays (
+  id bigserial primary key,
+  puzzle_id bigint not null references wf_puzzles (id) on delete cascade,
+  lang text not null,
+  day date not null,
+  player_id uuid references players (id) on delete cascade,
+  device text not null,               -- hash of a random cookie, never anything personal
+  nickname text,                      -- guests only
+  started_at timestamptz not null default now(),
+  found jsonb not null default '[]',  -- [{ i, path, ms }]
+  hints jsonb not null default '[]',  -- word indexes whose hint was shown
+  finished_at timestamptz,
+  base_ms integer,
+  total_ms integer,
+  flagged boolean not null default false  -- solved faster than a person could; kept off the leaderboard
+);
+alter table wf_plays add column if not exists flagged boolean not null default false;
+create unique index if not exists wf_plays_player_key on wf_plays (lang, day, player_id) where player_id is not null;
+create unique index if not exists wf_plays_guest_key on wf_plays (lang, day, device) where player_id is null;
+create index if not exists wf_plays_device_idx on wf_plays (device, lang, day);
+create index if not exists wf_plays_rank_idx on wf_plays (lang, day, total_ms) where finished_at is not null;
 `;
 
 let pool = null, ready = null;
@@ -263,4 +303,4 @@ async function saveGames(p, playerId, list) {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const clean = (s, n) => String(s == null ? "" : s).trim().slice(0, n);
 
-module.exports = { route, body, hashPassword, checkPassword, startSession, endSession, currentPlayer, profile, saveGames, EMAIL, clean, modes, gameNumberUTC, MAIL_ON, sendMail, sendBatch, langOf, sendCode, useCode, notifySignup, isAdmin, isAdminEmail, adminProblem };
+module.exports = { route, body, sha, token, hashPassword, checkPassword, startSession, endSession, currentPlayer, profile, saveGames, EMAIL, clean, modes, gameNumberUTC, MAIL_ON, sendMail, sendBatch, langOf, sendCode, useCode, notifySignup, isAdmin, isAdminEmail, adminProblem };

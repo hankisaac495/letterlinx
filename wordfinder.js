@@ -4,7 +4,12 @@
 (function (root) {
   var BLOCK = typeof module !== "undefined" && module.exports ? require("./wordfinder-blocklist.js") : root.LLX_WF_BLOCKLIST;
 
-  var LIMITS = { words: 6, minLen: 3, maxLen: 10, maxTotal: 45, maxHint: 80, maxTopic: 40, cols: 6, rows: 10, seedTries: 200 };
+  var LIMITS = { words: 6, minLen: 3, maxLen: 10, maxTotal: 45, maxHint: 80, maxTopic: 40, cols: 6, rows: 10, seedTries: 200, penaltyMs: 30000 };
+  // puzzle #1 is played on LAUNCH (a calendar date); each later day is one number higher
+  var LAUNCH = "2026-11-21";
+  function dayMs(day) { var p = String(day).split("-"); return Date.UTC(+p[0], p[1] - 1, +p[2]); }
+  function numberOf(day) { return Math.round((dayMs(day) - dayMs(LAUNCH)) / 86400000) + 1; }
+  function dayOf(n) { return new Date(dayMs(LAUNCH) + (n - 1) * 86400000).toISOString().slice(0, 10); }
   var DIFFICULTIES = ["easy", "medium", "hard"];
 
   // How often each letter turns up in ordinary words, used for filler (matches the main game's tile weights)
@@ -252,7 +257,7 @@
 
   var api = { LIMITS: LIMITS, DIFFICULTIES: DIFFICULTIES, normalizeWord: normalizeWord, validatePuzzle: validatePuzzle, blocked: blocked,
     generateBoard: generateBoard, findPath: findPath, spellPath: spellPath, adjacent: adjacent, neighbours: neighbours,
-    blockedOnBoard: blockedOnBoard, rng: rng };
+    blockedOnBoard: blockedOnBoard, rng: rng, LAUNCH: LAUNCH, numberOf: numberOf, dayOf: dayOf };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.LLX_WF = api;
 })(typeof window !== "undefined" ? window : this);

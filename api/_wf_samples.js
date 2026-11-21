@@ -1,4 +1,5 @@
-// Linx WordFinder sample puzzles, used until puzzles come from the server (phase 4).
+// Linx WordFinder sample puzzles: the server falls back to these when a day has no approved puzzle and the
+// backup pool is empty. Kept under api/ so the answers are never served to browsers.
 // Each has an English and a Spanish version on the same topic.
 (function (root) {
   var samples = [
