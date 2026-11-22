@@ -96,6 +96,9 @@ create table if not exists wf_plays (
   flagged boolean not null default false  -- solved faster than a person could; kept off the leaderboard
 );
 alter table wf_plays add column if not exists flagged boolean not null default false;
+alter table wf_plays add column if not exists outcome text;            -- null while playing; solved, surrender or timeout once over
+alter table wf_plays add column if not exists last_hint_at timestamptz;
+update wf_plays set outcome = 'solved' where finished_at is not null and outcome is null;
 create unique index if not exists wf_plays_player_key on wf_plays (lang, day, player_id) where player_id is not null;
 create unique index if not exists wf_plays_guest_key on wf_plays (lang, day, device) where player_id is null;
 create index if not exists wf_plays_device_idx on wf_plays (device, lang, day);

@@ -5,6 +5,8 @@
 // POST /api/wordfinder { action: "find", lang, day, path }        -> checks a dragged path against the hidden words
 // POST /api/wordfinder { action: "hint", lang, day }              -> reveals one more hint (+30 seconds)
 // POST /api/wordfinder { action: "nickname", lang, day, nickname } -> puts a guest's finished game on the leaderboard
+// POST /api/wordfinder { action: "surrender", lang, day }         -> gives up: the game ends and the answers are shown
+// POST /api/wordfinder { action: "timeout", lang, day }           -> asks the server to end a game whose 10 minutes are up
 const L = require("./_lib.js");
 const F = require("./_wf.js");
 
@@ -65,17 +67,20 @@ module.exports = L.route(async (req, res, p) => {
     const idx = spelled ? playPuzzle.words.findIndex((w) => w.key === spelled) : -1;
     if (idx < 0) return send(play, { hit: false });
     if (play.found.some((f) => f.i === idx)) return send(play, { hit: false, already: idx });
+    // finds only count inside the time limit (checked again in the update, against the database clock)
     // the time of the find comes from the database clock; the row update keeps two quick finds from clashing
     const r = await p.query(
       `update wf_plays set found = found || jsonb_build_array(jsonb_build_object('i', $2::int, 'path', $3::jsonb,
           'ms', (extract(epoch from now() - started_at) * 1000)::int))
-        where id = $1 and finished_at is null and not found @> jsonb_build_array(jsonb_build_object('i', $2::int)) returning id`,
-      [play.id, idx, JSON.stringify(path)]);
-    if (r.rows[0]) await p.query(
+        where id = $1 and finished_at is null and not found @> jsonb_build_array(jsonb_build_object('i', $2::int))
+          and extract(epoch from now() - started_at) * 1000 + $4 * jsonb_array_length(hints) < $5 returning id`,
+      [play.id, idx, JSON.stringify(path), F.PEN, F.LIMIT]);
+    if (!r.rows[0]) return send(await F.expire(p, (await p.query(F.PLAY + " where w.id = $1", [play.id])).rows[0]), { hit: false });
+    await p.query(
       `update wf_plays set finished_at = now(),
           base_ms = (select max((f ->> 'ms')::int) from jsonb_array_elements(found) f),
           total_ms = (select max((f ->> 'ms')::int) from jsonb_array_elements(found) f) + $2 * jsonb_array_length(hints),
-          flagged = (select max((f ->> 'ms')::int) from jsonb_array_elements(found) f) < $4
+          flagged = (select max((f ->> 'ms')::int) from jsonb_array_elements(found) f) < $4, outcome = 'solved'
         where id = $1 and finished_at is null and jsonb_array_length(found) >= $3`, [play.id, F.PEN, F.COUNT, F.MIN_MS]);
     play = (await p.query(F.PLAY + " where id = $1", [play.id])).rows[0];
     return send(play, { hit: true, i: idx });
@@ -85,13 +90,28 @@ module.exports = L.route(async (req, res, p) => {
     if (play.finished_at) return send(play);
     const open = playPuzzle.words.map((w, i) => i).filter((i) => !play.found.some((f) => f.i === i) && !play.hints.includes(i));
     if (!open.length) return send(play, { noHints: true });
+    // at least 10 seconds between hints, by the database clock
+    if (play.since_hint != null && Number(play.since_hint) < F.GAP) return send(play, { hintWait: F.GAP - Number(play.since_hint) });
     const i = open[Math.floor(Math.random() * open.length)];
-    await p.query("update wf_plays set hints = hints || to_jsonb($2::int) where id = $1 and finished_at is null and not hints @> to_jsonb($2::int)", [play.id, i]);
+    const u = await p.query(
+      `update wf_plays set hints = hints || to_jsonb($2::int), last_hint_at = now()
+        where id = $1 and finished_at is null and not hints @> to_jsonb($2::int)
+          and (last_hint_at is null or now() - last_hint_at >= make_interval(secs => $3 / 1000.0)) returning id`, [play.id, i, F.GAP]);
+    if (!u.rows[0]) { play = (await p.query(F.PLAY + " where w.id = $1", [play.id])).rows[0]; return send(play, { hintWait: Math.max(0, F.GAP - Number(play.since_hint || 0)) }); }
     play = (await p.query(F.PLAY + " where id = $1", [play.id])).rows[0];
     return send(play, { hint: i });
   }
 
+  if (q.action === "surrender") {
+    if (!play.finished_at) await p.query(
+      `update wf_plays set finished_at = now(), outcome = 'surrender', base_ms = (extract(epoch from now() - started_at) * 1000)::int
+        where id = $1 and finished_at is null`, [play.id]);
+    return send((await p.query(F.PLAY + " where w.id = $1", [play.id])).rows[0]);
+  }
+  if (q.action === "timeout") return send(play);              // findPlay has already ended it if the time is up
+
   if (q.action === "nickname") {
+    if (play.outcome !== "solved") return res.status(400).json({ error: "not_solved" });
     if (play.player_id) return res.status(400).json({ error: "signed_in" });
     const c = await F.checkNickname(p, q.nickname, lang);
     if (c.error) return res.status(400).json({ error: c.error });

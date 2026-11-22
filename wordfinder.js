@@ -4,7 +4,9 @@
 (function (root) {
   var BLOCK = typeof module !== "undefined" && module.exports ? require("./wordfinder-blocklist.js") : root.LLX_WF_BLOCKLIST;
 
-  var LIMITS = { words: 6, minLen: 3, maxLen: 10, maxTotal: 45, maxHint: 80, maxTopic: 40, cols: 6, rows: 10, seedTries: 200, penaltyMs: 30000 };
+  var LIMITS = { words: 6, minLen: 3, maxLen: 10, maxTotal: 45, maxHint: 80, maxTopic: 40, cols: 6, rows: 10, seedTries: 200, penaltyMs: 30000,
+    timeLimitMs: 600000,   // a game ends when the clock (hint penalties included) reaches 10:00
+    hintGapMs: 10000 };    // at least 10 seconds between hints
   // puzzle #1 is played on LAUNCH (a calendar date); each later day is one number higher
   var LAUNCH = "2026-11-21";
   function dayMs(day) { var p = String(day).split("-"); return Date.UTC(+p[0], p[1] - 1, +p[2]); }

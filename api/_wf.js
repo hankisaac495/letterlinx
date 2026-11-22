@@ -5,6 +5,7 @@ const W = require("../wordfinder.js");
 const SAMPLES = require("./_wf_samples.js");
 const L = require("./_lib.js");
 
+const LIMIT = W.LIMITS.timeLimitMs, GAP = W.LIMITS.hintGapMs;
 const PEN = W.LIMITS.penaltyMs, COLS = W.LIMITS.cols, ROWS = W.LIMITS.rows, COUNT = W.LIMITS.words;
 const DEVICE = "llx_wfg";
 // dragging out six words takes a person well over this; faster solves are kept but not ranked
@@ -64,8 +65,18 @@ async function puzzleFor(p, lang, day) {
 }
 
 /* plays */
-const PLAY = "select w.*, (extract(epoch from now() - w.started_at) * 1000)::bigint as elapsed from wf_plays w";
-async function findPlay(p, lang, day, me, dev) {
+const PLAY = `select w.*, (extract(epoch from now() - w.started_at) * 1000)::bigint as elapsed,
+  (extract(epoch from now() - w.last_hint_at) * 1000)::bigint as since_hint from wf_plays w`;
+// a game whose clock (with hint penalties) has reached the time limit ends as "timeout"
+async function expire(p, play) {
+  if (!play || play.finished_at || Number(play.elapsed) + PEN * play.hints.length < LIMIT) return play;
+  await p.query(
+    `update wf_plays set finished_at = now(), outcome = 'timeout', base_ms = $2 - $3 * jsonb_array_length(hints)
+      where id = $1 and finished_at is null`, [play.id, LIMIT, PEN]);
+  return (await p.query(PLAY + " where w.id = $1", [play.id])).rows[0];
+}
+async function findPlay(p, lang, day, me, dev) { return expire(p, await findPlayRow(p, lang, day, me, dev)); }
+async function findPlayRow(p, lang, day, me, dev) {
   if (me) {
     let r = await p.query(PLAY + " where lang = $1 and day = $2 and player_id = $3", [lang, day, me.id]);
     if (r.rows[0]) return r.rows[0];
@@ -87,7 +98,9 @@ function playView(play, puzzle) {
   if (!play) return null;
   const words = puzzle.words, done = !!play.finished_at;
   return {
-    elapsed: Number(play.elapsed), found: play.found.map((f) => ({ i: f.i, path: f.path, ms: f.ms, word: words[f.i].display })),
+    elapsed: Number(play.elapsed), outcome: play.outcome || null, limitMs: LIMIT,
+    hintWait: play.finished_at || play.since_hint == null ? 0 : Math.max(0, GAP - Number(play.since_hint)),
+    found: play.found.map((f) => ({ i: f.i, path: f.path, ms: f.ms, word: words[f.i].display })),
     hints: play.hints.map((i) => ({ i, hint: words[i].hint })), done,
     baseMs: play.base_ms, totalMs: play.total_ms, nickname: play.nickname, guest: !play.player_id,
     words: done ? words.map((w) => ({ word: w.display, hint: w.hint })) : undefined,
@@ -105,7 +118,7 @@ async function checkNickname(p, raw, lang) {
 }
 
 /* leaderboard: fastest total time first; ties go to whoever finished first */
-const ELIGIBLE = `w.finished_at is not null and not w.flagged and ((w.player_id is not null and (pl.email_verified or not $3)) or (w.player_id is null and w.nickname is not null))`;
+const ELIGIBLE = `w.finished_at is not null and w.outcome = 'solved' and not w.flagged and ((w.player_id is not null and (pl.email_verified or not $3)) or (w.player_id is null and w.nickname is not null))`;
 async function leaderboard(p, lang, day, limit, mine) {
   const r = await p.query(
     `select w.id, coalesce(pl.screen_name, w.nickname) as name, w.total_ms, jsonb_array_length(w.hints) as hints
@@ -116,7 +129,7 @@ async function leaderboard(p, lang, day, limit, mine) {
     `select count(*)::int as n from wf_plays w left join players pl on pl.id = w.player_id where w.lang = $1 and w.day = $2 and ${ELIGIBLE}`,
     [lang, day, L.MAIL_ON]);
   const out = { players: r.rows.map((x) => ({ name: x.name, ms: x.total_ms, hints: x.hints, me: !!mine && x.id === mine.id })), total: c.rows[0].n, rank: null };
-  if (mine && mine.finished_at) {
+  if (mine && mine.finished_at && mine.outcome === "solved") {
     const k = await p.query(
       `select (count(*) filter (where (w.total_ms, w.finished_at) < ($5, $6)))::int + 1 as rank, coalesce(bool_or(w.id = $4), false) as listed
          from wf_plays w left join players pl on pl.id = w.player_id where w.lang = $1 and w.day = $2 and ${ELIGIBLE}`,
@@ -129,18 +142,20 @@ async function leaderboard(p, lang, day, limit, mine) {
 /* stats for the signed-in player (all their games) or this device (guest games) */
 async function stats(p, lang, day, me, dev) {
   if (!me && !dev) return { played: 0, best: null, average: null, current: 0, max: 0 };
-  const r = await p.query(
-    `select to_char(day, 'YYYY-MM-DD') as day, total_ms from wf_plays
+  const all = await p.query(
+    `select to_char(day, 'YYYY-MM-DD') as day, total_ms, outcome from wf_plays
       where lang = $1 and finished_at is not null and ${me ? "player_id = $2" : "device = $2 and player_id is null"} order by day`,
     [lang, me ? me.id : dev]);
+  // every finished game counts as played; only solved ones count for times and streaks
+  const r = { rows: all.rows.filter((x) => x.outcome === "solved") };
   const days = r.rows.map((x) => x.day), set = new Set(days), times = r.rows.map((x) => x.total_ms);
   let max = 0, run = 0, prev = null;
   for (const d of days) { run = prev && W.numberOf(d) === W.numberOf(prev) + 1 ? run + 1 : 1; max = Math.max(max, run); prev = d; }
   let current = 0, n = W.numberOf(day);
   if (!set.has(W.dayOf(n))) n--;                       // still alive if yesterday was the last one solved
   while (set.has(W.dayOf(n))) { current++; n--; }
-  return { played: days.length, best: times.length ? Math.min(...times) : null,
+  return { played: all.rows.length, best: times.length ? Math.min(...times) : null,
     average: times.length ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : null, current, max, days: days.slice(-120) };
 }
 
-module.exports = { storedWords, utcToday, MIN_MS, W, PEN, COLS, ROWS, COUNT, dayOk, pastOk, device, readDevice, puzzleFor, findPlay, playView, checkNickname, leaderboard, stats, PLAY };
+module.exports = { LIMIT, GAP, expire, storedWords, utcToday, MIN_MS, W, PEN, COLS, ROWS, COUNT, dayOk, pastOk, device, readDevice, puzzleFor, findPlay, playView, checkNickname, leaderboard, stats, PLAY };

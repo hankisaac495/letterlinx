@@ -112,6 +112,19 @@ titles and link previews.
   leaderboard tab; a keyboard player solves the Spanish puzzle by typing with reduced motion. They also check that
   unfound words never reach the browser. Needs Playwright with Chromium; not part of the Vercel build.
 
+## Time limit, hint gap and giving up
+
+- 10-minute limit on the clock players see (hint penalties included). The clock turns red in the last minute; at
+  10:00 the game ends as "Time's up!". The server ends it too (any request after the limit), and finds after the
+  limit don't count.
+- At least 10 seconds between hints, enforced by the server; the Hint button counts down ("Hint in 7s").
+- Give up: the red stop sign at the top right opens "Give up? End today's game and show me the answers. Try again
+  tomorrow!" with End Game and Cancel. The board's letters blur while it's open; Cancel carries on (the clock keeps
+  running).
+- A game that ends by giving up or running out of time shows all six answers (missed ones in grey with ✕), isn't
+  ranked, doesn't count toward the streak, and shares as "Gave up (n of 6 found)" or "Time's up (n of 6 found)".
+  It still counts as played in My stats. `wf_plays.outcome` records solved, surrender or timeout.
+
 ## Setup needed later
 
 - Phase 4: ideally a separate Neon database branch for Vercel previews, so test data stays out of the live database.

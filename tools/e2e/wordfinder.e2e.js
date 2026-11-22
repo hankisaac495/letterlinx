@@ -99,6 +99,11 @@ test("a guest plays today's puzzle: misses, a hint, all six words, the result, a
   assert.strictEqual(await p.evaluate(() => document.activeElement.closest("#wfHints") !== null), true, "focus moves into the hints dialog");
   await p.keyboard.press("Escape");
   assert.strictEqual(await p.evaluate(() => document.activeElement.id), "wfHintBtn", "Escape closes it and focus returns to the Hint button");
+  // 10 seconds between hints: the button counts down, and the server refuses an early second hint
+  assert.match(await p.textContent("#wfHintBtn"), /^Hint in \d+s$/);
+  const early = await p.evaluate(async (d) => (await (await fetch("/api/wordfinder", { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ action: "hint", lang: "en", day: d }) })).json()), today);
+  assert.ok(early.hintWait > 0 && early.play.hints.length === 1, "a second hint within 10 seconds is refused");
 
   await p.waitForTimeout(5200);                                // solves faster than 5 seconds aren't ranked
   for (const [i, k] of keys.entries()) {
@@ -135,6 +140,59 @@ test("a guest plays today's puzzle: misses, a hint, all six words, the result, a
   // reloading shows the same result: one attempt per day
   await p.goto(U + "/wordfinder");
   await p.waitForSelector("#wfResults:not([hidden])");
+  assert.deepStrictEqual(p.errors, []);
+});
+
+test("giving up: the board blurs behind the dialog, Cancel carries on, End Game shows the answers", async () => {
+  const p = await page();
+  await p.goto(U + "/wordfinder");
+  await until(p, () => document.getElementById("goTopic").textContent.length > 0);
+  await p.click("#go");
+  await until(p, () => document.querySelector("#board .tile").firstChild.textContent !== "");
+  const g = await grid(p), keys = answers("en");
+  await drag(p, W.findPath(g, keys[0], 6, 10));
+  await until(p, () => document.querySelectorAll("#wfChips .wfchip").length === 1);
+  await p.click("#wfStopBtn");
+  await p.waitForSelector("#wfGiveUp:not([hidden])");
+  assert.match(await p.textContent("#wfGiveUp"), /Give up\?\s*End today's game and show me the answers\. Try again tomorrow!/);
+  assert.match(await p.evaluate(() => getComputedStyle(document.querySelector("#board .tile span")).filter), /blur/, "tiles are blurred");
+  await p.click("#wfGiveUpNo");
+  assert.strictEqual(await p.isHidden("#wfGiveUp"), true);
+  assert.strictEqual(await p.evaluate(() => getComputedStyle(document.querySelector("#board .tile span")).filter), "none");
+  await drag(p, W.findPath(g, keys[1], 6, 10));                // Cancel carries on with the game
+  await until(p, () => document.querySelectorAll("#wfChips .wfchip").length === 2);
+  await p.click("#wfStopBtn"); await p.click("#wfGiveUpYes");
+  await p.waitForSelector("#wfResults:not([hidden])");
+  assert.strictEqual(await p.textContent("#wfDoneTime"), "You gave up");
+  assert.match(await p.textContent("#wfDoneBreak"), /^Found 2 of 6 in \d+:\d\d$/);
+  assert.strictEqual(await p.$$eval("#wfDoneWords li", (n) => n.length), 6);
+  assert.strictEqual(await p.$$eval("#wfDoneWords li.missed", (n) => n.length), 4);
+  assert.strictEqual(await p.textContent("#wfRank"), "Not ranked today. Try again tomorrow!");
+  assert.strictEqual(await p.isHidden("#wfNickForm"), true);
+  await p.evaluate(() => { delete Navigator.prototype.share; });
+  await p.click("#wfShareBtn"); await until(p, () => document.getElementById("wfShareBtn").textContent === "Copied");
+  assert.match(await p.evaluate(() => navigator.clipboard.readText()), /\n🏳️ Gave up \(2 of 6 found\)\n/);
+  await p.goto(U + "/wordfinder"); await p.waitForSelector("#wfResults:not([hidden])");   // still over after a reload
+  assert.deepStrictEqual(p.errors, []);
+});
+
+test("the 10-minute limit: the clock turns red in the last minute and the game ends at 10:00", async () => {
+  const { Client } = require("pg");
+  const p = await page();
+  await p.goto(U + "/wordfinder");
+  await until(p, () => document.getElementById("goTopic").textContent.length > 0);
+  await p.click("#go");
+  await until(p, () => document.querySelector("#board .tile").firstChild.textContent !== "");
+  const db = new Client({ connectionString: DB }); await db.connect();
+  await db.query("update wf_plays set started_at = now() - interval '9 minutes 57 seconds' where id = (select max(id) from wf_plays)");
+  await db.end();
+  await p.reload();
+  await until(p, () => document.getElementById("time").classList.contains("low"));
+  assert.match(await p.textContent("#time"), /^9:5\d$/);
+  await p.waitForSelector("#wfResults:not([hidden])", { timeout: 15000 });
+  assert.strictEqual(await p.textContent("#wfDoneTime"), "Time's up!");
+  assert.match(await p.textContent("#wfDoneBreak"), /^Found 0 of 6 in 10:00$/);
+  assert.strictEqual(await p.$$eval("#wfDoneWords li.missed", (n) => n.length), 6);
   assert.deepStrictEqual(p.errors, []);
 });
 
