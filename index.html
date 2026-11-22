@@ -1894,7 +1894,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       $("stPlayed").textContent = st.played; $("stTop").textContent = st.top; $("stStreak").textContent = st.current; $("stMax").textContent = st.max;
       $("stLongest").textContent = st.longest || "—";
     }
-    const mine = daily ? games() : boosts(), ol = $("top5"); ol.textContent = "";
+    // Linx Daily: the player's five best games (highest score first; a tie goes to the newer game)
+    const mine = daily ? [...games()].sort((a, b) => b.score - a.score || b.game - a.game).slice(0, 5) : boosts(), ol = $("top5"); ol.textContent = "";
     if (!mine.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = t("lb.noScores"); ol.appendChild(li); }
     mine.forEach((g, i) => {
       const li = document.createElement("li"), b = document.createElement("button");
