@@ -116,6 +116,10 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
   .linx span { width: 80px; height: 80px; font-size: 2.4rem; border-radius: 16px; }
   .linx::before { left: 40px; right: 40px; }
   .tagline { font-size: 1.45rem; }
+  .herologo { font-size: 2.6rem; }
+  .herologo .mark { grid-template-columns: repeat(2, 30px); }
+  .herologo .mark i { width: 30px; height: 30px; font-size: 19px; border-radius: 7px; }
+  .demo.hero { --hs: clamp(26px, calc((100svh - 520px) / 6), 64px); }
   .demo { grid-template-columns: repeat(4, 76px); grid-template-rows: repeat(3, 76px); }
   .points div { padding: 9px 16px; }
   .ways { max-width: 460px; }
@@ -499,6 +503,20 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 1.7rem;
   box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 60%, #000); }
 .linx span:nth-child(even) { transform: translateY(8px); }
+/* tour slide 1: the header logo, and a 6 × 6 board where a long word links up tile by tile */
+.herologo { display: flex; align-items: center; gap: 12px; margin: 0; font-family: var(--display); font-weight: 900; font-size: 2rem; letter-spacing: .01em; }
+.herologo .mark { display: grid; grid-template-columns: repeat(2, 24px); gap: 3px; flex: none; }
+.herologo .mark i { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 6px; background: var(--accent); color: var(--accent-ink);
+  font-style: normal; font-size: 15px; font-weight: 900; line-height: 1; }
+/* the board takes what height is left after the logo, text, language picker and buttons */
+.slide.first { gap: 12px; }
+.demo.hero { --hs: clamp(26px, calc((100svh - 450px) / 6), 46px); grid-template-columns: repeat(6, var(--hs)); grid-template-rows: repeat(6, var(--hs)); cursor: pointer; }
+.demo.hero polyline { stroke-width: .11; stroke-opacity: .8; }
+@media (max-height: 640px) {
+  .slide.first .heroIntro { display: none; }               /* short screens: the board says it instead */
+  .demo.hero { --hs: clamp(26px, calc((100svh - 370px) / 6), 46px); }
+  .herologo { font-size: 1.6rem; }
+}
 .tagline { font-family: var(--display); font-weight: 800; font-size: 1.15rem; color: var(--brand); }
 .demo { position: relative; display: grid; grid-template-columns: repeat(4, 54px); grid-template-rows: repeat(3, 54px); isolation: isolate; }
 .demo svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
@@ -764,10 +782,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 <!-- TOUR -->
 <div id="tour" hidden>
   <div id="slides">
-    <div class="slide">
-      <h1 class="logo" data-t-label="app.name" aria-label="Letra Linx"><div class="top" data-t="logo.top">LETRA</div><div class="linx"><span>L</span><span>I</span><span>N</span><span>X</span></div></h1>
+    <div class="slide first">
+      <h1 class="herologo"><span class="mark" aria-hidden="true"><i>L</i><i>I</i><i>N</i><i>X</i></span><span data-t="app.name">Letra Linx</span></h1>
+      <div class="demo hero" id="heroGrid" aria-hidden="true"></div>
       <div class="tagline" data-t="tour.tagline">Une letras. Gánale al reloj.</div>
-      <p data-t="tour.intro">Tres juegos de palabras gratis en uno. Traza un camino por fichas vecinas para unir letras y formar palabras, contra el reloj.</p>
+      <p class="heroIntro" data-t="tour.intro">Tres juegos de palabras gratis en uno. Traza un camino por fichas vecinas para unir letras y formar palabras, contra el reloj.</p>
       <div class="pick"><div class="eyebrow" data-t="tour.playIn">Juega en</div><div class="seg langSeg" data-t-label="set.lang" aria-label="Idioma"></div><p class="note" data-t="tour.later">Puedes cambiarlo después en Ajustes.</p></div>
     </div>
     <div class="slide">
@@ -912,6 +931,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     document.querySelectorAll("[data-t-label]").forEach((el) => { el.setAttribute("aria-label", t(el.dataset.tLabel)); });
     $("restartBtn").title = t("hud.restart");
     $("tourDrag").textContent = t("tour.dragText", { n: mode.minLength });
+    buildHero();
     // the WordFinder slide's little board: three found words (one per row) and a filler letter, in the player's language
     const demo = $("wfDemo"); demo.textContent = "";
     t("tour.wfDemo").split("|").forEach((row, r) => [...row].forEach((l, c) => {
@@ -2335,7 +2355,38 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   }
   slides.addEventListener("scroll", setDots, { passive: true });
   $("tourNext").addEventListener("click", () => slides.scrollTo({ left: (slideIx + 1) * slides.clientWidth, behavior: "smooth" }));
-  function openTour() { $("tour").hidden = false; slides.scrollLeft = 0; setDots(); }
+  /* slide 1's board: the word lights up tile by tile with the line following, holds, then plays again */
+  const HERO_PATH = [[1, 0], [1, 1], [2, 2], [1, 3], [1, 4], [2, 5], [3, 4], [3, 3], [4, 2], [4, 3]];
+  let heroTimer = 0;
+  function buildHero() {
+    const g = $("heroGrid"), word = t("tour.heroWord"), fill = t("tour.heroFill"), at = {};
+    HERO_PATH.forEach(([r, c], i) => { at[r * 6 + c] = word[i]; });
+    g.textContent = ""; let k = 0;
+    for (let i = 0; i < 36; i++) {
+      const tl = document.createElement("div"), sp = document.createElement("span");
+      tl.className = "tile"; sp.textContent = at[i] || fill[k++ % fill.length]; tl.appendChild(sp); g.appendChild(tl);
+    }
+    g.insertAdjacentHTML("beforeend", '<svg viewBox="0 0 6 6" preserveAspectRatio="none"><polyline points=""/></svg>');
+    playHero();
+  }
+  function playHero() {
+    clearTimeout(heroTimer);
+    const g = $("heroGrid"), tiles = g.querySelectorAll(".tile"), line = g.querySelector("polyline");
+    if (!line) return;
+    const pts = HERO_PATH.map(([r, c]) => (c + .5) + "," + (r + .5));
+    const show = (n) => { HERO_PATH.forEach(([r, c], i) => tiles[r * 6 + c].classList.toggle("sel", i < n)); line.setAttribute("points", pts.slice(0, n).join(" ")); };
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return show(HERO_PATH.length);
+    let n = 0;
+    const step = () => {
+      if ($("tour").hidden) return;
+      show(n);
+      if (n < HERO_PATH.length) { n++; heroTimer = setTimeout(step, n === 1 ? 500 : 160); }
+      else heroTimer = setTimeout(() => { n = 0; step(); }, 3200);   // hold the finished word, then play again
+    };
+    step();
+  }
+  $("heroGrid").addEventListener("click", playHero);
+  function openTour() { $("tour").hidden = false; slides.scrollLeft = 0; setDots(); playHero(); }
   // the tour ends on the Games screen, so new players pick which game to play
   $("playNow").addEventListener("click", () => { $("tour").hidden = true; S.tourSeen = true; S.mode = modeId; saveLocal(); show("games"); });
 
