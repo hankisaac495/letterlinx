@@ -2057,7 +2057,9 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   }
 
   function openModal(title, list, meta) {
-    $("modalTitle").textContent = title; fillWords($("modalWords"), list, t("modal.none"));
+    // highest-scoring words first; words worth the same are in alphabetical order
+    const sorted = [...list].sort((x, y) => pointsFor(y.length) - pointsFor(x.length) || x.localeCompare(y, mode.lang));
+    $("modalTitle").textContent = title; fillWords($("modalWords"), sorted, t("modal.none"));
     $("modalMeta").hidden = !meta; $("modalMeta").textContent = meta || "";
     $("modal").hidden = false; $("modalClose").focus();
   }
