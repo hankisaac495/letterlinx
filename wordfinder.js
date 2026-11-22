@@ -8,7 +8,7 @@
     timeLimitMs: 600000,   // a game ends when the clock (hint penalties included) reaches 10:00
     hintGapMs: 10000 };    // at least 10 seconds between hints
   // puzzle #1 is played on LAUNCH (a calendar date); each later day is one number higher
-  var LAUNCH = "2026-11-21";
+  var LAUNCH = "2026-11-22";
   function dayMs(day) { var p = String(day).split("-"); return Date.UTC(+p[0], p[1] - 1, +p[2]); }
   function numberOf(day) { return Math.round((dayMs(day) - dayMs(LAUNCH)) / 86400000) + 1; }
   function dayOf(n) { return new Date(dayMs(LAUNCH) + (n - 1) * 86400000).toISOString().slice(0, 10); }

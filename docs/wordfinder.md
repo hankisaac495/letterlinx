@@ -129,4 +129,4 @@ titles and link previews.
 
 - Phase 4: ideally a separate Neon database branch for Vercel previews, so test data stays out of the live database.
 - Phase 7: `ANTHROPIC_API_KEY` in Vercel (server only), for Production and Preview. Optional: `WF_AI_MODEL`.
-- Launch date for puzzle #1: to be decided. It is `LAUNCH` in `wordfinder.js` (now 2026-11-21, provisional).
+- Launch date for puzzle #1: November 22, 2026. It is `LAUNCH` in `wordfinder.js`: 2026-11-22 (launch day).
