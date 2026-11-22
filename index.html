@@ -420,6 +420,10 @@ a.btn { display: inline-block; text-decoration: none; text-align: center; }
 .scorebtn .num { font-size: 1.15rem; font-weight: 800; min-width: 3ch; }
 .scorebtn .meta { flex: 1; min-width: 0; color: var(--muted); font-size: .85rem; }
 .scorebtn .chev { color: var(--muted); }
+.winbtn .who { flex: 1; min-width: 0; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.winbtn .trophy { width: 22px; height: 22px; flex: none; fill: none; stroke: var(--accent-ink, #2B1E00); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  background: var(--accent); border-radius: 50%; padding: 4px; box-sizing: content-box; }
+.modalmeta { margin: -6px 0 0; color: var(--muted); font-weight: 600; }
 li + li > .scorebtn { border-top: 1px solid var(--line); }
 ol.plain, ul.plain { list-style: none; margin: 0; padding: 0; }
 table { width: 100%; border-collapse: collapse; }
@@ -671,6 +675,10 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <p class="empty" id="playersEmpty" hidden></p>
     </div>
     <p class="note" id="lbNote"></p>
+    <div id="lbWinBox" hidden>
+      <h2 data-t="lb.yesterday">Yesterday's Winner</h2>
+      <div class="panel"><button class="scorebtn winbtn" id="lbWin" type="button"></button></div>
+    </div>
     <div id="lbMineBox">
       <h2 id="lbMine">Your games</h2>
       <div class="panel"><ol class="plain" id="top5"></ol></div>
@@ -799,6 +807,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 <div class="overlay" id="modal" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <header><h2 id="modalTitle"></h2><button class="x" id="modalClose" type="button" data-t-label="modal.close" aria-label="Close">✕</button></header>
+    <p class="modalmeta" id="modalMeta" hidden></p>
     <div class="grow"><ul class="wordlist" id="modalWords"></ul></div>
   </div>
 </div>
@@ -1033,6 +1042,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   }
   async function loadPlayers() {
     if (lbTab === "wordfinder") return loadWfPlayers();
+    if (lbTab === "daily") loadWinner();
     try {
       const r = await call("/api/leaderboard?mode=" + encodeURIComponent(modeId) + (lbTab === "daily" ? "&game=" + viewGame() : "&variant=booster"), "GET");
       if (!r.ok || !Array.isArray(r.data?.players)) throw 0;
@@ -1041,6 +1051,33 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     } catch (e) { lbState = "local"; }
     renderLeaderboard();
   }
+  /* yesterday's Linx Daily winner, shown above the player's top 5 */
+  let lbWinner = null;                                              // { key: "mode:game", data: winner or null }
+  async function loadWinner() {
+    const game = gameNo - 1, key = modeId + ":" + game;
+    if (game < M.daily.first || (lbWinner && lbWinner.key === key)) return renderWinner();
+    try {
+      const r = await call("/api/leaderboard?mode=" + encodeURIComponent(modeId) + "&winner=" + game, "GET");
+      if (r.ok) lbWinner = { key, data: r.data.winner };
+    } catch (e) {}
+    renderWinner();
+  }
+  function renderWinner() {
+    const w = lbWinner && lbWinner.key === modeId + ":" + (gameNo - 1) ? lbWinner.data : null, box = $("lbWinBox");
+    box.hidden = lbTab !== "daily" || !w;
+    if (box.hidden) return;
+    const b = $("lbWin"); b.textContent = "";
+    const mk = (cls, txt) => { const s = document.createElement("span"); s.className = cls; s.textContent = txt; b.appendChild(s); };
+    b.insertAdjacentHTML("beforeend", '<svg class="trophy" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 14v4M8 20h8"/></svg>');
+    mk("gno", "#" + (gameNo - 1)); mk("who", w.screenName.slice(0, 24)); mk("num", w.score); mk("chev", "›");
+    b.setAttribute("aria-label", t("lb.yesterday") + ": " + t("lb.game", { game: gameNo - 1 }) + ", " + w.screenName + ", " + t("modal.points", { n: w.score }));
+  }
+  $("lbWin").addEventListener("click", () => {
+    const w = lbWinner && lbWinner.data; if (!w) return;
+    openModal(t("lb.game", { game: gameNo - 1 }) + " · " + t("modal.points", { n: w.score }), w.words, w.screenName + " · " + nWords(w.words.length));
+    track("winner_open", { game: gameNo - 1 });
+  });
+
   async function loadWfPlayers() {
     const lang = mode.lang === "es" ? "es" : "en", n = viewGame();
     try {
@@ -1894,6 +1931,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       $("stPlayed").textContent = st.played; $("stTop").textContent = st.top; $("stStreak").textContent = st.current; $("stMax").textContent = st.max;
       $("stLongest").textContent = st.longest || "—";
     }
+    renderWinner();
     // Linx Daily: the player's five best games (highest score first; a tie goes to the newer game)
     const mine = daily ? [...games()].sort((a, b) => b.score - a.score || b.game - a.game).slice(0, 5) : boosts(), ol = $("top5"); ol.textContent = "";
     if (!mine.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = t("lb.noScores"); ol.appendChild(li); }
@@ -2018,8 +2056,10 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     reset(); show("game");
   }
 
-  function openModal(title, list) {
-    $("modalTitle").textContent = title; fillWords($("modalWords"), list, t("modal.none")); $("modal").hidden = false; $("modalClose").focus();
+  function openModal(title, list, meta) {
+    $("modalTitle").textContent = title; fillWords($("modalWords"), list, t("modal.none"));
+    $("modalMeta").hidden = !meta; $("modalMeta").textContent = meta || "";
+    $("modal").hidden = false; $("modalClose").focus();
   }
   const closeModal = () => { $("modal").hidden = true; $("notice").hidden = true; $("calendar").hidden = true; };
   /* confirmation overlay with a Play Now button (welcome after confirming, or changes saved) */
