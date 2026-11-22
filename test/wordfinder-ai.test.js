@@ -109,3 +109,12 @@ test("an account that rejects the fallback option is asked again without it", as
   assert.strictEqual(requests.length, 2);
   assert.ok(!("fallbacks" in requests[1].body) && !/fallback/.test(requests[1].headers["anthropic-beta"] || ""));
 });
+
+test("a key without permission for the fallback option still works without it", async () => {
+  reply = (b) => b.fallbacks ? { status: 403, etype: "permission_error", emsg: "Your organization does not have access to this feature." }
+    : { json: { days: [{ day: "2026-12-01", en_topic: "Trees", es_topic: "Árboles" }] } };
+  const r = await AI.planMonth(["2026-12-01"], []);
+  assert.strictEqual(r.topics[0].en, "Trees");
+  reply = () => ({ status: 403, etype: "permission_error", emsg: "This key can't use this workspace." });   // refused both ways: say so
+  await assert.rejects(AI.planMonth(["2026-12-01"], []), (e) => e.code === "forbidden" && /can't use this workspace/.test(e.message));
+});

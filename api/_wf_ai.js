@@ -84,7 +84,8 @@ async function ask(prompt, schema, maxTokens) {
     r = await c.beta.messages.create({ ...base, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" });
   } catch (e) {
     // an account that doesn't accept the fallback option gets the same request without it
-    if (e && e.status === 400 && /fallback|beta/i.test(reasonOf(e))) {
+    // (a 400 or 403 that names the fallback or beta, or any 403: permission to use the optional feature)
+    if (e && (e.status === 403 || (e.status === 400 && /fallback|beta/i.test(reasonOf(e))))) {
       try { r = await c.messages.create(base); } catch (e2) { throw explain(e2); }
     } else throw explain(e);
   }
