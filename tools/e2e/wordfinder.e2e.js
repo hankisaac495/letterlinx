@@ -143,7 +143,7 @@ test("a guest plays today's puzzle: misses, a hint, all six words, the result, a
   assert.deepStrictEqual(p.errors, []);
 });
 
-test("giving up: the board blurs behind the dialog, Cancel carries on, End Game shows the answers", async () => {
+test("surrendering: the board blurs behind the dialog, Cancel carries on, End Game shows the answers", async () => {
   const p = await page();
   await p.goto(U + "/wordfinder");
   await until(p, () => document.getElementById("goTopic").textContent.length > 0);
@@ -154,7 +154,7 @@ test("giving up: the board blurs behind the dialog, Cancel carries on, End Game 
   await until(p, () => document.querySelectorAll("#wfChips .wfchip").length === 1);
   await p.click("#wfStopBtn");
   await p.waitForSelector("#wfGiveUp:not([hidden])");
-  assert.match(await p.textContent("#wfGiveUp"), /Give up\?\s*End today's game and show me the answers\. Try again tomorrow!/);
+  assert.match(await p.textContent("#wfGiveUp"), /Surrender\?\s*End today's game and reveal the answers\. Try again tomorrow!/);
   assert.match(await p.evaluate(() => getComputedStyle(document.querySelector("#board .tile span")).filter), /blur/, "tiles are blurred");
   await p.click("#wfGiveUpNo");
   assert.strictEqual(await p.isHidden("#wfGiveUp"), true);
@@ -163,7 +163,7 @@ test("giving up: the board blurs behind the dialog, Cancel carries on, End Game 
   await until(p, () => document.querySelectorAll("#wfChips .wfchip").length === 2);
   await p.click("#wfStopBtn"); await p.click("#wfGiveUpYes");
   await p.waitForSelector("#wfResults:not([hidden])");
-  assert.strictEqual(await p.textContent("#wfDoneTime"), "You gave up");
+  assert.strictEqual(await p.textContent("#wfDoneTime"), "You Ended the Game");
   assert.match(await p.textContent("#wfDoneBreak"), /^Found 2 of 6 in \d+:\d\d$/);
   assert.strictEqual(await p.$$eval("#wfDoneWords li", (n) => n.length), 6);
   assert.strictEqual(await p.$$eval("#wfDoneWords li.missed", (n) => n.length), 4);
@@ -171,7 +171,7 @@ test("giving up: the board blurs behind the dialog, Cancel carries on, End Game 
   assert.strictEqual(await p.isHidden("#wfNickForm"), true);
   await p.evaluate(() => { delete Navigator.prototype.share; });
   await p.click("#wfShareBtn"); await until(p, () => document.getElementById("wfShareBtn").textContent === "Copied");
-  assert.match(await p.evaluate(() => navigator.clipboard.readText()), /\n🏳️ Gave up \(2 of 6 found\)\n/);
+  assert.match(await p.evaluate(() => navigator.clipboard.readText()), /\n🏳️ Ended the game \(2 of 6 found\)\n/);
   await p.goto(U + "/wordfinder"); await p.waitForSelector("#wfResults:not([hidden])");   // still over after a reload
   assert.deepStrictEqual(p.errors, []);
 });
