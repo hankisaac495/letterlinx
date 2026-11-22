@@ -230,13 +230,13 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .longest span { color: var(--muted); font-size: .9rem; }
 .longest b { font-size: 1.3rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; overflow-wrap: anywhere; }
 /* Linx WordFinder: found-word colours from the Okabe-Ito colour-blind-safe palette, each with readable ink */
-:root { --wf1: #0072B2; --wf1i: #FFFFFF; --wf2: #E69F00; --wf2i: #2B1E00; --wf3: #009E73; --wf3i: #FFFFFF;
-  --wf4: #CC79A7; --wf4i: #2B1E00; --wf5: #D55E00; --wf5i: #FFFFFF; --wf6: #56B4E9; --wf6i: #10303B; }
+:root { --wf1: #0072B2; --wf1i: #FFFFFF; --wf2: #E69F00; --wf2i: #2B1E00; --wf3: #009E73; --wf3i: #0B1C22;
+  --wf4: #CC79A7; --wf4i: #2B1E00; --wf5: #D55E00; --wf5i: #1A0A00; --wf6: #56B4E9; --wf6i: #10303B; }
 .tile.wf::before { background: var(--wfc); box-shadow: 0 2px 0 color-mix(in srgb, var(--wfc) 55%, #000); }
 .tile.wf span { color: var(--wfi); }
 .tile.wf.sel::before { background: var(--accent); }
 .tile.wf.sel span { color: var(--accent-ink); }
-.tile.wffill::before, .tile.wffill span { animation: wffill .28s ease-out both; animation-delay: var(--d, 0ms); }
+.tile.wffill::before, .tile.wffill span { animation: wffill .22s ease-out both; animation-delay: var(--d, 0ms); }
 @keyframes wffill { 0% { transform: scale(.55); } 60% { transform: scale(1.1); } 100% { transform: scale(1); } }
 .tile .wfb { position: absolute; z-index: 3; top: 2%; left: 2%; width: 38cqw; height: 38cqw; border-radius: 50%; display: grid; place-items: center;
   background: var(--surface); color: var(--ink); font-size: 26cqw; font-weight: 900; line-height: 1; box-shadow: 0 1px 3px var(--shade); }
@@ -254,6 +254,14 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .lbhints { color: var(--muted); font-weight: 600; font-size: .75em; white-space: nowrap; }
 .tile.miss::before, .tile.miss span { animation: shake .3s linear; }
 #word.miss { background: var(--surface-2); color: var(--muted); }
+.sronly { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* typing a word: for keyboard and screen-reader players; out of sight until it has focus */
+.wftype { position: absolute; left: -9999px; display: flex; align-items: center; gap: 8px; background: var(--surface); border-radius: 12px; padding: 8px 10px;
+  box-shadow: 0 2px 10px var(--shade); z-index: 5; }
+.wftype:focus-within { position: relative; left: 0; }
+.wftype { flex-direction: row; flex-wrap: wrap; }
+.wftype label { display: block; flex: 1 0 100%; font-size: .85rem; font-weight: 700; color: var(--ink); }
+.wftype input { flex: 1; width: auto; min-width: 0; padding: 8px 10px; text-transform: uppercase; font-weight: 700; letter-spacing: .08em; }
 .wfhintbtn { flex: none; border: 0; border-radius: 12px; padding: 8px 12px; font-weight: 800; font-size: .85rem; background: var(--accent); color: var(--accent-ink);
   box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 60%, #000); white-space: nowrap; }
 .wfhintbtn:disabled { opacity: .45; box-shadow: none; }
@@ -502,9 +510,15 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     <div class="bar" id="bar"><i></i></div>
     <div class="wfbanner" id="wfBanner" hidden><span data-t="wf.banner">A new puzzle is ready.</span><button class="btn small" id="wfBannerBtn" type="button" data-t="wf.bannerBtn">Play it</button></div>
     <div class="wfrow" id="wfRow" hidden>
-      <div class="wfchips" id="wfChips"></div>
+      <div class="wfchips" id="wfChips" role="list" data-t-label="wf.chips" aria-label="Words found"></div>
       <button class="wfmute" id="wfMute" type="button" data-t-label="wf.mute" aria-label="Sound on or off"></button>
     </div>
+    <form class="wftype" id="wfType" autocomplete="off" hidden>
+      <label for="wfTypeIn" data-t="wf.typeLabel">Type a word you've found</label>
+      <input type="text" id="wfTypeIn" maxlength="12" autocapitalize="characters" spellcheck="false" autocomplete="off">
+      <button class="btn small" type="submit" data-t="wf.typeBtn">Check</button>
+    </form>
+    <p class="sronly" id="wfLive" aria-live="polite"></p>
     <div class="boardwrap" id="boardwrap">
       <div id="board">
         <svg id="trail" viewBox="0 0 7 11" preserveAspectRatio="none" aria-hidden="true"><polyline class="base" points=""/><polyline class="dash" points=""/></svg>
@@ -1394,6 +1408,9 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     while (days.has(localKey(d))) { n++; d.setDate(d.getDate() - 1); }
     return n;
   }
+  // screen readers hear finds, misses, hints and the final time (the word box is silent during WordFinder,
+  // so a drag isn't read out letter by letter)
+  function wfSay(text) { const n = $("wfLive"); n.textContent = ""; setTimeout(() => { n.textContent = text; }, 60); }
   const wfApi = (body) => call("/api/wordfinder", "POST", { lang: wf.lang, day: wf.day, ...body }).catch(() => null);
 
   // take the server's view of the puzzle and this player's game
@@ -1474,7 +1491,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     found.forEach((f, n) => { const b = document.createElement("span"); b.className = "wfb"; b.textContent = n + 1; tiles[f.path[0]].appendChild(b); });
     if (newest) newest.path.forEach((i, k) => {
       const tl = tiles[i]; tl.classList.remove("wffill"); void tl.offsetWidth;
-      tl.style.setProperty("--d", Math.round(k * Math.min(45, 300 / newest.path.length)) + "ms"); tl.classList.add("wffill");
+      tl.style.setProperty("--d", Math.round(k * Math.min(25, 160 / newest.path.length)) + "ms");   // the whole word fills in under 0.4 s tl.classList.add("wffill");
     });
   }
 
@@ -1486,7 +1503,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     const spelled = WF.spellPath(wf.grid, p, COLS);
     const known = pl.found.find((f) => WF.normalizeWord(f.word).key === spelled);
     if (known) return wfMiss(p, t("word.already", { word: known.word }));
-    if (!spelled || wf.misses.has(spelled)) return wfMiss(p, spelled || "");
+    if (!spelled || wf.misses.has(spelled)) return wfMiss(p, spelled || "", spelled ? t("wf.saidMiss", { word: spelled }) : "");
     const mine = fb = { text: spelled, kind: "wait", pts: p };      // the trail stays lit while the server checks
     p.forEach((i) => mark.set(i, "wait")); paint();
     wfQueue = wfQueue.then(() => wfCheck(p, spelled, mine));
@@ -1501,6 +1518,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     if (r.data.hit) {
       const find = me.play.found.find((f) => f.i === r.data.i);
       chime(me.play.found.length === WF_COUNT);
+      wfSay(t("wf.saidFound", { word: find.word, n: me.play.found.length }));
       const good = fb = { text: find.word, kind: "good", pts: p };
       wfPaintFound(find); paint();
       setTimeout(() => { if (fb === good) { fb = null; paint(); } }, 420);
@@ -1509,11 +1527,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     }
     if (r.data.already != null) { const f = me.play.found.find((x) => x.i === r.data.already); return wfMiss(p, t("word.already", { word: f ? f.word : spelled })); }
     me.misses.add(spelled);
-    wfMiss(p, spelled);
+    wfMiss(p, spelled, t("wf.saidMiss", { word: spelled }));
   }
   // a gentle miss: soft thud and a small shake, no penalty
-  function wfMiss(p, text) {
-    thud();
+  function wfMiss(p, text, said) {
+    thud(); wfSay(said || text);
     const round = roundId, mine = fb = { text, kind: "miss", pts: p };
     p.forEach((i) => mark.set(i, "miss")); paint();
     setTimeout(() => { if (round !== roundId) return; p.forEach((i) => { if (mark.get(i) === "miss") mark.delete(i); }); if (fb === mine) fb = null; paint(); }, 360);
@@ -1521,7 +1539,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   function wfFinish() {
     track("round_end", { game_language: wf.lang, game_variant: "wordfinder", time_seconds: Math.round(wf.play.totalMs / 1000), hints: wf.play.hints.length });
-    setTimeout(() => { if (wf && wf.play && wf.play.done) wfShowResults(); }, 700);
+    wfSay(t("wf.saidSolved", { time: clockText(wf.play.totalMs) }));
+    setTimeout(() => { if (wf && wf.play && wf.play.done) wfShowResults(); }, 450);
   }
 
   function wfShowResults() {
@@ -1608,7 +1627,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     if (wf !== me) return;
     me.hinting = false;
     if (r && r.ok) { wfAdopt(r.data); track("hint", { game_variant: "wordfinder" }); }
-    wfTickClock(); wfRenderHints(); $("wfHints").hidden = false; paint();
+    wfTickClock(); wfRenderHints(); wfOpenHints(); paint();
   }
   function wfRenderHints() {
     const pl = wf && wf.play;
@@ -1624,10 +1643,25 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     });
     $("wfHintMore").hidden = !wfHintsLeft(); $("wfHintMore").textContent = t("wf.another");
   }
-  $("wfHintBtn").addEventListener("click", () => { if (wfHintsLeft()) wfHint(); else { wfRenderHints(); $("wfHints").hidden = false; } });
+  // the hints dialog takes focus when it opens, closes with Escape, and hands focus back to the Hint button
+  function wfOpenHints() { $("wfHints").hidden = false; ($("wfHintMore").hidden ? $("wfHintsClose") : $("wfHintMore")).focus(); }
+  function wfCloseHints() { if ($("wfHints").hidden) return; $("wfHints").hidden = true; if (!$("wfHintBtn").hidden) $("wfHintBtn").focus(); }
+  $("wfHintBtn").addEventListener("click", () => { if (wfHintsLeft()) wfHint(); else { wfRenderHints(); wfOpenHints(); } });
   $("wfHintMore").addEventListener("click", wfHint);
-  $("wfHintsClose").addEventListener("click", () => { $("wfHints").hidden = true; });
-  $("wfHints").addEventListener("click", (e) => { if (e.target === $("wfHints")) $("wfHints").hidden = true; });
+  $("wfHintsClose").addEventListener("click", wfCloseHints);
+  $("wfHints").addEventListener("click", (e) => { if (e.target === $("wfHints")) wfCloseHints(); });
+  $("wfHints").addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); wfCloseHints(); } });
+
+  // typing a word instead of dragging it: the board is searched for it and the path is checked like a drag
+  $("wfType").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const inp = $("wfTypeIn"), key = WF.normalizeWord(inp.value).key;
+    if (!wf || !wf.play || wf.play.done || phase !== "playing" || !key) return;
+    const found = WF.findPath(wf.grid, key, COLS, ROWS);
+    inp.value = "";
+    if (!found) return wfSay(t("wf.saidNotOnBoard", { word: key }));
+    path = found; wfSubmit();
+  });
 
   // WordFinder's parts of the screen, refreshed with every paint
   function wfPaint() {
@@ -1637,6 +1671,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     $("goTopic").hidden = !on || !wf.topic;
     $("wfRow").hidden = !playing;
     $("wfHintBtn").hidden = !playing;
+    $("wfType").hidden = !playing;
+    $("word").setAttribute("aria-live", on ? "off" : "polite");
     $("go").disabled = on && (wf.loading || !!wf.starting);
     if (!on) return;
     $("restartBtn").hidden = true;
@@ -1654,11 +1690,13 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       (pl ? pl.found : []).forEach((f, n) => {
         const c = document.createElement("span"), b = document.createElement("b"), [col, ink] = wfColor(n);
         c.className = "wfchip" + (grew && n === found - 1 ? " new" : ""); c.style.setProperty("--wfc", col); c.style.setProperty("--wfi", ink);
+        c.setAttribute("role", "listitem");
         b.textContent = n + 1; c.append(b, f.word); chips.appendChild(c);
       });
     }
     const left = wfHintsLeft();
     $("wfHintBtn").disabled = !left || !!wf.hinting; $("wfHintBtn").textContent = left ? t("wf.hint") : t("wf.noHints");
+    $("wfMute").setAttribute("aria-pressed", String(!!S.audio));
     $("wfMute").innerHTML = S.audio
       ? '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>'
       : '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';

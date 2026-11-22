@@ -5,6 +5,7 @@
   "use strict";
   const W = window.LLX_WF, LANGS = { en: "English", es: "Español" };
   const COLORS = ["#0072B2", "#E69F00", "#009E73", "#CC79A7", "#D55E00", "#56B4E9"];
+  const INKS = ["#FFFFFF", "#2B1E00", "#0B1C22", "#2B1E00", "#1A0A00", "#10303B"];   // readable letters on each colour
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
   const btn = (label, cls, fn) => { const b = el("button", "btn small " + (cls || ""), label); b.type = "button"; b.addEventListener("click", fn); return b; };
   const parse = (d) => { const p = d.split("-"); return new Date(+p[0], p[1] - 1, +p[2]); };
@@ -486,7 +487,7 @@
         const g = el("div", "wfa-grid");
         board.grid.forEach((l, i) => {
           const t = el("span", owner[i] >= 0 ? "on" : "", l);
-          if (owner[i] >= 0) t.style.background = COLORS[owner[i]];
+          if (owner[i] >= 0) { t.style.background = COLORS[owner[i]]; t.style.color = INKS[owner[i]]; }
           if (start[i]) t.appendChild(el("b", null, start[i]));
           g.appendChild(t);
         });

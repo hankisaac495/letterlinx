@@ -98,6 +98,20 @@ titles and link previews.
   by day and can be stopped. Rough cost: about 10 cents a day, $3–4 a month.
 - Tests use a local stand-in for the Claude API (`test/wordfinder-ai.test.js`), so no key or network is needed.
 
+## Polish and tests (phase 8)
+
+- Accessibility: finds, misses, hints and the final time are announced to screen readers (the word box stays
+  quiet during WordFinder so drags aren't read letter by letter); a "Type a word you've found" box appears when
+  tabbed to, for keyboard and screen-reader players; the hints dialog takes focus, closes with Escape and returns
+  focus; the chips are a labelled list; the mute button reports its state.
+- Colours: all six found-word colours have letters at 4.5:1 contrast or better (green and vermilion now use dark ink).
+- Motion: the fill animation finishes within 0.4 s; with "reduce motion" on, nothing animates.
+- End-to-end tests (`tools/e2e/wordfinder.e2e.js`, run with `E2E_DATABASE_URL=<empty database> npm run e2e`):
+  an admin writes the month with Claude (a local stand-in) and approves today; a guest misses, takes a hint, finds
+  all six words, is refused a member's name, joins the leaderboard, shares (no words in the text) and sees the
+  leaderboard tab; a keyboard player solves the Spanish puzzle by typing with reduced motion. They also check that
+  unfound words never reach the browser. Needs Playwright with Chromium; not part of the Vercel build.
+
 ## Setup needed later
 
 - Phase 4: ideally a separate Neon database branch for Vercel previews, so test data stays out of the live database.

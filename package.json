@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "node dev-server.js",
     "pages": "node build-pages.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "e2e": "node --test --test-concurrency=1 tools/e2e/*.e2e.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.12.0",
