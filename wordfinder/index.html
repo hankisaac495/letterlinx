@@ -335,9 +335,21 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .calkey { display: flex; align-items: center; gap: 6px; }
 /* games screen */
 #variantList { display: flex; flex-direction: column; gap: 12px; }
-.variant { width: 100%; text-align: left; border: 2px solid transparent; background: var(--surface); border-radius: 18px; padding: 16px 18px;
+.gamestitle { font-size: 1.75rem; }
+.vcard { background: var(--surface); border: 2px solid transparent; border-radius: 18px; display: flex; flex-direction: column; }
+.vcard.on { border-color: var(--brand); }
+.variant { width: 100%; text-align: left; border: 0; background: none; border-radius: 16px; padding: 16px 18px 8px; color: inherit; font: inherit;
   display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; }
-.variant[aria-pressed="true"] { border-color: var(--brand); }
+.vhow { align-self: flex-start; margin: 0 0 14px 18px; border: 1.5px solid var(--line); background: none; color: var(--brand); border-radius: 99px;
+  padding: 5px 12px 5px 8px; font: inherit; font-size: .8rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.vhow svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+.howto { gap: 10px; }
+.howto h3 { margin: 6px 0 0; font-size: .8rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); }
+.howto p, .howto ul { margin: 0; font-size: .95rem; line-height: 1.45; }
+.howto ul { padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.howto .pts { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; font-size: .9rem; }
+.howto .pts span { display: flex; justify-content: space-between; gap: 8px; background: var(--surface); border-radius: 8px; padding: 4px 10px; }
+.howto .pts span b { font-weight: 800; color: var(--brand); }
 .variant .vname { font-size: 1.3rem; font-weight: 900; }
 .variant .vtext { grid-column: 1 / -1; color: var(--muted); font-size: .95rem; line-height: 1.45; }
 .variant .vmeta { grid-column: 1 / -1; font-size: .8rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); }
@@ -604,7 +616,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
   <!-- GAMES: choose a game variation -->
   <section class="screen scroll" id="s-games" hidden>
-    <h2 data-t="games.title">Games</h2>
+    <h2 class="gamestitle" data-t="games.title">Select a Game</h2>
     <div id="variantList"></div>
   </section>
 
@@ -802,7 +814,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   <div id="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
   <div class="tourbtns">
     <button class="btn" id="tourNext" type="button" data-t="tour.next">Next</button>
-    <button class="btn primary" id="playNow" type="button" data-t="tour.play">Play Now</button>
+    <button class="btn primary" id="playNow" type="button" data-t="tour.play">Select Game and Play!</button>
   </div>
 </div>
 
@@ -835,6 +847,13 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   </div>
 </div>
 
+<div class="overlay" id="howto" hidden>
+  <div class="modal howto" role="dialog" aria-modal="true" aria-labelledby="howtoTitle">
+    <header><h2 id="howtoTitle"></h2><button class="x" id="howtoClose" type="button" data-t-label="modal.close" aria-label="Close">✕</button></header>
+    <div class="grow" id="howtoBody"></div>
+  </div>
+</div>
+
 <div class="overlay" id="wfGiveUp" hidden>
   <div class="modal giveup" role="alertdialog" aria-modal="true" aria-labelledby="wfGiveUpTitle" aria-describedby="wfGiveUpText">
     <div class="flagicon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="pole" d="M5.5 21.5V2.5"/><path class="cloth" d="M5.5 3.8c2.6-1.6 5 .9 7.5-.1s4.300-1.300 6.300-.5v9.300c-2-.8-3.800-.5-6.300.5s-4.900-1.500-7.500.1z"/></svg></div>
@@ -850,7 +869,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     <p id="noticeText"></p>
     <div class="noticebtns">
       <button class="btn" id="noticeSettings" type="button" data-t="nav.settings" hidden>Settings</button>
-      <button class="btn primary" id="noticePlay" type="button" data-t="tour.play">Play Now</button>
+      <button class="btn primary" id="noticePlay" type="button" data-t="notice.play">Play Now</button>
     </div>
   </div>
 </div>
@@ -2039,6 +2058,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   function renderVariants() {
     const box = $("variantList"); box.textContent = "";
     for (const v of VARIANTS) {
+      const card = document.createElement("div"); card.className = "vcard" + (v === variant ? " on" : "");
       const b = document.createElement("button"); b.type = "button"; b.className = "variant"; b.setAttribute("aria-pressed", String(v === variant));
       const add = (cls, text) => { const n = document.createElement("span"); n.className = cls; n.textContent = text; b.appendChild(n); };
       add("vname", t("v." + v + ".name")); add("vgo", v === variant ? t("games.playing") : t("games.play"));
@@ -2047,9 +2067,48 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
         : v === "wordfinder" ? t("wf.num", { n: wfNumber(localKey()) }) + " · " + t("wf.streak", { n: wfStreak() })
         : t("games.best", { n: boosts()[0]?.score || 0 }));
       b.addEventListener("click", () => setVariant(v));
-      box.appendChild(b);
+      const how = document.createElement("button"); how.type = "button"; how.className = "vhow";
+      how.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6M12 7.5v.01"/></svg>';
+      how.append(t("games.instructions"));
+      how.setAttribute("aria-label", t("games.instructions") + ": " + t("v." + v + ".name"));
+      how.addEventListener("click", () => openHowto(v, how));
+      card.append(b, how);
+      box.appendChild(card);
     }
   }
+  /* Instructions: how to play, scoring and rules for one game, as short as possible */
+  let howtoFrom = null;
+  function openHowto(v, from) {
+    howtoFrom = from;
+    $("howtoTitle").textContent = t("v." + v + ".name");
+    const body = $("howtoBody"); body.textContent = "";
+    const h = (k) => { const n = document.createElement("h3"); n.textContent = t(k); body.appendChild(n); };
+    const p = (text) => { const n = document.createElement("p"); n.textContent = text; body.appendChild(n); };
+    const list = (key) => { const ul = document.createElement("ul"); t(key).split("|").forEach((x) => { const li = document.createElement("li"); li.textContent = x; ul.appendChild(li); }); body.appendChild(ul); };
+    h("howto.play"); p(t(v === "wordfinder" ? "howto.wf.play" : "howto.linx.play", { n: mode.minLength }));
+    h("howto.scoring");
+    if (v === "wordfinder") p(t("howto.wf.scoring"));
+    else {                                                        // points by word length, from the game's own table
+      const pts = document.createElement("div"); pts.className = "pts";
+      const lens = []; for (let n = mode.minLength; n < mode.points.length; n++) lens.push(n);
+      const half = Math.ceil(lens.length / 2), order = [];
+      for (let i = 0; i < half; i++) { order.push(lens[i]); if (lens[i + half] != null) order.push(lens[i + half]); }
+      for (const n of order) {
+        const s = document.createElement("span"), b = document.createElement("b");
+        s.append(n === mode.points.length - 1 ? t("tour.orMore", { n }) : t("tour.letters", { n }), " ");
+        b.textContent = mode.points[n]; s.appendChild(b); pts.appendChild(s);
+      }
+      body.appendChild(pts);
+    }
+    h("howto.rules"); list("howto." + (v === "wordfinder" ? "wf" : v) + ".rules");
+    $("howto").hidden = false; $("howtoClose").focus();
+    track("instructions_open", { game_variant: v });
+  }
+  function closeHowto() { if ($("howto").hidden) return; $("howto").hidden = true; if (howtoFrom && document.body.contains(howtoFrom)) howtoFrom.focus(); }
+  $("howtoClose").addEventListener("click", closeHowto);
+  $("howto").addEventListener("click", (e) => { if (e.target === $("howto")) closeHowto(); });
+  $("howto").addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); closeHowto(); } });
+
   function setVariant(v) {
     if (phase === "playing" && variant !== "wordfinder") return;
     if (v !== variant) { variant = S.variant = v; saveLocal(); track("variant_change", { game_variant: v }); }
@@ -2277,7 +2336,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   slides.addEventListener("scroll", setDots, { passive: true });
   $("tourNext").addEventListener("click", () => slides.scrollTo({ left: (slideIx + 1) * slides.clientWidth, behavior: "smooth" }));
   function openTour() { $("tour").hidden = false; slides.scrollLeft = 0; setDots(); }
-  $("playNow").addEventListener("click", () => { $("tour").hidden = true; S.tourSeen = true; S.mode = modeId; saveLocal(); show("game"); });
+  // the tour ends on the Games screen, so new players pick which game to play
+  $("playNow").addEventListener("click", () => { $("tour").hidden = true; S.tourSeen = true; S.mode = modeId; saveLocal(); show("games"); });
 
   /* ---------- boot ---------- */
   function renderAll() { applyText(); renderSignState(); renderInstall(); renderVariants(); renderSettings(); renderModes(); renderLeaderboard(); renderAccount(); paint(); }

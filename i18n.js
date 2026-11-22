@@ -24,7 +24,14 @@ window.LLX_I18N = {
     "board.label": "Letter grid, {cols} by {rows}",
     "over.title": "Game #{game} · your score", "over.high": "New best today", "over.again": "Play Again",
     "over.none": "No words this round. Try short ones first: two letters still score.",
-    "nav.games": "Games", "games.title": "Games", "games.play": "Play", "games.playing": "Selected", "games.best": "Your best: {n}",
+    "nav.games": "Games", "games.title": "Select a Game", "games.instructions": "Instructions",
+    "howto.play": "How to play", "howto.scoring": "Scoring", "howto.rules": "Rules",
+    "howto.linx.play": "Tap GO, then drag across touching tiles (in any direction) to spell a word of {n} or more letters. Lift your finger to play it. Used tiles drop away and new letters fall in.",
+    "howto.daily.rules": "60 seconds per round.|Everyone gets the same letters each day; a new game starts at midnight.|Your best score of the day goes on that day's leaderboard (sign in to appear).",
+    "howto.booster.rules": "60 seconds per round.|A new random board every round.|Play as often as you like; your best scores are saved.",
+    "howto.wf.play": "Read the topic and tap GO. Drag through touching letters (in any direction) to find the six hidden words. Words can bend and share letters.",
+    "howto.wf.scoring": "Your time is your score: the fastest time wins. Each hint adds 30 seconds.",
+    "howto.wf.rules": "One try per day; everyone gets the same puzzle, and a new one starts at midnight.|10-minute limit. Hints are at least 10 seconds apart.|The white flag ends the game and shows the answers (not ranked).", "games.play": "Play", "games.playing": "Selected", "games.best": "Your best: {n}",
     "v.daily.name": "Linx Daily", "v.daily.text": "The same letters for every player, and a new numbered game every day at midnight. See how you rank on the day's leaderboard.",
     "v.booster.name": "Brain Booster", "v.booster.text": "A fresh random board every time you play. No two rounds are alike, so keep going and chase your all-time best.",
     "v.wordfinder.name": "Linx WordFinder", "v.wordfinder.text": "Six words on one topic are hidden in the board. Everyone gets the same puzzle each day. Find them all as fast as you can.",
@@ -130,7 +137,7 @@ window.LLX_I18N = {
     "tour.waysText": "Switch between them any time on the Games tab.",
     "tour.clockTitle": "Sixty seconds per round",
     "tour.clockText": "The clock ticks out loud for the last 10 seconds. Play as often as you like: your best scores are saved and ranked on the leaderboard.",
-    "tour.next": "Next", "tour.play": "Play Now"
+    "tour.next": "Next", "tour.play": "Select Game and Play!", "notice.play": "Play Now"
   },
   es: {
     "app.name": "Letra Linx", "logo.top": "LETRA",
@@ -155,7 +162,14 @@ window.LLX_I18N = {
     "board.label": "Cuadrícula de letras, {cols} por {rows}",
     "over.title": "Juego #{game} · tu puntuación", "over.high": "Nuevo récord de hoy", "over.again": "Jugar de nuevo",
     "over.none": "Ninguna palabra en esta ronda. Prueba primero con palabras cortas: las de dos letras también suman.",
-    "nav.games": "Juegos", "games.title": "Juegos", "games.play": "Jugar", "games.playing": "Elegido", "games.best": "Tu récord: {n}",
+    "nav.games": "Juegos", "games.title": "Elige un juego", "games.instructions": "Instrucciones",
+    "howto.play": "Cómo se juega", "howto.scoring": "Puntuación", "howto.rules": "Reglas",
+    "howto.linx.play": "Toca ¡YA! y arrastra por fichas vecinas (en cualquier dirección) para formar una palabra de {n} o más letras. Levanta el dedo para jugarla. Las fichas usadas desaparecen y caen letras nuevas.",
+    "howto.daily.rules": "60 segundos por ronda.|Todos tienen las mismas letras cada día; a medianoche empieza un juego nuevo.|Tu mejor puntuación del día entra en la clasificación de ese día (inicia sesión para aparecer).",
+    "howto.booster.rules": "60 segundos por ronda.|Un tablero nuevo al azar en cada ronda.|Juega las veces que quieras; tus mejores puntuaciones se guardan.",
+    "howto.wf.play": "Lee el tema y toca ¡YA!. Arrastra por letras vecinas (en cualquier dirección) para encontrar las seis palabras escondidas. Las palabras pueden girar y compartir letras.",
+    "howto.wf.scoring": "Tu tiempo es tu puntuación: gana el más rápido. Cada pista suma 30 segundos.",
+    "howto.wf.rules": "Un intento por día; todos tienen el mismo reto y a medianoche empieza uno nuevo.|Límite de 10 minutos. Entre pistas hay al menos 10 segundos.|La bandera blanca termina el juego y muestra las respuestas (sin clasificación).", "games.play": "Jugar", "games.playing": "Elegido", "games.best": "Tu récord: {n}",
     "v.daily.name": "Linx Diario", "v.daily.text": "Las mismas letras para todos, y un nuevo juego numerado cada día a medianoche. Mira en qué lugar quedas en la clasificación del día.",
     "v.booster.name": "Brain Booster", "v.booster.text": "Un tablero nuevo al azar cada vez que juegas. Ninguna ronda se repite, así que sigue jugando y supera tu récord.",
     "v.wordfinder.name": "Linx WordFinder", "v.wordfinder.text": "Seis palabras sobre un mismo tema se esconden en el tablero. Todos tienen el mismo reto cada día. Encuéntralas lo más rápido que puedas.",
@@ -261,6 +275,6 @@ window.LLX_I18N = {
     "tour.waysText": "Cambia de uno a otro cuando quieras en la pestaña Juegos.",
     "tour.clockTitle": "Sesenta segundos por ronda",
     "tour.clockText": "El reloj suena en los últimos 10 segundos. Juega las veces que quieras: tus mejores puntuaciones se guardan y aparecen en la clasificación.",
-    "tour.next": "Siguiente", "tour.play": "Jugar ahora"
+    "tour.next": "Siguiente", "tour.play": "Elige un juego y ¡a jugar!", "notice.play": "Jugar ahora"
   }
 };
