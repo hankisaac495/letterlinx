@@ -12,6 +12,18 @@
     <xhtml:link rel="alternate" hreflang="es" href="https://www.letterlinx.com/es/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.letterlinx.com/"/>
   </url>
+  <url>
+    <loc>https://www.letterlinx.com/wordfinder/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.letterlinx.com/wordfinder/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.letterlinx.com/es/wordfinder/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.letterlinx.com/wordfinder/"/>
+  </url>
+  <url>
+    <loc>https://www.letterlinx.com/es/wordfinder/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.letterlinx.com/wordfinder/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://www.letterlinx.com/es/wordfinder/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.letterlinx.com/wordfinder/"/>
+  </url>
   <url><loc>https://www.letterlinx.com/about/</loc></url>
   <url><loc>https://www.letterlinx.com/contact/</loc></url>
   <url><loc>https://www.letterlinx.com/privacy/</loc></url>

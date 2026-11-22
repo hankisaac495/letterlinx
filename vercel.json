@@ -19,6 +19,16 @@
       "source": "/privacy",
       "destination": "/privacy/",
       "permanent": true
+    },
+    {
+      "source": "/wordfinder",
+      "destination": "/wordfinder/",
+      "permanent": true
+    },
+    {
+      "source": "/es/wordfinder",
+      "destination": "/es/wordfinder/",
+      "permanent": true
     }
   ],
   "crons": [
@@ -29,6 +39,9 @@
   ],
   "functions": {
     "api/weekly-email.js": {
+      "maxDuration": 60
+    },
+    "api/wf-admin.js": {
       "maxDuration": 60
     }
   }
