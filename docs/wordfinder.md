@@ -118,7 +118,7 @@ titles and link previews.
   10:00 the game ends as "Time's up!". The server ends it too (any request after the limit), and finds after the
   limit don't count.
 - At least 10 seconds between hints, enforced by the server; the Hint button counts down ("Hint in 7s").
-- Surrender: the red stop sign at the top right opens "Surrender? End today's game and reveal the answers. Try again
+- Surrender: the white flag at the top right opens "Surrender? End today's game and reveal the answers. Try again
   tomorrow!" with End Game and Cancel; afterwards the results say "You Ended the Game". The board's letters blur while it's open; Cancel carries on (the clock keeps
   running).
 - A game that ends by giving up or running out of time shows all six answers (missed ones in grey with ✕), isn't

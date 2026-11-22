@@ -53,7 +53,7 @@ function gtag(){dataLayer.push(arguments);}
 /* Layout: one-screen phone app. A header strip (time / word / score), a tile board
    that fills what is left, and a four-tab bar pinned to the bottom. */
 :root {
-  --bg: #E7EFF2; --surface: #FFFFFF; --surface-2: #D9E5EA; --ink: #10303B; --muted: #55717C;
+  --bg: #E7EFF2; --surface: #FFFFFF; --surface-2: #D9E5EA; --flag-bg: #55717C; --ink: #10303B; --muted: #55717C;
   --line: #C5D4DA; --brand: #0C6B7A; --accent: #F2A900; --accent-ink: #2B1E00;
   --good: #128A58; --bad: #CF3B2A; --on-state: #FFFFFF; --tile: #FFFFFF; --tile-edge: #BCCDD4;
   --shade: rgba(16, 48, 59, .45);
@@ -61,12 +61,12 @@ function gtag(){dataLayer.push(arguments);}
   --body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0B1C22; --surface: #132B33; --surface-2: #1C3944; --ink: #E8F2F4; --muted: #8DA9B2;
+  --bg: #0B1C22; --surface: #132B33; --surface-2: #1C3944; --flag-bg: #1C3944; --ink: #E8F2F4; --muted: #8DA9B2;
   --line: #29495397; --brand: #5CC7D6; --accent: #FFBE2E; --accent-ink: #2B1E00;
   --good: #2FBF82; --bad: #FF6B57; --on-state: #06161B; --tile: #1A3742; --tile-edge: #071317;
   --shade: rgba(0, 0, 0, .6); color-scheme: dark } }
 :root[data-theme="dark"] {
-  --bg: #0B1C22; --surface: #132B33; --surface-2: #1C3944; --ink: #E8F2F4; --muted: #8DA9B2;
+  --bg: #0B1C22; --surface: #132B33; --surface-2: #1C3944; --flag-bg: #1C3944; --ink: #E8F2F4; --muted: #8DA9B2;
   --line: #29495397; --brand: #5CC7D6; --accent: #FFBE2E; --accent-ink: #2B1E00;
   --good: #2FBF82; --bad: #FF6B57; --on-state: #06161B; --tile: #1A3742; --tile-edge: #071317;
   --shade: rgba(0, 0, 0, .6); color-scheme: dark }
@@ -262,16 +262,16 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .wftype { flex-direction: row; flex-wrap: wrap; }
 .wftype label { display: block; flex: 1 0 100%; font-size: .85rem; font-weight: 700; color: var(--ink); }
 .wftype input { flex: 1; width: auto; min-width: 0; padding: 8px 10px; text-transform: uppercase; font-weight: 700; letter-spacing: .08em; }
-/* give up: a red stop sign in the top-right corner, and a dialog that blurs the board */
-#wfStopBtn { border: 0; background: none; width: 42px; height: 42px; padding: 0; flex: none; display: grid; place-items: center; }
-#wfStopBtn svg, .stopsign svg { width: 100%; height: 100%; }
-#wfStopBtn .oct, .stopsign path:first-child { fill: var(--bad); stroke: color-mix(in srgb, var(--bad) 60%, #000); stroke-width: 1; }
-#wfStopBtn .bar, .stopsign .bar { stroke: #fff; stroke-width: 2.6; stroke-linecap: round; fill: none; }
+/* surrender: a white flag in the top-right corner, and a dialog that blurs the board */
+#wfStopBtn { border: 0; border-radius: 50%; background: var(--flag-bg); width: 42px; height: 42px; padding: 8px; flex: none; display: grid; place-items: center; }
+#wfStopBtn svg, .flagicon svg { width: 100%; height: 100%; }
+#wfStopBtn .pole, .flagicon .pole { fill: none; stroke: #FFFFFF; stroke-width: 2; stroke-linecap: round; }
+#wfStopBtn .cloth, .flagicon .cloth { fill: #FFFFFF; stroke: #FFFFFF; stroke-width: 1.6; stroke-linejoin: round; }
 .modal.giveup { text-align: center; align-items: center; }
 .modal.giveup h2 { margin: 0; }
 .modal.giveup p { margin: 0; font-size: 1.05rem; line-height: 1.4; }
 .modal.giveup .two { width: 100%; }
-.stopsign { width: 64px; height: 64px; }
+.flagicon { width: 72px; height: 72px; padding: 12px; border-radius: 50%; background: var(--flag-bg); }
 .boardwrap.wfblur .tile span { filter: blur(9px); }
 .boardwrap.wfblur #trail { visibility: hidden; }
 .wfwords li.missed strong { background: var(--surface-2); color: var(--muted); }
@@ -299,7 +299,7 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 #wfResults { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; text-align: center; padding-bottom: 12px; }
 #wfResults h2 { font-size: 1.6rem; color: var(--brand); }
 #wfDoneTime { font-size: clamp(3rem, min(22vw, 10vh), 5.5rem); font-weight: 800; line-height: 1; }
-#wfDoneTime.words { font-size: clamp(1.6rem, min(8.5vw, 6vh), 2.6rem); color: var(--bad); }
+#wfDoneTime.words { font-size: clamp(1.3rem, min(6.5vw, 4.5vh), 2rem); color: var(--bad); }
 .wfbreak { color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
 .wfwords { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; text-align: left; }
 .wfwords li { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; background: var(--surface); border-radius: 12px; padding: 8px 12px; }
@@ -521,7 +521,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <div class="stat right"><div class="eyebrow" data-t="hud.score">Puntos</div><div class="num" id="score">0</div></div>
       <button id="wfHintBtn" class="wfhintbtn" type="button" hidden></button>
       <button id="restartBtn" type="button" data-t-label="hud.restart" aria-label="Reiniciar" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg></button>
-      <button id="wfStopBtn" type="button" data-t-label="wf.stop" aria-label="Rendirse" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path class="oct" d="M8.2 2h7.6L22 8.2v7.6L15.8 22H8.2L2 15.8V8.2z"/><path class="bar" d="M7 12h10"/></svg></button>
+      <button id="wfStopBtn" type="button" data-t-label="wf.stop" aria-label="Rendirse" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path class="pole" d="M5.5 21.5V2.5"/><path class="cloth" d="M5.5 3.8c2.6-1.6 5 .9 7.5-.1s4.300-1.300 6.300-.5v9.300c-2-.8-3.800-.5-6.300.5s-4.900-1.500-7.500.1z"/></svg></button>
     </div>
     <div class="bar" id="bar"><i></i></div>
     <div class="wfbanner" id="wfBanner" hidden><span data-t="wf.banner">Hay un reto nuevo.</span><button class="btn small" id="wfBannerBtn" type="button" data-t="wf.bannerBtn">Jugar</button></div>
@@ -811,7 +811,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 
 <div class="overlay" id="wfGiveUp" hidden>
   <div class="modal giveup" role="alertdialog" aria-modal="true" aria-labelledby="wfGiveUpTitle" aria-describedby="wfGiveUpText">
-    <div class="stopsign" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8.2 2h7.6L22 8.2v7.6L15.8 22H8.2L2 15.8V8.2z"/><path class="bar" d="M7 12h10"/></svg></div>
+    <div class="flagicon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="pole" d="M5.5 21.5V2.5"/><path class="cloth" d="M5.5 3.8c2.6-1.6 5 .9 7.5-.1s4.300-1.300 6.300-.5v9.300c-2-.8-3.800-.5-6.300.5s-4.900-1.500-7.500.1z"/></svg></div>
     <h2 id="wfGiveUpTitle" data-t="wf.giveUpTitle">¿Te rindes?</h2>
     <p id="wfGiveUpText" data-t="wf.giveUpText">Termina el reto de hoy y revela las respuestas. ¡Vuelve a intentarlo mañana!</p>
     <div class="two"><button class="btn danger solid" id="wfGiveUpYes" type="button" data-t="wf.endGame">Terminar</button><button class="btn" id="wfGiveUpNo" type="button" data-t="wf.cancel">Cancelar</button></div>
