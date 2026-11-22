@@ -34,7 +34,7 @@ function gtag(){dataLayer.push(arguments);}
 <meta name="twitter:title" content="LetterLinx: Free One-Minute Word Game">
 <meta name="twitter:description" content="Play LetterLinx free in your browser: link neighbouring letter tiles to spell words and score as many points as you can in 60 seconds. English and Spanish, with leaderboards.">
 <meta name="twitter:image" content="https://www.letterlinx.com/og-image.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":["VideoGame","WebApplication"],"name":"LetterLinx","alternateName":"Letra Linx","url":"https://www.letterlinx.com/","description":"Play LetterLinx free in your browser: link neighbouring letter tiles to spell words and score as many points as you can in 60 seconds. English and Spanish, with leaderboards.","image":"https://www.letterlinx.com/og-image.png","applicationCategory":"GameApplication","genre":"Word game","operatingSystem":"Any","browserRequirements":"Requires JavaScript","inLanguage":["en","es"],"playMode":"SinglePlayer","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","inLanguage":"en","mainEntity":[{"@type":"Question","name":"How do you play LetterLinx?","acceptedAnswer":{"@type":"Answer","text":"Tap GO, then drag across neighbouring tiles (across, up, down or diagonally) to spell a word of 2 or more letters. Lift your finger to play it. Used tiles disappear, the letters above slide down and new letters drop in at the top."}},{"@type":"Question","name":"What are Linx Daily and Brain Booster?","acceptedAnswer":{"@type":"Answer","text":"They are the two ways to play. Linx Daily gives every player the same letters, with a new numbered game each day at midnight and a leaderboard for that day. Brain Booster deals a fresh random board every time you play, so you can chase your all-time best. Switch between them on the Games tab."}},{"@type":"Question","name":"How is the score worked out?","acceptedAnswer":{"@type":"Answer","text":"By word length: 2 letters score 1 point, 3 letters 3, 4 letters 5, 5 letters 10, 6 letters 15, 7 letters 25, 8 letters 35, and 9 or more letters 50."}},{"@type":"Question","name":"Is LetterLinx free?","acceptedAnswer":{"@type":"Answer","text":"Yes. You can play without an account. A free account saves your score history and puts you on the leaderboard."}},{"@type":"Question","name":"Can I play in Spanish?","acceptedAnswer":{"@type":"Answer","text":"Yes. Choose Español in Settings to play Letra Linx, with Spanish letters including Ñ, a Spanish dictionary and its own leaderboard."}}]}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":["VideoGame","WebApplication"],"name":"LetterLinx","alternateName":"Letra Linx","url":"https://www.letterlinx.com/","description":"Play LetterLinx free in your browser: link neighbouring letter tiles to spell words and score as many points as you can in 60 seconds. English and Spanish, with leaderboards.","image":"https://www.letterlinx.com/og-image.png","applicationCategory":"GameApplication","genre":"Word game","operatingSystem":"Any","browserRequirements":"Requires JavaScript","inLanguage":["en","es"],"playMode":"SinglePlayer","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","inLanguage":"en","mainEntity":[{"@type":"Question","name":"How do you play LetterLinx?","acceptedAnswer":{"@type":"Answer","text":"Tap GO, then drag across neighbouring tiles (across, up, down or diagonally) to spell a word of 2 or more letters. Lift your finger to play it. Used tiles disappear, the letters above slide down and new letters drop in at the top."}},{"@type":"Question","name":"What are Linx Daily, Brain Booster and Linx WordFinder?","acceptedAnswer":{"@type":"Answer","text":"They are the three ways to play. Linx Daily gives every player the same letters, with a new numbered game each day at midnight and a leaderboard for that day. Brain Booster deals a fresh random board every time you play, so you can chase your all-time best. Linx WordFinder hides six words on one topic in a daily puzzle that is the same for everyone: find them all as fast as you can. Switch between them on the Games tab."}},{"@type":"Question","name":"How is the score worked out?","acceptedAnswer":{"@type":"Answer","text":"By word length: 2 letters score 1 point, 3 letters 3, 4 letters 5, 5 letters 10, 6 letters 15, 7 letters 25, 8 letters 35, and 9 or more letters 50."}},{"@type":"Question","name":"Is LetterLinx free?","acceptedAnswer":{"@type":"Answer","text":"Yes. You can play without an account. A free account saves your score history and puts you on the leaderboard."}},{"@type":"Question","name":"Can I play in Spanish?","acceptedAnswer":{"@type":"Answer","text":"Yes. Choose Español in Settings to play Letra Linx, with Spanish letters including Ñ, a Spanish dictionary and its own leaderboard."}}]}]}</script>
 <!-- seo:end -->
 <meta name="theme-color" content="#E7EFF2">
 <link rel="icon" type="image/png" href="favicon.png">
@@ -70,6 +70,8 @@ function gtag(){dataLayer.push(arguments);}
   --shade: rgba(0, 0, 0, .6); color-scheme: dark }
 
 html, body { height: 100%; margin: 0; }
+/* nothing may widen the page sideways (the title card behind GO reaches past the screen edges to stay centred) */
+html, body { overflow-x: clip; }
 [hidden] { display: none !important; }
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px;
@@ -483,6 +485,9 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 .demo { position: relative; display: grid; grid-template-columns: repeat(4, 54px); grid-template-rows: repeat(3, 54px); isolation: isolate; }
 .demo svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
 .demo svg polyline { fill: none; stroke: var(--brand); stroke-width: .16; stroke-linecap: round; stroke-linejoin: round; }
+.wfdemo { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.wftopic { font-weight: 900; font-size: 1.3rem; color: var(--brand); }
+.demo.wfd .tile { container-type: inline-size; }
 .ways { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 340px; text-align: left; }
 .way { background: var(--surface); border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
 .way strong { font-size: 1.2rem; font-weight: 900; }
@@ -634,7 +639,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <h2 data-t="about.title">About LetterLinx</h2>
       <p data-t="about.text">LetterLinx is a free word game you play in your browser, on a phone or a computer. Link neighbouring letter tiles to spell words, score more for longer words, and see how many points you can make in 60 seconds. Play in English or Spanish. A new numbered game starts every day at midnight with the same letters for every player. Save your scores and climb the day's leaderboard.</p>
       <h3 data-t="faq.q1">How do you play LetterLinx?</h3><p data-t="faq.a1">Tap GO, then drag across neighbouring tiles (across, up, down or diagonally) to spell a word of 2 or more letters. Lift your finger to play it. Used tiles disappear, the letters above slide down and new letters drop in at the top.</p>
-      <h3 data-t="faq.q5">What are Linx Daily and Brain Booster?</h3><p data-t="faq.a5">They are the two ways to play. Linx Daily gives every player the same letters, with a new numbered game each day at midnight and a leaderboard for that day. Brain Booster deals a fresh random board every time you play, so you can chase your all-time best. Switch between them on the Games tab.</p>
+      <h3 data-t="faq.q5">What are Linx Daily, Brain Booster and Linx WordFinder?</h3><p data-t="faq.a5">They are the three ways to play. Linx Daily gives every player the same letters, with a new numbered game each day at midnight and a leaderboard for that day. Brain Booster deals a fresh random board every time you play, so you can chase your all-time best. Linx WordFinder hides six words on one topic in a daily puzzle that is the same for everyone: find them all as fast as you can. Switch between them on the Games tab.</p>
       <h3 data-t="faq.q2">How is the score worked out?</h3><p data-t="faq.a2">By word length: 2 letters score 1 point, 3 letters 3, 4 letters 5, 5 letters 10, 6 letters 15, 7 letters 25, 8 letters 35, and 9 or more letters 50.</p>
       <h3 data-t="faq.q3">Is LetterLinx free?</h3><p data-t="faq.a3">Yes. You can play without an account. A free account saves your score history and puts you on the leaderboard.</p>
       <h3 data-t="faq.q4">Can I play in Spanish?</h3><p data-t="faq.a4">Yes. Choose Español in Settings to play Letra Linx, with Spanish letters including Ñ, a Spanish dictionary and its own leaderboard.</p>
@@ -740,7 +745,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     <div class="slide">
       <h1 class="logo" data-t-label="app.name" aria-label="LetterLinx"><div class="top" data-t="logo.top">LETTER</div><div class="linx"><span>L</span><span>I</span><span>N</span><span>X</span></div></h1>
       <div class="tagline" data-t="tour.tagline">Link letters. Beat the clock.</div>
-      <p data-t="tour.intro">A one-minute word hunt. Trace through neighbouring tiles to spell as many words as you can before time runs out.</p>
+      <p data-t="tour.intro">Three free word games in one. Trace through neighbouring tiles to link letters into words, against the clock.</p>
       <div class="pick"><div class="eyebrow" data-t="tour.playIn">Play in</div><div class="seg langSeg" data-t-label="set.lang" aria-label="Language"></div><p class="note" data-t="tour.later">You can change this later in Settings.</p></div>
     </div>
     <div class="slide">
@@ -754,25 +759,37 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <p id="tourDrag">Press a tile and drag to the next one: across, up, down or diagonally. Lift your finger to play the word. Words need at least 2 letters.</p>
     </div>
     <div class="slide">
+      <h2 data-t="tour.waysTitle">Three ways to play</h2>
+      <div class="ways">
+        <div class="way"><strong data-t="v.daily.name">Linx Daily</strong><span data-t="tour.dailyText">The same letters for every player, with a new numbered game each day at midnight. Compare scores on the day's leaderboard.</span></div>
+        <div class="way"><strong data-t="v.booster.name">Brain Booster</strong><span data-t="tour.boosterText">A fresh random board every time you play. Chase your all-time best.</span></div>
+        <div class="way"><strong data-t="v.wordfinder.name">Linx WordFinder</strong><span data-t="tour.wfWay">Six hidden words on one topic, the same puzzle for everyone each day. Find them all as fast as you can.</span></div>
+      </div>
+      <p data-t="tour.waysText">Switch between them any time on the Games tab.</p>
+    </div>
+    <div class="slide">
+      <div class="eyebrow" data-t="tour.classic">Linx Daily and Brain Booster</div>
       <h2 data-t="tour.scoreTitle">Longer words score big</h2>
       <div class="points" id="pointsTable"></div>
       <p data-t="tour.scoreText">A real word flashes green with a ding. Anything else flashes red with a buzz.</p>
     </div>
     <div class="slide">
-      <h2 data-t="tour.waysTitle">Two ways to play</h2>
-      <div class="ways">
-        <div class="way"><strong data-t="v.daily.name">Linx Daily</strong><span data-t="tour.dailyText">The same letters for every player, with a new numbered game each day at midnight. Compare scores on the day's leaderboard.</span></div>
-        <div class="way"><strong data-t="v.booster.name">Brain Booster</strong><span data-t="tour.boosterText">A fresh random board every time you play. Chase your all-time best.</span></div>
-      </div>
-      <p data-t="tour.waysText">Switch between them any time on the Games tab.</p>
-    </div>
-    <div class="slide">
+      <div class="eyebrow" data-t="tour.classic">Linx Daily and Brain Booster</div>
       <div class="clock" aria-hidden="true">0:10</div>
       <h2 data-t="tour.clockTitle">Sixty seconds per round</h2>
       <p data-t="tour.clockText">The clock ticks out loud for the last 10 seconds. Play as often as you like: your best scores are saved and ranked on the leaderboard.</p>
     </div>
+    <div class="slide">
+      <div class="eyebrow" data-t="v.wordfinder.name">Linx WordFinder</div>
+      <div class="wfdemo" aria-hidden="true">
+        <div class="wftopic" data-t="tour.wfDemoTopic">Animals</div>
+        <div class="demo wfd" id="wfDemo"></div>
+      </div>
+      <h2 data-t="tour.wfTitle">Find the six hidden words</h2>
+      <p data-t="tour.wfText">Each day has a topic and six hidden words. Found words light up in color. A hint costs 30 seconds, you have 10 minutes, and the white flag ends the game and reveals the answers.</p>
+    </div>
   </div>
-  <div id="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+  <div id="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
   <div class="tourbtns">
     <button class="btn" id="tourNext" type="button" data-t="tour.next">Next</button>
     <button class="btn primary" id="playNow" type="button" data-t="tour.play">Play Now</button>
@@ -865,6 +882,15 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     document.querySelectorAll("[data-t-label]").forEach((el) => { el.setAttribute("aria-label", t(el.dataset.tLabel)); });
     $("restartBtn").title = t("hud.restart");
     $("tourDrag").textContent = t("tour.dragText", { n: mode.minLength });
+    // the WordFinder slide's little board: three found words (one per row) and a filler letter, in the player's language
+    const demo = $("wfDemo"); demo.textContent = "";
+    t("tour.wfDemo").split("|").forEach((row, r) => [...row].forEach((l, c) => {
+      const tl = document.createElement("div"), sp = document.createElement("span"), word = c < row.length - (r === 0 ? 1 : 0);
+      tl.className = "tile" + (word ? " wf" : ""); sp.textContent = l; tl.appendChild(sp);
+      if (word) { tl.style.setProperty("--wfc", "var(--wf" + (r + 1) + ")"); tl.style.setProperty("--wfi", "var(--wf" + (r + 1) + "i)"); }
+      if (word && c === 0) { const b = document.createElement("span"); b.className = "wfb"; b.textContent = r + 1; tl.appendChild(b); }
+      demo.appendChild(tl);
+    }));
     // scoring table for the tour: two columns, read row by row
     const p = mode.points, rowsOf = [], tbl = $("pointsTable"); tbl.textContent = "";
     for (let n = mode.minLength; n < p.length; n++) rowsOf.push([n === p.length - 1 ? t("tour.orMore", { n }) : t("tour.letters", { n }), p[n]]);

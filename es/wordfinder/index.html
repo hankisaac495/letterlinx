@@ -72,6 +72,8 @@ function gtag(){dataLayer.push(arguments);}
   --shade: rgba(0, 0, 0, .6); color-scheme: dark }
 
 html, body { height: 100%; margin: 0; }
+/* nothing may widen the page sideways (the title card behind GO reaches past the screen edges to stay centred) */
+html, body { overflow-x: clip; }
 [hidden] { display: none !important; }
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px;
@@ -485,6 +487,9 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
 .demo { position: relative; display: grid; grid-template-columns: repeat(4, 54px); grid-template-rows: repeat(3, 54px); isolation: isolate; }
 .demo svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
 .demo svg polyline { fill: none; stroke: var(--brand); stroke-width: .16; stroke-linecap: round; stroke-linejoin: round; }
+.wfdemo { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.wftopic { font-weight: 900; font-size: 1.3rem; color: var(--brand); }
+.demo.wfd .tile { container-type: inline-size; }
 .ways { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 340px; text-align: left; }
 .way { background: var(--surface); border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
 .way strong { font-size: 1.2rem; font-weight: 900; }
@@ -636,7 +641,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <h2 data-t="about.title">Acerca de Letra Linx</h2>
       <p data-t="about.text">Letra Linx es un juego de palabras gratis que se juega en el navegador, en el teléfono o en la computadora. Une fichas de letras vecinas para formar palabras, gana más puntos con palabras largas y descubre cuántos puntos puedes sumar en 60 segundos. Juega en español o en inglés. Cada día a medianoche empieza un nuevo juego numerado con las mismas letras para todos. Guarda tus puntuaciones y sube en la clasificación del día.</p>
       <h3 data-t="faq.q1">¿Cómo se juega Letra Linx?</h3><p data-t="faq.a1">Toca ¡YA! y arrastra el dedo por fichas vecinas (en horizontal, vertical o diagonal) para formar una palabra de 2 letras o más. Levanta el dedo para jugarla. Las fichas usadas desaparecen, las letras de arriba bajan y entran letras nuevas por la parte superior.</p>
-      <h3 data-t="faq.q5">¿Qué son Linx Diario y Brain Booster?</h3><p data-t="faq.a5">Son las dos formas de jugar. Linx Diario da a todos las mismas letras, con un nuevo juego numerado cada día a medianoche y una clasificación para ese día. Brain Booster reparte un tablero nuevo al azar cada vez que juegas, para que superes tu récord. Cambia de uno a otro en la pestaña Juegos.</p>
+      <h3 data-t="faq.q5">¿Qué son Linx Diario, Brain Booster y Linx WordFinder?</h3><p data-t="faq.a5">Son las tres formas de jugar. Linx Diario da a todos las mismas letras, con un nuevo juego numerado cada día a medianoche y una clasificación para ese día. Brain Booster reparte un tablero nuevo al azar cada vez que juegas, para que superes tu récord. Linx WordFinder esconde seis palabras sobre un mismo tema en un reto diario igual para todos: encuéntralas lo más rápido que puedas. Cambia de uno a otro en la pestaña Juegos.</p>
       <h3 data-t="faq.q2">¿Cómo se calcula la puntuación?</h3><p data-t="faq.a2">Según el largo de la palabra: 2 letras valen 1 punto, 3 letras 3, 4 letras 5, 5 letras 10, 6 letras 15, 7 letras 25, 8 letras 35, y 9 letras o más 50.</p>
       <h3 data-t="faq.q3">¿Letra Linx es gratis?</h3><p data-t="faq.a3">Sí. Puedes jugar sin cuenta. Una cuenta gratuita guarda tu historial de puntuaciones y te incluye en la clasificación.</p>
       <h3 data-t="faq.q4">¿Puedo jugar en inglés?</h3><p data-t="faq.a4">Sí. Elige English en Ajustes para jugar LetterLinx, con letras y diccionario en inglés y su propia clasificación.</p>
@@ -742,7 +747,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     <div class="slide">
       <h1 class="logo" data-t-label="app.name" aria-label="Letra Linx"><div class="top" data-t="logo.top">LETRA</div><div class="linx"><span>L</span><span>I</span><span>N</span><span>X</span></div></h1>
       <div class="tagline" data-t="tour.tagline">Une letras. Gánale al reloj.</div>
-      <p data-t="tour.intro">Una búsqueda de palabras de un minuto. Traza un camino por fichas vecinas para formar todas las palabras que puedas antes de que se acabe el tiempo.</p>
+      <p data-t="tour.intro">Tres juegos de palabras gratis en uno. Traza un camino por fichas vecinas para unir letras y formar palabras, contra el reloj.</p>
       <div class="pick"><div class="eyebrow" data-t="tour.playIn">Juega en</div><div class="seg langSeg" data-t-label="set.lang" aria-label="Idioma"></div><p class="note" data-t="tour.later">Puedes cambiarlo después en Ajustes.</p></div>
     </div>
     <div class="slide">
@@ -756,25 +761,37 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <p id="tourDrag">Presiona una ficha y arrastra hasta la siguiente: en horizontal, vertical o diagonal. Levanta el dedo para jugar la palabra. Las palabras deben tener al menos 2 letras.</p>
     </div>
     <div class="slide">
+      <h2 data-t="tour.waysTitle">Tres formas de jugar</h2>
+      <div class="ways">
+        <div class="way"><strong data-t="v.daily.name">Linx Diario</strong><span data-t="tour.dailyText">Las mismas letras para todos, con un nuevo juego numerado cada día a medianoche. Compara tu puntuación en la clasificación del día.</span></div>
+        <div class="way"><strong data-t="v.booster.name">Brain Booster</strong><span data-t="tour.boosterText">Un tablero nuevo al azar cada vez que juegas. Supera tu récord.</span></div>
+        <div class="way"><strong data-t="v.wordfinder.name">Linx WordFinder</strong><span data-t="tour.wfWay">Seis palabras escondidas sobre un mismo tema, el mismo reto para todos cada día. Encuéntralas lo más rápido que puedas.</span></div>
+      </div>
+      <p data-t="tour.waysText">Cambia de uno a otro cuando quieras en la pestaña Juegos.</p>
+    </div>
+    <div class="slide">
+      <div class="eyebrow" data-t="tour.classic">Linx Diario y Brain Booster</div>
       <h2 data-t="tour.scoreTitle">Las palabras largas valen más</h2>
       <div class="points" id="pointsTable"></div>
       <p data-t="tour.scoreText">Una palabra válida se ilumina en verde con una campanita. Cualquier otra se ilumina en rojo con un zumbido.</p>
     </div>
     <div class="slide">
-      <h2 data-t="tour.waysTitle">Dos formas de jugar</h2>
-      <div class="ways">
-        <div class="way"><strong data-t="v.daily.name">Linx Diario</strong><span data-t="tour.dailyText">Las mismas letras para todos, con un nuevo juego numerado cada día a medianoche. Compara tu puntuación en la clasificación del día.</span></div>
-        <div class="way"><strong data-t="v.booster.name">Brain Booster</strong><span data-t="tour.boosterText">Un tablero nuevo al azar cada vez que juegas. Supera tu récord.</span></div>
-      </div>
-      <p data-t="tour.waysText">Cambia de uno a otro cuando quieras en la pestaña Juegos.</p>
-    </div>
-    <div class="slide">
+      <div class="eyebrow" data-t="tour.classic">Linx Diario y Brain Booster</div>
       <div class="clock" aria-hidden="true">0:10</div>
       <h2 data-t="tour.clockTitle">Sesenta segundos por ronda</h2>
       <p data-t="tour.clockText">El reloj suena en los últimos 10 segundos. Juega las veces que quieras: tus mejores puntuaciones se guardan y aparecen en la clasificación.</p>
     </div>
+    <div class="slide">
+      <div class="eyebrow" data-t="v.wordfinder.name">Linx WordFinder</div>
+      <div class="wfdemo" aria-hidden="true">
+        <div class="wftopic" data-t="tour.wfDemoTopic">Animales</div>
+        <div class="demo wfd" id="wfDemo"></div>
+      </div>
+      <h2 data-t="tour.wfTitle">Encuentra las seis palabras escondidas</h2>
+      <p data-t="tour.wfText">Cada día hay un tema y seis palabras escondidas. Las que encuentras se iluminan en color. Una pista cuesta 30 segundos, tienes 10 minutos y la bandera blanca termina el juego y revela las respuestas.</p>
+    </div>
   </div>
-  <div id="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+  <div id="dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
   <div class="tourbtns">
     <button class="btn" id="tourNext" type="button" data-t="tour.next">Siguiente</button>
     <button class="btn primary" id="playNow" type="button" data-t="tour.play">Jugar ahora</button>
@@ -867,6 +884,15 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     document.querySelectorAll("[data-t-label]").forEach((el) => { el.setAttribute("aria-label", t(el.dataset.tLabel)); });
     $("restartBtn").title = t("hud.restart");
     $("tourDrag").textContent = t("tour.dragText", { n: mode.minLength });
+    // the WordFinder slide's little board: three found words (one per row) and a filler letter, in the player's language
+    const demo = $("wfDemo"); demo.textContent = "";
+    t("tour.wfDemo").split("|").forEach((row, r) => [...row].forEach((l, c) => {
+      const tl = document.createElement("div"), sp = document.createElement("span"), word = c < row.length - (r === 0 ? 1 : 0);
+      tl.className = "tile" + (word ? " wf" : ""); sp.textContent = l; tl.appendChild(sp);
+      if (word) { tl.style.setProperty("--wfc", "var(--wf" + (r + 1) + ")"); tl.style.setProperty("--wfi", "var(--wf" + (r + 1) + "i)"); }
+      if (word && c === 0) { const b = document.createElement("span"); b.className = "wfb"; b.textContent = r + 1; tl.appendChild(b); }
+      demo.appendChild(tl);
+    }));
     // scoring table for the tour: two columns, read row by row
     const p = mode.points, rowsOf = [], tbl = $("pointsTable"); tbl.textContent = "";
     for (let n = mode.minLength; n < p.length; n++) rowsOf.push([n === p.length - 1 ? t("tour.orMore", { n }) : t("tour.letters", { n }), p[n]]);
