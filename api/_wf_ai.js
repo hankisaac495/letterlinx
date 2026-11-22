@@ -49,25 +49,45 @@ const PUZZLE = {
   },
 };
 
+// Anthropic's own reason for a failed request, e.g. "authentication_error: invalid x-api-key"
+function reasonOf(e) {
+  const body = e && e.error && e.error.error ? e.error.error : null;
+  if (body && (body.type || body.message)) return [body.type, body.message].filter(Boolean).join(": ");
+  return String((e && e.message) || "").replace(/^\d{3}\s*/, "").slice(0, 200);
+}
+// a plain explanation for the admin, with Anthropic's reason after it
+function explain(e) {
+  const status = e && e.status, why = reasonOf(e), lower = why.toLowerCase(), tail = why ? " (Anthropic says: " + why + ")" : "";
+  if (status === 401) return new AiError("bad_key", "The Anthropic API key was refused. In Vercel, check ANTHROPIC_API_KEY holds the whole sk-ant-… key with no spaces or quotes, that the key still exists at console.anthropic.com, then redeploy." + tail);
+  if (/credit balance|billing|purchase credits/.test(lower)) return new AiError("no_credit", "Your Anthropic account has no credit left. Add credit at console.anthropic.com → Billing, then try again." + tail);
+  if (status === 403) return new AiError("forbidden", "This API key isn't allowed to make this request. Check the key's workspace and permissions at console.anthropic.com." + tail);
+  if (status === 404 && /model/.test(lower)) return new AiError("model", "The Claude model " + MODEL + " isn't available to this Anthropic account." + tail);
+  if (status === 429) return new AiError("busy", "Claude is busy, or the account's rate or spend limit was reached. Try again in a minute, or check limits at console.anthropic.com." + tail);
+  if (status === 529 || status >= 500) return new AiError("busy", "Claude is temporarily overloaded. Try again in a minute." + tail);
+  if (e && (e.name === "APIConnectionTimeoutError" || /timed? ?out/i.test(e.message || ""))) return new AiError("timeout", "Claude took too long to answer. Try again.");
+  if (e && e.name === "APIConnectionError") return new AiError("network", "The server couldn't connect to the Anthropic API. Try again in a minute." + tail);
+  return new AiError("api", "Claude couldn't write this (error " + (status || "unknown") + ")." + tail);
+}
+
 async function ask(prompt, schema, maxTokens) {
   const c = getClient();
+  const base = {
+    model: MODEL,
+    max_tokens: maxTokens || 8000,
+    output_config: { effort: "medium", format: { type: "json_schema", schema } },
+    system: GUIDE,
+    messages: [{ role: "user", content: prompt }],
+  };
   let r;
   try {
-    r = await c.beta.messages.create({
-      model: MODEL,
-      max_tokens: maxTokens || 8000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",                                   // a declined request is retried on Anthropic's recommended fallback model
-      output_config: { effort: "medium", format: { type: "json_schema", schema } },
-      system: GUIDE,
-      messages: [{ role: "user", content: prompt }],
-    });
+    // a declined request is retried on Anthropic's recommended fallback model
+    r = await c.beta.messages.create({ ...base, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" });
   } catch (e) {
-    const status = e && e.status;
-    if (status === 401 || status === 403) throw new AiError("bad_key", "The Anthropic API key was refused. Check ANTHROPIC_API_KEY in Vercel.");
-    if (status === 429) throw new AiError("busy", "Claude is busy or the account's spend limit was reached. Try again in a minute, or check console.anthropic.com.");
-    if (e && (e.name === "APIConnectionTimeoutError" || /timed? ?out/i.test(e.message || ""))) throw new AiError("timeout", "Claude took too long to answer. Try again.");
-    throw new AiError("api", "Claude couldn't be reached (" + (status || (e && e.message) || "error") + "). Try again.");
+    // an account that doesn't accept the fallback option gets the same request without it
+    // (a 400 or 403 that names the fallback or beta, or any 403: permission to use the optional feature)
+    if (e && (e.status === 403 || (e.status === 400 && /fallback|beta/i.test(reasonOf(e))))) {
+      try { r = await c.messages.create(base); } catch (e2) { throw explain(e2); }
+    } else throw explain(e);
   }
   if (r.stop_reason === "refusal") throw new AiError("refused", "Claude declined to write this one. Try a different topic.");
   if (r.stop_reason === "max_tokens") throw new AiError("too_long", "Claude's answer was cut off. Try again.");

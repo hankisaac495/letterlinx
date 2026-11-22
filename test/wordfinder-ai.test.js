@@ -11,7 +11,7 @@ const server = http.createServer((req, res) => {
     requests.push({ url: req.url, headers: req.headers, body });
     const r = reply(body);
     res.setHeader("content-type", "application/json");
-    if (r.status) { res.statusCode = r.status; return res.end(JSON.stringify({ type: "error", error: { type: "error", message: "x" } })); }
+    if (r.status) { res.statusCode = r.status; return res.end(JSON.stringify({ type: "error", error: { type: r.etype || "error", message: r.emsg || "x" } })); }
     res.end(JSON.stringify({ id: "msg_test", type: "message", role: "assistant", model: body.model, stop_reason: r.stop || "end_turn",
       content: [{ type: "text", text: typeof r.json === "string" ? r.json : JSON.stringify(r.json) }], usage: { input_tokens: 900, output_tokens: 700 } }));
   });
@@ -77,7 +77,7 @@ test("one word or one hint can be replaced", async () => {
 });
 
 test("refusals, cut-off answers, unreadable answers and API errors become plain messages", async () => {
-  for (const [r, code] of [[{ stop: "refusal", json: "" }, "refused"], [{ stop: "max_tokens", json: "{" }, "too_long"], [{ json: "not json" }, "bad_output"], [{ status: 401 }, "bad_key"], [{ status: 400 }, "api"]]) {
+  for (const [r, code] of [[{ stop: "refusal", json: "" }, "refused"], [{ stop: "max_tokens", json: "{" }, "too_long"], [{ json: "not json" }, "bad_output"], [{ status: 401 }, "bad_key"], [{ status: 400 }, "api"], [{ status: 429 }, "busy"], [{ status: 529 }, "busy"]]) {
     reply = () => r;
     await assert.rejects(AI.planMonth(["2026-12-01"], []), (e) => e instanceof AI.AiError && e.code === code && e.message.length > 10);
   }
@@ -90,4 +90,31 @@ test("without a key, generation is off and says how to turn it on", async () => 
     await assert.rejects(AI.planMonth(["2026-12-01"], []), (e) => e.code === "no_key" && /ANTHROPIC_API_KEY/.test(e.message));
     assert.strictEqual(requests.length, 0);
   } finally { process.env.ANTHROPIC_API_KEY = key; }
+});
+
+test("error messages include Anthropic's own reason", async () => {
+  reply = () => ({ status: 401, etype: "authentication_error", emsg: "invalid x-api-key" });
+  await assert.rejects(AI.planMonth(["2026-12-01"], []), (e) => e.code === "bad_key" && /invalid x-api-key/.test(e.message) && /sk-ant-/.test(e.message));
+  reply = () => ({ status: 400, etype: "invalid_request_error", emsg: "Your credit balance is too low to access the Anthropic API." });
+  await assert.rejects(AI.planMonth(["2026-12-01"], []), (e) => e.code === "no_credit" && /Billing/.test(e.message));
+  reply = () => ({ status: 404, etype: "not_found_error", emsg: "model: claude-opus-5-5" });
+  await assert.rejects(AI.planMonth(["2026-12-01"], []), (e) => e.code === "model");
+});
+
+test("an account that rejects the fallback option is asked again without it", async () => {
+  reply = (b) => b.fallbacks ? { status: 400, etype: "invalid_request_error", emsg: "fallbacks: unexpected parameter for this beta" }
+    : { json: { days: [{ day: "2026-12-01", en_topic: "Birds", es_topic: "Aves" }] } };
+  const r = await AI.planMonth(["2026-12-01"], []);
+  assert.strictEqual(r.topics[0].en, "Birds");
+  assert.strictEqual(requests.length, 2);
+  assert.ok(!("fallbacks" in requests[1].body) && !/fallback/.test(requests[1].headers["anthropic-beta"] || ""));
+});
+
+test("a key without permission for the fallback option still works without it", async () => {
+  reply = (b) => b.fallbacks ? { status: 403, etype: "permission_error", emsg: "Your organization does not have access to this feature." }
+    : { json: { days: [{ day: "2026-12-01", en_topic: "Trees", es_topic: "Árboles" }] } };
+  const r = await AI.planMonth(["2026-12-01"], []);
+  assert.strictEqual(r.topics[0].en, "Trees");
+  reply = () => ({ status: 403, etype: "permission_error", emsg: "This key can't use this workspace." });   // refused both ways: say so
+  await assert.rejects(AI.planMonth(["2026-12-01"], []), (e) => e.code === "forbidden" && /can't use this workspace/.test(e.message));
 });
