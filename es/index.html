@@ -1561,7 +1561,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     clearInterval(wfTimer);
     const day = localKey();
     wf = { day, lang: wfLang(), num: wfNumber(day), topic: "", loading: true, error: null, play: null, misses: new Set() };
-    tiles.forEach((tl) => { tl.classList.remove("wf", "wffill"); tl.style.removeProperty("--wfc"); tl.style.removeProperty("--wfi"); tl.querySelector(".wfb")?.remove(); });
+    wfClearTiles();
     $("wfBanner").hidden = true; $("wfResults").hidden = true; $("wfChips").dataset.sig = "";
     wfTimer = setInterval(wfTickClock, 500); wfTickClock(); paint();
     wfLoad();
@@ -1577,7 +1577,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     else if (me.play) wfReveal(false);
     else paint();
   }
-  function wfLeave() { clearInterval(wfTimer); wf = null; wfCloseGiveUp(true); $("time").classList.remove("low"); $("wfResults").hidden = true; $("wfRow").hidden = true; $("wfBanner").hidden = true; $("goBelow").hidden = true; $("go").disabled = false; }
+  // WordFinder's colours, number badges and marks come off the tiles when it starts and when another game takes the board
+  function wfClearTiles() {
+    tiles.forEach((tl) => { tl.classList.remove("wf", "wffill", "miss"); tl.style.removeProperty("--wfc"); tl.style.removeProperty("--wfi"); tl.style.removeProperty("--d"); tl.querySelectorAll(".wfb").forEach((b) => b.remove()); });
+  }
+  function wfLeave() { clearInterval(wfTimer); wf = null; wfClearTiles(); mark.clear(); wfCloseGiveUp(true); $("time").classList.remove("low"); $("wfResults").hidden = true; $("wfRow").hidden = true; $("wfBanner").hidden = true; $("goBelow").hidden = true; $("go").disabled = false; }
 
   async function wfStart() {
     if (!wf || wf.starting) return;
@@ -1861,6 +1865,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     $("wfRow").hidden = !playing;
     $("wfHintBtn").hidden = !playing;
     $("wfType").hidden = !playing;
+    $("wfStopBtn").hidden = !playing || !pl || pl.done;          // set before the early return, so other games never show it
     $("word").setAttribute("aria-live", on ? "off" : "polite");
     $("go").disabled = on && (wf.loading || !!wf.starting);
     if (!on) return;
@@ -1884,7 +1889,6 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       });
     }
     wfPaintHintBtn();
-    $("wfStopBtn").hidden = !playing || !pl || pl.done;
     $("wfMute").setAttribute("aria-pressed", String(!!S.audio));
     $("wfMute").innerHTML = S.audio
       ? '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>'

@@ -196,6 +196,25 @@ test("the 10-minute limit: the clock turns red in the last minute and the game e
   assert.deepStrictEqual(p.errors, []);
 });
 
+test("switching to another game leaves no WordFinder badges, colours or buttons behind", async () => {
+  const p = await page();
+  await p.goto(U + "/wordfinder");
+  await until(p, () => document.getElementById("goTopic").textContent.length > 0);
+  await p.click("#go");
+  await until(p, () => document.querySelector("#board .tile").firstChild.textContent !== "");
+  const g = await grid(p);
+  await drag(p, W.findPath(g, answers("en")[0], 6, 10));
+  await until(p, () => document.querySelectorAll("#board .wfb").length === 1);
+  await p.click('nav button[data-go="games"]'); await p.click('#variantList .variant:has-text("Brain Booster")');
+  await p.waitForSelector("#go:not([hidden])");
+  const left = () => p.evaluate(() => ({ badges: document.querySelectorAll("#board .wfb").length, coloured: document.querySelectorAll("#board .tile.wf").length,
+    flag: !document.getElementById("wfStopBtn").hidden, hint: !document.getElementById("wfHintBtn").hidden }));
+  assert.deepStrictEqual(await left(), { badges: 0, coloured: 0, flag: false, hint: false });
+  await p.click("#go"); await p.waitForTimeout(600);
+  assert.deepStrictEqual(await left(), { badges: 0, coloured: 0, flag: false, hint: false });
+  assert.deepStrictEqual(p.errors, []);
+});
+
 test("a keyboard player types the words, in Spanish, with reduced motion", async () => {
   const p = await page({ reducedMotion: "reduce" });
   await p.goto(U + "/es/wordfinder");
