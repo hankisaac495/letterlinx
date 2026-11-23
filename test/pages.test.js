@@ -16,7 +16,7 @@ test("WordFinder pages have their own link preview in each language", () => {
     assert.ok(html.includes(`<meta property="og:image" content="https://www.letterlinx.com/${img}">`), file + " image");
     assert.ok(fs.existsSync(path.join(__dirname, "..", img)), img + " exists");
   }
-  assert.match(read("index.html"), /og-image\.png/);              // the main page keeps its own preview
+  assert.match(read("index.html"), /og-image\.jpg/);              // the main page keeps its own preview
 });
 
 test("the WordFinder share links redirect to the pages", () => {

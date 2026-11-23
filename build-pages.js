@@ -9,7 +9,7 @@ const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 function head(lang, wf) {
   const t = (k) => T[lang][k], base = lang === "es" ? "/es/" : "/", url = SITE + base + (wf ? "wordfinder/" : "");
   const title = wf ? t("wf.pageTitle") : t("app.title"), desc = wf ? t("wf.pageDesc") : t("app.description");
-  const image = SITE + (wf ? (lang === "es" ? "/og-wordfinder-es.png" : "/og-wordfinder.png") : "/og-image.png");
+  const image = SITE + (wf ? (lang === "es" ? "/og-wordfinder-es.png" : "/og-wordfinder.png") : "/og-image.jpg");
   const alt = (l) => SITE + (l === "es" ? "/es/" : "/") + (wf ? "wordfinder/" : "");
   const data = wf ? { "@context": "https://schema.org", "@type": ["VideoGame", "WebApplication"], name: "Linx WordFinder", url,
       description: desc, image, applicationCategory: "GameApplication", genre: "Word game", operatingSystem: "Any",
@@ -17,7 +17,7 @@ function head(lang, wf) {
       isPartOf: { "@type": "WebSite", name: t("app.name"), url: SITE + base }, offers: { "@type": "Offer", price: "0", priceCurrency: "USD" } }
     : { "@context": "https://schema.org", "@graph": [
     { "@type": ["VideoGame", "WebApplication"], name: t("app.name"), alternateName: lang === "es" ? "LetterLinx" : "Letra Linx", url,
-      description: t("app.description"), image: SITE + "/og-image.png", applicationCategory: "GameApplication", genre: "Word game",
+      description: t("app.description"), image: SITE + "/og-image.jpg", applicationCategory: "GameApplication", genre: "Word game",
       operatingSystem: "Any", browserRequirements: "Requires JavaScript", inLanguage: ["en", "es"], playMode: "SinglePlayer",
       isAccessibleForFree: true, offers: { "@type": "Offer", price: "0", priceCurrency: "USD" } },
     { "@type": "FAQPage", inLanguage: lang, mainEntity: [1, 5, 2, 3, 4].map((n) => (
