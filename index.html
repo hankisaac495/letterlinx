@@ -705,6 +705,10 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <p class="empty" id="playersEmpty" hidden></p>
     </div>
     <p class="note" id="lbNote"></p>
+    <div id="lbTodayBox" hidden>
+      <h2 data-t="lb.todayBest">Your Best Score Today</h2>
+      <div class="panel"><ol class="plain" id="todayBest"></ol></div>
+    </div>
     <div id="lbWinBox" hidden>
       <h2 data-t="lb.yesterday">Yesterday's Winner</h2>
       <div class="panel"><button class="scorebtn winbtn" id="lbWin" type="button"></button></div>
@@ -1978,15 +1982,24 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     // Linx Daily: the player's five best games (highest score first; a tie goes to the newer game)
     const mine = daily ? [...games()].sort((a, b) => b.score - a.score || b.game - a.game).slice(0, 5) : boosts(), ol = $("top5"); ol.textContent = "";
     if (!mine.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = t("lb.noScores"); ol.appendChild(li); }
-    mine.forEach((g, i) => {
+    // one game as a row (game number or rank, score, words and date); tapping it opens that game's words
+    const scoreRow = (g, label) => {
       const li = document.createElement("li"), b = document.createElement("button");
       b.type = "button"; b.className = "scorebtn";
       const mk = (cls, txt) => { const s = document.createElement("span"); s.className = cls; s.textContent = txt; b.appendChild(s); };
-      if (daily) mk("gno", "#" + g.game); else mk("rank", i + 1);
+      if (daily) mk("gno", "#" + g.game); else mk("rank", label);
       mk("num", g.score); mk("meta", nWords(g.words.length) + " · " + dateFmt(g.at)); mk("chev", "›");
       b.addEventListener("click", () => openModal((daily ? t("lb.game", { game: g.game }) + " · " : "") + t("modal.points", { n: g.score }), g.words));
-      li.appendChild(b); ol.appendChild(li);
-    });
+      li.appendChild(b); return li;
+    };
+    mine.forEach((g, i) => ol.appendChild(scoreRow(g, i + 1)));
+    // Linx Daily: the player's best round in today's game, above yesterday's winner and their top 5
+    $("lbTodayBox").hidden = !daily;
+    if (daily) {
+      const today = games().find((g) => g.game === gameNo), box = $("todayBest"); box.textContent = "";
+      if (today) box.appendChild(scoreRow(today));
+      else { const li = document.createElement("li"); li.className = "empty"; li.textContent = t("lb.todayNone"); box.appendChild(li); }
+    }
 
     const me = S.account?.screenName;
     let list = lbState === "live" ? players : me && !wfT ? [{ screenName: me, best: daily ? bestIn(vg) : boosts()[0]?.score || 0 }] : [];
