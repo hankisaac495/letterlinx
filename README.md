@@ -10,6 +10,8 @@ A one-minute word hunt for phones and desktops. Drag across neighbouring tiles t
 - `i18n.js` – interface text in English and Spanish
 - `about/`, `contact/`, `privacy/` – the About, Contact and Privacy Policy pages, styled by `pages.css`
 - `words.js` – English dictionary (about 270,000 words, 2–15 letters)
+  - Words added on request (not in the original list): `indian`, `indians`. To add more, put them in this
+    list and in `test/dictionary.test.js`; the words in `words.js` stay lowercase, sorted and separated by `|`.
 - `words-es.js` – Spanish dictionary (about 366,000 words, 2–10 letters, no accents, Ñ kept)
 - `api/` – Vercel functions: accounts, score history, leaderboard (Postgres)
 - `tools/demo-video/` – records scripted gameplay clips for videos (see its README); clips go in `media/videos/`
