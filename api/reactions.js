@@ -10,6 +10,7 @@
 // POST /api/reactions { action: "clear" }                -> removes them all
 // Reactions are deleted 48 hours after they're sent.
 const L = require("./_lib.js");
+const F = require("./_wf.js");
 const W = require("../wordfinder.js");
 
 const KINDS = ["great", "fire", "well", "brainiac", "fast", "congrats", "how", "rematch"];
@@ -82,6 +83,19 @@ module.exports = L.route(async (req, res, p) => {
     if (r) { subject = `wf:${lang}:${s.day}`; label = { v: "wf", lang, n: W.numberOf(s.day), ms: r.total_ms }; }
   }
   if (!subject) return res.status(404).json({ error: "no_score" });
+
+  // "Nice win!" is only for a top-3 finish in that game
+  if (b.kind === "congrats") {
+    let top3 = [];
+    if (s.type === "daily") top3 = (await p.query(
+      `select player_id from (select distinct on (g.player_id) g.player_id, g.score, g.played_at from games g join players pl on pl.id = g.player_id
+          where g.mode = $1 and g.game = $2 and g.score > 0 and (pl.email_verified or not $3) order by g.player_id, g.score desc, g.played_at asc) best
+        order by score desc, played_at asc limit 3`, [s.mode, Number(s.game), L.MAIL_ON])).rows.map((x) => x.player_id);
+    // WordFinder: a member's name on the board is their screen name (guest nicknames can never match one)
+    else if (s.type === "wf") top3 = (await F.leaderboard(p, L.langOf(s.lang), s.day, 3, null)).players
+      .filter((x) => String(x.name).toLowerCase() === to.screen_name.toLowerCase()).map(() => to.id);
+    if (!top3.includes(to.id)) return res.status(400).json({ error: "not_winner" });
+  }
 
   // a muted sender is told it was sent, but the receiver never sees it
   const muted = (await p.query("select 1 from reaction_mutes where player_id = $1 and muted_id = $2", [to.id, me.id])).rows.length > 0;

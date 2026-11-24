@@ -479,6 +479,7 @@ a.btn { display: inline-block; text-decoration: none; text-align: center; }
 .winbtn .who { flex: 1; min-width: 0; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wingame { font-size: .85rem; font-weight: 700; color: var(--muted); }
 .winbtn .medal { width: 30px; height: 34px; flex: none; }
+div.winbtn { cursor: default; }
 .modalmeta { margin: -6px 0 0; color: var(--muted); font-weight: 600; }
 li + li > .scorebtn { border-top: 1px solid var(--line); }
 ol.plain, ul.plain { list-style: none; margin: 0; padding: 0; }
@@ -1146,8 +1147,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     renderLeaderboard();
   }
   async function loadPlayers() {
-    if (lbTab === "wordfinder") return loadWfPlayers();
-    if (lbTab === "daily") loadWinner();
+    if (lbTab === "wordfinder") { loadWinner(); return loadWfPlayers(); }
+    if (lbTab === "daily" || lbTab === "wordfinder") loadWinner();
     try {
       const r = await call("/api/leaderboard?mode=" + encodeURIComponent(modeId) + (lbTab === "daily" ? "&game=" + viewGame() : "&variant=booster"), "GET");
       if (!r.ok || !Array.isArray(r.data?.players)) throw 0;
@@ -1158,12 +1159,20 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   }
   /* yesterday's Linx Daily winner, shown above the player's top 5 */
   let lbWinner = null;                                              // { key: "mode:game", data: winner or null }
+  // Linx Daily: yesterday's game; WordFinder: yesterday's puzzle in the language being played
+  const wfLangNow = () => (mode.lang === "es" ? "es" : "en");
+  const winnerKey = () => lbTab === "wordfinder" ? "wf:" + wfLangNow() + ":" + WF.dayOf(wfToday() - 1) : modeId + ":" + (gameNo - 1);
   async function loadWinner() {
-    const game = gameNo - 1, key = modeId + ":" + game;
-    if (game < M.daily.first || (lbWinner && lbWinner.key === key)) return renderWinner();
+    const key = winnerKey(), wfT = lbTab === "wordfinder";
+    if ((wfT ? wfToday() - 1 < 1 : gameNo - 1 < M.daily.first) || (lbWinner && lbWinner.key === key)) return renderWinner();
     try {
-      const r = await call("/api/leaderboard?mode=" + encodeURIComponent(modeId) + "&winner=" + game, "GET");
-      if (r.ok) lbWinner = { key, data: Array.isArray(r.data.winners) ? r.data.winners : r.data.winner ? [r.data.winner] : [] };
+      if (wfT) {
+        const r = await call("/api/wordfinder?lb=1&winners=1&lang=" + wfLangNow() + "&day=" + WF.dayOf(wfToday() - 1), "GET");
+        if (r.ok) lbWinner = { key, data: (r.data.players || []).map((x) => ({ screenName: String(x.name), ms: x.ms, hints: x.hints, react: !!x.react })) };
+      } else {
+        const r = await call("/api/leaderboard?mode=" + encodeURIComponent(modeId) + "&winner=" + (gameNo - 1), "GET");
+        if (r.ok) lbWinner = { key, data: Array.isArray(r.data.winners) ? r.data.winners : r.data.winner ? [r.data.winner] : [] };
+      }
     } catch (e) {}
     renderWinner();
   }
@@ -1174,11 +1183,12 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       + `<circle cx="15" cy="21" r="11.5" fill="${face}" stroke="${rim}" stroke-width="2"/>`
       + `<text x="15" y="25.5" text-anchor="middle" font-size="13" font-weight="900" font-family="Nunito, sans-serif" fill="${ink}">${n + 1}</text></svg>`; };
   function renderWinner() {
-    const ws = lbWinner && lbWinner.key === modeId + ":" + (gameNo - 1) ? lbWinner.data : null, box = $("lbWinBox");
-    box.hidden = lbTab !== "daily" || !ws || !ws.length;
+    const wfT = lbTab === "wordfinder", ws = lbWinner && lbWinner.key === winnerKey() ? lbWinner.data : null, box = $("lbWinBox");
+    box.hidden = (lbTab !== "daily" && !wfT) || !ws || !ws.length;
     if (box.hidden) return;
-    $("lbWinGame").textContent = "· " + t("lb.game", { game: gameNo - 1 });
+    $("lbWinGame").textContent = "· " + (wfT ? "#" + (wfToday() - 1) : t("lb.game", { game: gameNo - 1 }));
     const ol = $("lbWins"); ol.textContent = "";
+    if (wfT) return renderWfWinners(ws, ol);
     ws.forEach((w, n) => {
       const li = document.createElement("li"), b = document.createElement("button");
       b.type = "button"; b.className = "scorebtn winbtn";
@@ -1194,7 +1204,28 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       if (w.react && w.screenName !== S.account?.screenName) {
         const rb = document.createElement("button"); rb.type = "button"; rb.className = "reactbtn"; rb.textContent = "🎉";
         rb.setAttribute("aria-label", t("react.to", { name: w.screenName }));
-        rb.addEventListener("click", () => openReact(w.screenName, { type: "daily", mode: modeId, game: gameNo - 1 }, { v: "daily", n: gameNo - 1, score: w.score }));
+        rb.addEventListener("click", () => openReact(w.screenName, { type: "daily", mode: modeId, game: gameNo - 1 }, { v: "daily", n: gameNo - 1, score: w.score }, true));
+        li.appendChild(rb);
+      }
+      ol.appendChild(li);
+    });
+  }
+  // WordFinder winners: medal, name and time (with hints); yesterday's words stay hidden, since some time zones are still playing it
+  function renderWfWinners(ws, ol) {
+    const day = WF.dayOf(wfToday() - 1);
+    ws.forEach((w, n) => {
+      const li = document.createElement("li"), row = document.createElement("div"); li.className = "winrow"; row.className = "scorebtn winbtn";
+      row.insertAdjacentHTML("beforeend", medal(n));
+      const mk = (cls, txt) => { const s = document.createElement("span"); s.className = cls; s.textContent = txt; row.appendChild(s); return s; };
+      mk("who", w.screenName.slice(0, 24));
+      const num = mk("num", clockText(w.ms));
+      if (w.hints) { const sm = document.createElement("small"); sm.className = "lbhints"; sm.textContent = " " + t(w.hints === 1 ? "wf.hint1" : "wf.hintsN", { n: w.hints }); num.appendChild(sm); }
+      row.setAttribute("aria-label", t("lb.place" + (n + 1)) + ": " + w.screenName + ", " + clockText(w.ms));
+      li.appendChild(row);
+      if (w.react && w.screenName !== S.account?.screenName) {
+        const rb = document.createElement("button"); rb.type = "button"; rb.className = "reactbtn"; rb.textContent = "🎉";
+        rb.setAttribute("aria-label", t("react.to", { name: w.screenName }));
+        rb.addEventListener("click", () => openReact(w.screenName, { type: "wf", lang: wfLangNow(), day }, { v: "wf", n: wfToday() - 1, ms: w.ms }, true));
         li.appendChild(rb);
       }
       ol.appendChild(li);
@@ -2290,13 +2321,14 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     el.appendChild(s);
   }
   let reactTarget = null;
-  function openReact(name, subject, label) {
+  function openReact(name, subject, label, winner) {
     reactTarget = { name, subject };
     $("reactTitle").textContent = t("react.to", { name });
     $("reactCtx").textContent = fmtLabel(label);
     const grid = $("reactGrid"); grid.textContent = "";
     const can = S.account && S.account.verified !== false;
     for (const [k, e] of REACTS) {
+      if (k === "congrats" && !winner) continue;                    // "Nice win!" is only for Yesterday's Winners
       const b = document.createElement("button"); b.type = "button"; b.disabled = !can;
       const em = document.createElement("span"); em.className = "e"; em.textContent = e; b.append(em, t("react." + k));
       b.addEventListener("click", () => sendReact(k, b));
