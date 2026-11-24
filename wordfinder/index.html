@@ -480,7 +480,7 @@ a.btn { display: inline-block; text-decoration: none; text-align: center; }
 .scorebtn .chev { color: var(--muted); }
 .winbtn .who { flex: 1; min-width: 0; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wingame { font-size: .85rem; font-weight: 700; color: var(--muted); }
-.winbtn .medal { width: 30px; height: 34px; flex: none; }
+.winbtn .medal { width: 30px; height: 30px; flex: none; }
 div.winbtn { cursor: default; }
 .modalmeta { margin: -6px 0 0; color: var(--muted); font-weight: 600; }
 li + li > .scorebtn { border-top: 1px solid var(--line); }
@@ -1178,12 +1178,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     } catch (e) {}
     renderWinner();
   }
-  // gold, silver and bronze medals: a ribbon and a disc with the place number
+  // gold, silver and bronze medals: a round disc with the place number
   const MEDALS = [["#E8B923", "#9A7406", "#3A2A00"], ["#C7CFD6", "#7C8894", "#1F2A33"], ["#D08A4E", "#8A4F1E", "#2E1503"]];
   const medal = (n) => { const [face, rim, ink] = MEDALS[n];
-    return `<svg class="medal" viewBox="0 0 30 34" aria-hidden="true"><path d="M8 0h6l4 10h-6zM22 0h-6l-4 10h6z" fill="${rim}" opacity=".85"/>`
-      + `<circle cx="15" cy="21" r="11.5" fill="${face}" stroke="${rim}" stroke-width="2"/>`
-      + `<text x="15" y="25.5" text-anchor="middle" font-size="13" font-weight="900" font-family="Nunito, sans-serif" fill="${ink}">${n + 1}</text></svg>`; };
+    return `<svg class="medal" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13" fill="${face}" stroke="${rim}" stroke-width="2"/>`
+      + `<text x="15" y="20" text-anchor="middle" font-size="14" font-weight="900" font-family="Nunito, sans-serif" fill="${ink}">${n + 1}</text></svg>`; };
   function renderWinner() {
     const wfT = lbTab === "wordfinder", ws = lbWinner && lbWinner.key === winnerKey() ? lbWinner.data : null, box = $("lbWinBox");
     box.hidden = (lbTab !== "daily" && !wfT) || !ws || !ws.length;
