@@ -73,8 +73,7 @@ async function champions(p, mode) {
 const REACT_EMOJI = { great: "🎉", fire: "🔥", well: "👏", brainiac: "🧠", fast: "⚡", congrats: "🏆", how: "😮", rematch: "🔁" };
 async function reactionsWeek(p, player) {
   const r = await p.query(
-    `select kind, count(*)::int as n from reactions r where to_id = $1 and created_at > now() - interval '7 days'
-        and not exists (select 1 from reaction_mutes m where m.player_id = $1 and m.muted_id = r.from_id)
+    `select kind, sum(n)::int as n from reaction_counts where player_id = $1 and day > (now() at time zone 'America/New_York')::date - 7
       group by kind order by n desc, kind`, [player.id]);
   return { n: r.rows.reduce((a, x) => a + x.n, 0), top: r.rows[0] ? REACT_EMOJI[r.rows[0].kind] || "🎉" : "" };
 }

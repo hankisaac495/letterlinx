@@ -96,7 +96,7 @@ create table if not exists wf_plays (
   flagged boolean not null default false  -- solved faster than a person could; kept off the leaderboard
 );
 alter table wf_plays add column if not exists flagged boolean not null default false;
--- preset reactions between registered players: one per sender, receiver and score; kept 90 days
+-- preset reactions between registered players: one per sender, receiver and score; deleted after 48 hours
 alter table players add column if not exists reactions_on boolean not null default true;
 create table if not exists reactions (
   id bigserial primary key,
@@ -111,6 +111,16 @@ create table if not exists reactions (
 );
 create index if not exists reactions_to_idx on reactions (to_id, created_at desc);
 create index if not exists reactions_from_idx on reactions (from_id, created_at);
+alter table reactions add column if not exists removed_at timestamptz;   -- removed by the receiver: hidden, and blocks a repeat until deleted
+create index if not exists reactions_created_idx on reactions (created_at);
+-- how many of each reaction a player received per day (no senders), for the weekly email and the admin count
+create table if not exists reaction_counts (
+  player_id uuid not null references players (id) on delete cascade,
+  day date not null,
+  kind text not null,
+  n integer not null default 0,
+  primary key (player_id, day, kind)
+);
 create table if not exists reaction_mutes (
   player_id uuid not null references players (id) on delete cascade,
   muted_id uuid not null references players (id) on delete cascade,

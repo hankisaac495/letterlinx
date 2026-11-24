@@ -240,7 +240,7 @@ test("a keyboard player types the words, in Spanish, with reduced motion", async
   assert.deepStrictEqual(p.errors, []);
 });
 
-test("preset reactions: send from the leaderboard, badge, list, tally, mute and switch off", async () => {
+test("preset reactions: send, badge, list, tally, remove one, clear all, 48-hour expiry, mute and switch off", async () => {
   const signIn = async (p, who, register) => p.evaluate(async ({ who, register }) => (await fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" },
     body: JSON.stringify(register ? { action: "register", email: who.email, screenName: who.name, password: "react-pass-1" } : { action: "login", email: who.email, password: "react-pass-1" }) })).status, { who, register });
   const A = { email: "wizard@e2e.test", name: "Wizard" }, B = { email: "bobcat@e2e.test", name: "Bobcat" };
@@ -282,7 +282,30 @@ test("preset reactions: send from the leaderboard, badge, list, tally, mute and 
   await until(pb, () => /Wizard: Brainiac!/.test(document.getElementById("reactList").textContent));
   assert.match(await pb.textContent("#reactList"), new RegExp("on your Linx Daily #" + game + " · 38 pts"));
   await until(pb, () => document.getElementById("acctBadge").hidden);           // seen once the list is open
-  await pb.click('#reactList .mute');
+  // ✕ removes one; Wizard can't send another for the same score
+  await pb.click('#reactList .x');
+  await until(pb, () => /No reactions yet/.test(document.getElementById("reactList").textContent));
+  await pa.click('#players .namebtn:has-text("Bobcat")'); await pa.click('#reactGrid button:has-text("Well played")');
+  await until(pa, () => /already reacted/.test(document.getElementById("reactMsg").textContent));
+  await pa.click("#reactClose");
+  // a reaction on Bobcat's Brain Booster score, then "Clear all"
+  await pb.evaluate(async () => fetch("/api/games", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode: "classic", words: ["cat"], at: Date.now(), game: null }) }));
+  assert.strictEqual(await pa.evaluate(async () => (await fetch("/api/reactions", { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ action: "send", to: "Bobcat", kind: "fire", subject: { type: "booster", mode: "classic" } }) })).status), 200);
+  await pb.click('nav button[data-go="settings"]'); await pb.click('nav button[data-go="account"]');
+  await until(pb, () => /Wizard: Nice score!/.test(document.getElementById("reactList").textContent));
+  await pb.click("#reactClear"); await pb.click("#reactClearYes");
+  await until(pb, () => /No reactions yet/.test(document.getElementById("reactList").textContent) && document.getElementById("reactClear").hidden);
+  // reactions older than 48 hours are gone
+  const { Client } = require("pg"); const db = new Client({ connectionString: DB }); await db.connect();
+  await db.query("update reactions set removed_at = null, created_at = now() - interval '49 hours'");
+  const left = await pb.evaluate(async () => (await (await fetch("/api/reactions")).json()).list.length);
+  assert.strictEqual(left, 0);
+  // the weekly count still includes them
+  const counted = (await db.query("select coalesce(sum(n), 0)::int as n from reaction_counts")).rows[0].n; await db.end();
+  assert.strictEqual(counted, 2);
+  // muting: Wizard's next reaction (on a WordFinder-free score, so none) — just check the mute button still works on an empty list
+  await pb.click('nav button[data-go="settings"]'); await pb.click('nav button[data-go="account"]');
   await until(pb, () => /No reactions yet/.test(document.getElementById("reactList").textContent));
   await pb.click("#reactOn");                                                     // stop receiving reactions
   await pb.waitForTimeout(500);

@@ -365,7 +365,11 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .reactbtn { flex: none; border: 0; background: var(--surface-2); border-radius: 50%; width: 36px; height: 36px; margin-left: 8px; font-size: 1rem; cursor: pointer; }
 .tally { font-size: .78rem; color: var(--muted); white-space: nowrap; margin-left: 6px; }
 #reactBox { display: flex; flex-direction: column; gap: 12px; }
-.ritem { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; padding: 12px 0; align-items: start; }
+.ritem { display: grid; grid-template-columns: auto 1fr auto; gap: 2px 12px; padding: 12px 0; align-items: start; }
+.ritem .x { grid-column: 3; grid-row: 1; border: 0; background: var(--surface-2); color: var(--muted); width: 28px; height: 28px; border-radius: 50%; font-size: .8rem; cursor: pointer; }
+.reacthead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.reacthead .linkbtn { padding: 0; }
+#reactBox .note { margin: 0; }
 li + li > .ritem { border-top: 1px solid var(--line); }
 .ritem .e { grid-row: span 2; font-size: 1.6rem; line-height: 1.2; }
 .ritem .what { font-weight: 700; }
@@ -766,8 +770,13 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <button class="linkbtn" id="resendBtn" type="button" data-t="verify.resend">Send a new code</button>
     </div>
     <div id="reactBox" hidden>
-      <h2 data-t="react.title">Reactions</h2>
+      <div class="reacthead"><h2 data-t="react.title">Reactions</h2><button class="linkbtn" id="reactClear" type="button" data-t="react.clear" hidden>Clear all</button></div>
+      <div class="confirm" id="reactClearAsk" hidden>
+        <p data-t="react.clearAsk">Clear all reactions?</p>
+        <div class="two"><button class="btn" id="reactClearNo" type="button" data-t="wf.cancel">Cancel</button><button class="btn danger solid" id="reactClearYes" type="button" data-t="react.clearYes">Clear all</button></div>
+      </div>
       <div class="panel"><ol class="plain" id="reactList"></ol></div>
+      <p class="note" data-t="react.expire">Reactions disappear after 48 hours.</p>
       <label class="check"><input type="checkbox" id="reactOn"><span data-t="react.allow">Let other players send me reactions</span></label>
     </div>
     <form id="acctForm" novalidate>
@@ -1981,7 +1990,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     for (const s of ["game", "games", "settings", "leaderboard", "account", "admin"]) $("s-" + s).hidden = s !== name;
     $("toast").hidden = true;                                       // a passing message goes when the screen changes
     document.querySelectorAll("#nav button").forEach((b) => b.dataset.go === (name === "admin" ? "settings" : name) ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
-    if (name === "account") { renderAccount(); renderReactions(); markReactionsSeen(); }
+    if (name === "account") { renderAccount(); renderReactions(); if (S.account) loadReactions(); }   // fresh list each visit (marks them seen)
+    if (name === "leaderboard" && S.account) loadReactions();       // up-to-date tallies on your rows
     if (name === "leaderboard") { lbTab = variant; lbGame = null; players = null; wfLbStats = null; lbState = "loading"; renderLeaderboard(); loadPlayers(); if (lbTab === "booster") loadStats(); }
     if (name === "games") renderVariants();
   }
@@ -2314,6 +2324,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     if (!S.account) { reactData = null; renderReactions(); return; }
     try { const r = await call("/api/reactions", "GET"); if (r.ok) reactData = r.data; } catch (e) {}
     renderReactions();
+    if (!$("s-leaderboard").hidden) renderLeaderboard();           // tallies on your own rows
     if (reactData && reactData.unseen && !reactNudged) { reactNudged = true; toast(t(reactData.unseen === 1 ? "react.nudge1" : "react.nudge", { n: reactData.unseen }), () => show("account")); }
     if (!$("s-account").hidden) markReactionsSeen();
   }
@@ -2327,7 +2338,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     const list = d ? d.list : [];
     if (!list.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = t("react.none"); ol.appendChild(li); }
     const ago = (at) => { try { const m = Math.round((at - Date.now()) / 60000), rtf = new Intl.RelativeTimeFormat(mode.lang, { numeric: "auto" });
-      return Math.abs(m) < 60 ? rtf.format(m, "minute") : Math.abs(m) < 1440 ? rtf.format(Math.round(m / 60), "hour") : rtf.format(Math.round(m / 1440), "day"); } catch (e) { return ""; } };
+      return Math.abs(m) < 1 ? t("react.now") : Math.abs(m) < 60 ? rtf.format(m, "minute") : Math.abs(m) < 1440 ? rtf.format(Math.round(m / 60), "hour") : rtf.format(Math.round(m / 1440), "day"); } catch (e) { return ""; } };
     for (const x of list) {
       const li = document.createElement("li"), row = document.createElement("div"); row.className = "ritem" + (x.seen ? "" : " new");
       const e = document.createElement("span"); e.className = "e"; e.textContent = reactEmoji[x.kind] || "🎉";
@@ -2335,9 +2346,23 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       const ctx = document.createElement("span"); ctx.className = "ctx"; ctx.textContent = t("react.onYour", { what: fmtLabel(x.label) }) + " · " + ago(x.at);
       const mute = document.createElement("button"); mute.type = "button"; mute.className = "mute"; mute.textContent = t("react.mute", { name: x.from });
       mute.addEventListener("click", async () => { try { await call("/api/reactions", "POST", { action: "mute", from: x.from }); } catch (err) {} loadReactions(); });
-      row.append(e, what, ctx, mute); li.appendChild(row); ol.appendChild(li);
+      const x2 = document.createElement("button"); x2.type = "button"; x2.className = "x"; x2.textContent = "✕";
+      x2.setAttribute("aria-label", t("react.remove", { name: x.from }));
+      x2.addEventListener("click", async () => {
+        li.remove(); reactData.list = reactData.list.filter((y) => y.id !== x.id);
+        try { await call("/api/reactions", "POST", { action: "remove", id: x.id }); } catch (err) {}
+        loadReactions();
+      });
+      row.append(e, what, x2, ctx, mute); li.appendChild(row); ol.appendChild(li);
     }
+    $("reactClear").hidden = !list.length; $("reactClearAsk").hidden = true;
   }
+  $("reactClear").addEventListener("click", () => { $("reactClearAsk").hidden = false; $("reactClearNo").focus(); });
+  $("reactClearNo").addEventListener("click", () => { $("reactClearAsk").hidden = true; });
+  $("reactClearYes").addEventListener("click", async () => {
+    try { await call("/api/reactions", "POST", { action: "clear" }); } catch (e) {}
+    $("reactClearAsk").hidden = true; loadReactions();
+  });
   async function markReactionsSeen() {
     if (!reactData || !reactData.unseen) return;
     try { await call("/api/reactions", "POST", { action: "seen" }); } catch (e) { return; }

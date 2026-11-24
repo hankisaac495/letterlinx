@@ -6,11 +6,17 @@
 // POST /api/reactions { action: "seen" }                 -> marks everything as seen (clears the badge)
 // POST /api/reactions { action: "settings", on }         -> allow or stop reactions to this player
 // POST /api/reactions { action: "mute", from }           -> hides reactions from one player
+// POST /api/reactions { action: "remove", id }           -> removes one reaction from the list
+// POST /api/reactions { action: "clear" }                -> removes them all
+// Reactions are deleted 48 hours after they're sent.
 const L = require("./_lib.js");
 const W = require("../wordfinder.js");
 
 const KINDS = ["great", "fire", "well", "brainiac", "fast", "congrats", "how", "rematch"];
 const PER_DAY = 30;
+const KEEP = "48 hours";
+// clear out reactions older than 48 hours (cheap with the created_at index; run now and then)
+const sweep = (p) => (Math.random() < 0.2 ? p.query(`delete from reactions where created_at < now() - interval '${KEEP}'`) : null);
 
 module.exports = L.route(async (req, res, p) => {
   const me = await L.currentPlayer(req, p);
@@ -18,14 +24,15 @@ module.exports = L.route(async (req, res, p) => {
   const verified = me.email_verified || !L.MAIL_ON;
 
   if (req.method === "GET") {
+    await sweep(p);
     const [list, tallies] = await Promise.all([
       p.query(
         `select r.id, pl.screen_name as "from", r.kind, r.label, r.created_at, r.seen_at from reactions r join players pl on pl.id = r.from_id
-          where r.to_id = $1 and r.created_at > now() - interval '90 days'
+          where r.to_id = $1 and r.created_at > now() - interval '${KEEP}' and r.removed_at is null
             and not exists (select 1 from reaction_mutes m where m.player_id = $1 and m.muted_id = r.from_id)
           order by r.created_at desc limit 60`, [me.id]),
       p.query(
-        `select subject, kind, count(*)::int as n from reactions r where to_id = $1 and created_at > now() - interval '90 days'
+        `select subject, kind, count(*)::int as n from reactions r where to_id = $1 and created_at > now() - interval '${KEEP}' and removed_at is null
             and not exists (select 1 from reaction_mutes m where m.player_id = $1 and m.muted_id = r.from_id)
           group by subject, kind`, [me.id]),
     ]);
@@ -39,6 +46,8 @@ module.exports = L.route(async (req, res, p) => {
   if (req.method !== "POST") return res.status(405).json({ error: "method_not_allowed" });
   const b = L.body(req);
 
+  if (b.action === "remove") { await p.query("update reactions set removed_at = now() where id = $1 and to_id = $2", [Number(b.id) || 0, me.id]); return res.status(200).json({ ok: true }); }
+  if (b.action === "clear") { await p.query("update reactions set removed_at = now() where to_id = $1 and removed_at is null", [me.id]); return res.status(200).json({ ok: true }); }
   if (b.action === "seen") { await p.query("update reactions set seen_at = now() where to_id = $1 and seen_at is null", [me.id]); return res.status(200).json({ ok: true }); }
   if (b.action === "settings") {
     await p.query("update players set reactions_on = $2 where id = $1", [me.id, b.on !== false]);
@@ -79,7 +88,10 @@ module.exports = L.route(async (req, res, p) => {
   const r = await p.query(
     `insert into reactions (from_id, to_id, kind, subject, label, seen_at) values ($1, $2, $3, $4, $5, $6)
      on conflict (from_id, to_id, subject) do nothing returning id`, [me.id, to.id, b.kind, subject, JSON.stringify(label), muted ? new Date() : null]);
-  if (Math.random() < 0.02) await p.query("delete from reactions where created_at < now() - interval '90 days'");   // keep 90 days
+  await sweep(p);
   if (!r.rows[0]) return res.status(409).json({ error: "already" });
+  if (!muted) await p.query(
+    `insert into reaction_counts (player_id, day, kind, n) values ($1, (now() at time zone 'America/New_York')::date, $2, 1)
+     on conflict (player_id, day, kind) do update set n = reaction_counts.n + 1`, [to.id, b.kind]);
   return res.status(200).json({ ok: true });
 });
