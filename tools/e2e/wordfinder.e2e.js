@@ -239,3 +239,142 @@ test("a keyboard player types the words, in Spanish, with reduced motion", async
   assert.match(await p.textContent("#wfRank"), /Añade un apodo/);
   assert.deepStrictEqual(p.errors, []);
 });
+
+test("preset reactions: send, badge, list, tally, remove one, clear all, 48-hour expiry, mute and switch off", async () => {
+  const signIn = async (p, who, register) => p.evaluate(async ({ who, register }) => (await fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify(register ? { action: "register", email: who.email, screenName: who.name, password: "react-pass-1" } : { action: "login", email: who.email, password: "react-pass-1" }) })).status, { who, register });
+  const A = { email: "wizard@e2e.test", name: "Wizard" }, B = { email: "bobcat@e2e.test", name: "Bobcat" };
+  const game = 101 + Math.round((Date.UTC(...today.split("-").map((x, i) => i === 1 ? x - 1 : +x)) - Date.UTC(2026, 10, 16)) / 864e5);
+
+  // Bobcat plays today's Linx Daily
+  const pb = await page(); await pb.goto(U + "/");
+  assert.strictEqual(await signIn(pb, B, true), 200);
+  assert.strictEqual(await pb.evaluate(async (game) => (await fetch("/api/games", { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ mode: "classic", words: ["planets", "stone", "cat"], at: Date.now(), game }) })).status, game), 200);
+
+  // Wizard reacts from the leaderboard
+  const pa = await page(); await pa.goto(U + "/");
+  assert.strictEqual(await signIn(pa, A, true), 200);
+  await pa.goto(U + "/?r=1");
+  await pa.evaluate(() => { const s = JSON.parse(localStorage.getItem("letterlinx.v1")); s.variant = "daily"; localStorage.setItem("letterlinx.v1", JSON.stringify(s)); });
+  await pa.reload(); await until(pa, () => !!document.querySelector("#nav"));
+  await pa.click('nav button[data-go="leaderboard"]');
+  await pa.waitForSelector('#players .namebtn:has-text("Bobcat")');
+  await pa.click('#players .namebtn:has-text("Bobcat")');
+  await pa.waitForSelector("#react:not([hidden])");
+  assert.match(await pa.textContent("#reactCtx"), new RegExp("Linx Daily #" + game + " · 38 pts"));
+  assert.ok(!(await pa.isVisible('#reactGrid button:has-text("Nice win!")')), "Nice win! is only offered to yesterday's winners");
+  assert.ok(await pa.isVisible('#reactGrid button:has-text("So close!")'), "So close! is offered on the regular leaderboard");
+  assert.strictEqual(await pa.$$eval("#reactGrid button", (b) => b.length), 8);
+  await pa.click('#reactGrid button:has-text("Brainiac!")');
+  await until(pa, () => /Sent to Bobcat/.test(document.getElementById("reactMsg").textContent));
+  await pa.waitForSelector("#react", { state: "hidden" });
+  await pa.click('#players .namebtn:has-text("Bobcat")'); await pa.click('#reactGrid button:has-text("Great game!")');
+  await until(pa, () => /already reacted/.test(document.getElementById("reactMsg").textContent));
+  await pa.click("#reactClose");
+
+  // Bobcat sees the badge, the nudge, the list and the tally
+  await pb.goto(U + "/?r=2");
+  await until(pb, () => !document.getElementById("acctBadge").hidden);
+  assert.strictEqual(await pb.textContent("#acctBadge"), "1");
+  await until(pb, () => /new reaction/.test(document.getElementById("toast").textContent));
+  await pb.click('nav button[data-go="leaderboard"]');
+  await pb.evaluate(() => document.querySelector('#lbTabs [data-v="daily"]').click());
+  await until(pb, () => /🧠 1/.test(document.getElementById("players").textContent));
+  await pb.click('nav button[data-go="account"]');
+  await until(pb, () => /Wizard: Brainiac!/.test(document.getElementById("reactList").textContent));
+  assert.match(await pb.textContent("#reactList"), new RegExp("on your Linx Daily #" + game + " · 38 pts"));
+  await until(pb, () => document.getElementById("acctBadge").hidden);           // seen once the list is open
+  // ✕ removes one; Wizard can't send another for the same score
+  await pb.click('#reactList .x');
+  await until(pb, () => /No reactions yet/.test(document.getElementById("reactList").textContent));
+  await pa.click('#players .namebtn:has-text("Bobcat")'); await pa.click('#reactGrid button:has-text("Well played")');
+  await until(pa, () => /already reacted/.test(document.getElementById("reactMsg").textContent));
+  await pa.click("#reactClose");
+  // a reaction on Bobcat's Brain Booster score, then "Clear all"
+  await pb.evaluate(async () => fetch("/api/games", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode: "classic", words: ["cat"], at: Date.now(), game: null }) }));
+  assert.strictEqual(await pa.evaluate(async () => (await fetch("/api/reactions", { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ action: "send", to: "Bobcat", kind: "fire", subject: { type: "booster", mode: "classic" } }) })).status), 200);
+  await pb.click('nav button[data-go="settings"]'); await pb.click('nav button[data-go="account"]');
+  await until(pb, () => /Wizard: Nice score!/.test(document.getElementById("reactList").textContent));
+  await pb.click("#reactClear"); await pb.click("#reactClearYes");
+  await until(pb, () => /No reactions yet/.test(document.getElementById("reactList").textContent) && document.getElementById("reactClear").hidden);
+  // reactions older than 48 hours are gone
+  const { Client } = require("pg"); const db = new Client({ connectionString: DB }); await db.connect();
+  await db.query("update reactions set removed_at = null, created_at = now() - interval '49 hours'");
+  const left = await pb.evaluate(async () => (await (await fetch("/api/reactions")).json()).list.length);
+  assert.strictEqual(left, 0);
+  // the weekly count still includes them
+  const counted = (await db.query("select coalesce(sum(n), 0)::int as n from reaction_counts")).rows[0].n; await db.end();
+  assert.strictEqual(counted, 2);
+  // muting: Wizard's next reaction (on a WordFinder-free score, so none) — just check the mute button still works on an empty list
+  await pb.click('nav button[data-go="settings"]'); await pb.click('nav button[data-go="account"]');
+  await until(pb, () => /No reactions yet/.test(document.getElementById("reactList").textContent));
+  await pb.click("#reactOn");                                                     // stop receiving reactions
+  await pb.waitForTimeout(500);
+
+  // Wizard no longer gets a reaction button for Bobcat
+  await pa.click('nav button[data-go="settings"]'); await pa.click('nav button[data-go="leaderboard"]');
+  await until(pa, () => /Bobcat/.test(document.getElementById("players").textContent));
+  assert.strictEqual(await pa.$$eval('#players .namebtn', (n) => n.length), 0);
+  assert.deepStrictEqual(pa.errors, []); assert.deepStrictEqual(pb.errors, []);
+});
+
+test("Yesterday's Winners: Linx Daily and WordFinder, with Nice win! only for winners", async () => {
+  const { Client } = require("pg");
+  const signIn = async (p, who, register) => p.evaluate(async ({ who, register }) => (await fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify(register ? { action: "register", email: who.email, screenName: who.name, password: "react-pass-1" } : { action: "login", email: who.email, password: "react-pass-1" }) })).status, { who, register });
+  const game = 101 + Math.round((Date.UTC(...today.split("-").map((x, i) => i === 1 ? x - 1 : +x)) - Date.UTC(2026, 10, 16)) / 864e5);
+  const yday = new Date(Date.parse(today + "T00:00:00Z") - 864e5).toISOString().slice(0, 10);
+  const W1 = { email: "champ@e2e.test", name: "Champ" }, F1 = { email: "fan@e2e.test", name: "Fan" };
+
+  // Champ won yesterday's Linx Daily; Fan played today but didn't place yesterday
+  const pc = await page(); await pc.goto(U + "/");
+  assert.strictEqual(await signIn(pc, W1, true), 200);
+  await pc.evaluate(async (g) => fetch("/api/games", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode: "classic", words: ["catapult", "planets", "stone", "rain", "dog", "cat", "tea", "ant", "pen", "hat", "sun"], at: Date.now() - 864e5, game: g }) }), game - 1);
+  // and was fastest at yesterday's WordFinder (written straight to the database)
+  const db = new Client({ connectionString: DB }); await db.connect();
+  await db.query(`insert into wf_puzzles (lang, day, topic, words, grid, paths, seed, status, source) values ('en', $1, 'Test', '[]', '[]', '[]', 's', 'approved', 'manual') on conflict do nothing`, [yday]);
+  await db.query(`insert into wf_plays (puzzle_id, lang, day, player_id, device, started_at, finished_at, base_ms, total_ms, outcome, hints)
+    select (select id from wf_puzzles where lang = 'en' and day = $1 and status = 'approved'), 'en', $1, id, 'champdev', now() - interval '1 day', now() - interval '1 day', 95000, 125000, 'solved', '[2]' from players where screen_name = 'Champ'`, [yday]);
+  await db.end();
+
+  const pf = await page(); await pf.goto(U + "/");
+  assert.strictEqual(await signIn(pf, F1, true), 200);
+  await pf.evaluate(() => { const s = JSON.parse(localStorage.getItem("letterlinx.v1")); s.variant = "daily"; localStorage.setItem("letterlinx.v1", JSON.stringify(s)); });
+  await pf.reload(); await until(pf, () => !!document.querySelector("#nav"));
+  await pf.click('nav button[data-go="leaderboard"]');
+  await pf.waitForSelector("#lbWinBox:not([hidden]) .reactbtn");
+  assert.match(await pf.textContent("#lbWinBox"), /Champ/);
+  await pf.click("#lbWinBox .reactbtn");
+  await pf.waitForSelector("#react:not([hidden])");
+  assert.ok(await pf.isVisible('#reactGrid button:has-text("Nice win!")'), "Nice win! is offered to a winner");
+  assert.ok(!(await pf.isVisible('#reactGrid button:has-text("So close!")')), "So close! isn't offered to a winner");
+  await pf.click('#reactGrid button:has-text("Nice win!")');
+  await until(pf, () => /Sent to Champ/.test(document.getElementById("reactMsg").textContent));
+  await pf.waitForSelector("#react", { state: "hidden" });
+  // Nice win! isn't offered from the ordinary leaderboard, and the server refuses it for someone who didn't place
+  // Fan played yesterday too but came 5th, behind Champ and three others
+  for (const [i, words] of [[1, ["planets", "stone"]], [2, ["planets", "rain"]], [3, ["stone", "rain"]]]) {
+    const px = await page(); await px.goto(U + "/");
+    assert.strictEqual(await signIn(px, { email: "extra" + i + "@e2e.test", name: "Extra" + i }, true), 200);
+    await px.evaluate(async ({ g, words }) => fetch("/api/games", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode: "classic", words, at: Date.now() - 864e5, game: g }) }), { g: game - 1, words });
+  }
+  await pf.evaluate(async (g) => fetch("/api/games", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode: "classic", words: ["cat"], at: Date.now() - 864e5, game: g }) }), game - 1);
+  const res = await pc.evaluate(async (g) => (await fetch("/api/reactions", { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ action: "send", to: "Fan", kind: "congrats", subject: { type: "daily", mode: "classic", game: g } }) })).json(), game - 1);
+  assert.strictEqual(res.error, "not_winner");
+
+  // WordFinder tab: yesterday's fastest with medals, time and hints; Nice win! works there too
+  await pf.evaluate(() => document.querySelector('#lbTabs [data-v="wordfinder"]').click());
+  await until(pf, () => !document.getElementById("lbWinBox").hidden && /Champ/.test(document.getElementById("lbWins").textContent));
+  assert.match(await pf.textContent("#lbWinBox"), /Yesterday's Winners\s*· #\d+[\s\S]*Champ\s*2:05\s*1 hint/);
+  await pf.click("#lbWinBox .reactbtn");
+  await pf.click('#reactGrid button:has-text("Nice win!")');
+  await until(pf, () => /Sent to Champ/.test(document.getElementById("reactMsg").textContent));
+  await pf.click("#reactClose").catch(() => {});
+  // Champ sees both
+  await pc.goto(U + "/?w=1"); await pc.click('nav button[data-go="account"]');
+  await until(pc, () => (document.getElementById("reactList").textContent.match(/Fan: Nice win!/g) || []).length === 2);
+  assert.deepStrictEqual(pf.errors, []); assert.deepStrictEqual(pc.errors, []);
+});

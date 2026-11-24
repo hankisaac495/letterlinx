@@ -17,6 +17,8 @@ module.exports = L.route(async (req, res, p) => {
 
   if (req.method === "GET" && q.lb) {
     if (!F.pastOk(day)) return res.status(400).json({ error: "bad_day" });
+    // winners=1: just the day's three fastest (for "Yesterday's Winners")
+    if (q.winners) return res.status(200).json({ lang, day, number: F.W.numberOf(day), players: (await F.leaderboard(p, lang, day, 3, null)).players });
     const dev = F.device(req, res, false), mine = await F.findPlay(p, lang, day, me, dev);
     const [board, st] = await Promise.all([F.leaderboard(p, lang, day, 50, mine), F.stats(p, lang, day, me, dev)]);
     return res.status(200).json({ lang, day, number: F.W.numberOf(day), ...board, stats: st });

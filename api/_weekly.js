@@ -20,6 +20,7 @@ const TEXT = {
     wf: "Linx WordFinder", wfSolved: "Puzzles solved", wfBest: "Best time", wfStreak: "Day streak",
     wfPromo: "Have you tried Linx WordFinder? Six words on one topic are hidden in the board, with a fresh puzzle every day. Can you find them all before the clock runs out?",
     wfTry: "Try today's puzzle", champWf: "Linx WordFinder", wfHome: "/wordfinder/",
+    reactions: "You got {n} reactions from other players this week {e}", reaction1: "You got a reaction from another player this week {e}",
   },
   es: {
     subjectPlayed: "Tu semana en Letra Linx: {rounds} rondas, mejor puntuación {best}",
@@ -35,6 +36,7 @@ const TEXT = {
     wf: "Linx WordFinder", wfSolved: "Retos resueltos", wfBest: "Mejor tiempo", wfStreak: "Racha de días",
     wfPromo: "¿Ya probaste Linx WordFinder? Seis palabras sobre un mismo tema se esconden en el tablero, con un reto nuevo cada día. ¿Puedes encontrarlas todas antes de que se acabe el tiempo?",
     wfTry: "Prueba el reto de hoy", champWf: "Linx WordFinder", wfHome: "/es/wordfinder/",
+    reactions: "Esta semana recibiste {n} reacciones de otros jugadores {e}", reaction1: "Esta semana recibiste una reacción de otro jugador {e}",
   },
 };
 const fill = (s, v) => s.replace(/\{(\w+)\}/g, (m, k) => (v[k] != null ? v[k] : m));
@@ -67,6 +69,15 @@ async function champions(p, mode) {
   return { daily: await top(true), booster: await top(false), wf };
 }
 
+// reactions received in the last 7 days, and the most common one
+const REACT_EMOJI = { great: "🎉", fire: "🔥", well: "👏", brainiac: "🧠", fast: "⚡", congrats: "🏆", close: "😉", how: "😮", rematch: "🔁" };
+async function reactionsWeek(p, player) {
+  const r = await p.query(
+    `select kind, sum(n)::int as n from reaction_counts where player_id = $1 and day > (now() at time zone 'America/New_York')::date - 7
+      group by kind order by n desc, kind`, [player.id]);
+  return { n: r.rows.reduce((a, x) => a + x.n, 0), top: r.rows[0] ? REACT_EMOJI[r.rows[0].kind] || "🎉" : "" };
+}
+
 // one player's WordFinder week: puzzles finished and solved, best time, and their current streak
 async function wordfinderWeek(p, player, mode) {
   const lang = wfLang(mode), today = todayKey();
@@ -92,7 +103,7 @@ async function playerWeek(p, player, mode) {
   return { ...s, longest: w ? w.w : "" };
 }
 
-function render(player, week, champs, wf) {
+function render(player, week, champs, wf, rx) {
   const lang = L.langOf(player.lang), T = TEXT[lang], game = L.gameNumberUTC(Date.now());
   const name = player.first_name || player.screen_name, played = week.rounds > 0, wfPlayed = wf.played > 0;
   const best = Math.max(week.daily, week.booster);
@@ -138,6 +149,7 @@ function render(player, week, champs, wf) {
   <tr><td style="padding:16px 28px 4px;${font}color:#10303B;">
     <p style="margin:0 0 6px;font-size:18px;font-weight:800;">${esc(fill(T.hi, { name }))}</p>
     <p style="margin:0;font-size:16px;color:#4B6772;">${esc(played || wfPlayed ? T.introPlayed : T.introIdle)}</p>
+    ${rx && rx.n ? `<p style="margin:10px 0 0;font-size:16px;font-weight:800;color:#0C6B7A;">${esc(fill(rx.n === 1 ? T.reaction1 : T.reactions, { n: rx.n, e: rx.top }))}</p>` : ""}
   </td></tr>
   ${played ? `<tr><td style="padding:12px 22px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">
     <tr>${stat(week.rounds, T.rounds)}${stat(week.days + "/7", T.days)}</tr>
@@ -158,6 +170,7 @@ function render(player, week, champs, wf) {
 </td></tr></table></body></html>`;
 
   const lines = [fill(T.hi, { name }), "", played || wfPlayed ? T.introPlayed : T.introIdle, ""];
+  if (rx && rx.n) lines.push(fill(rx.n === 1 ? T.reaction1 : T.reactions, { n: rx.n, e: rx.top }), "");
   if (played) lines.push(`${T.rounds}: ${week.rounds}`, `${T.days}: ${week.days}/7`, `${T.daily}: ${week.daily}`, `${T.booster}: ${week.booster}`, ...(week.longest ? [`${T.longest}: ${week.longest.toUpperCase()}`] : []), "");
   lines.push(T.wf);
   if (wfPlayed) lines.push(`${T.wfSolved}: ${wf.solved}/${wf.played}`, `${T.wfBest}: ${wf.best == null ? "—" : clock(wf.best)}`, `${T.wfStreak}: ${wf.streak}`, "");
@@ -179,7 +192,7 @@ function render(player, week, champs, wf) {
 async function build(p, player, champsCache) {
   const mode = L.langOf(player.lang) === "es" ? "es" : "classic";
   if (!champsCache[mode]) champsCache[mode] = await champions(p, mode);
-  return render(player, await playerWeek(p, player, mode), champsCache[mode], await wordfinderWeek(p, player, mode));
+  return render(player, await playerWeek(p, player, mode), champsCache[mode], await wordfinderWeek(p, player, mode), await reactionsWeek(p, player));
 }
 
 module.exports = { build, weekKey };

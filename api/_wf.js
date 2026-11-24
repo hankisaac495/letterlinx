@@ -121,14 +121,15 @@ async function checkNickname(p, raw, lang) {
 const ELIGIBLE = `w.finished_at is not null and w.outcome = 'solved' and not w.flagged and ((w.player_id is not null and (pl.email_verified or not $3)) or (w.player_id is null and w.nickname is not null))`;
 async function leaderboard(p, lang, day, limit, mine) {
   const r = await p.query(
-    `select w.id, coalesce(pl.screen_name, w.nickname) as name, w.total_ms, jsonb_array_length(w.hints) as hints
+    `select w.id, coalesce(pl.screen_name, w.nickname) as name, w.total_ms, jsonb_array_length(w.hints) as hints, w.player_id, pl.reactions_on
        from wf_plays w left join players pl on pl.id = w.player_id
       where w.lang = $1 and w.day = $2 and ${ELIGIBLE}
       order by w.total_ms, w.finished_at limit $4`, [lang, day, L.MAIL_ON, limit]);
   const c = await p.query(
     `select count(*)::int as n from wf_plays w left join players pl on pl.id = w.player_id where w.lang = $1 and w.day = $2 and ${ELIGIBLE}`,
     [lang, day, L.MAIL_ON]);
-  const out = { players: r.rows.map((x) => ({ name: x.name, ms: x.total_ms, hints: x.hints, me: !!mine && x.id === mine.id })), total: c.rows[0].n, rank: null };
+  // react: a member who accepts reactions (guests with a nickname have nowhere to receive them)
+  const out = { players: r.rows.map((x) => ({ name: x.name, ms: x.total_ms, hints: x.hints, me: !!mine && x.id === mine.id, react: !!x.player_id && x.reactions_on !== false })), total: c.rows[0].n, rank: null };
   if (mine && mine.finished_at && mine.outcome === "solved") {
     const k = await p.query(
       `select (count(*) filter (where (w.total_ms, w.finished_at) < ($5, $6)))::int + 1 as rank, coalesce(bool_or(w.id = $4), false) as listed

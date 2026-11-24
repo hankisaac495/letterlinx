@@ -96,6 +96,36 @@ create table if not exists wf_plays (
   flagged boolean not null default false  -- solved faster than a person could; kept off the leaderboard
 );
 alter table wf_plays add column if not exists flagged boolean not null default false;
+-- preset reactions between registered players: one per sender, receiver and score; deleted after 48 hours
+alter table players add column if not exists reactions_on boolean not null default true;
+create table if not exists reactions (
+  id bigserial primary key,
+  from_id uuid not null references players (id) on delete cascade,
+  to_id uuid not null references players (id) on delete cascade,
+  kind text not null,                 -- one of the preset reactions
+  subject text not null,              -- the score it's about, e.g. daily:classic:109, booster:classic:120, wf:en:2026-11-24
+  label jsonb not null,               -- what the receiver sees about that score: game, number, score or time
+  created_at timestamptz not null default now(),
+  seen_at timestamptz,
+  unique (from_id, to_id, subject)
+);
+create index if not exists reactions_to_idx on reactions (to_id, created_at desc);
+create index if not exists reactions_from_idx on reactions (from_id, created_at);
+alter table reactions add column if not exists removed_at timestamptz;   -- removed by the receiver: hidden, and blocks a repeat until deleted
+create index if not exists reactions_created_idx on reactions (created_at);
+-- how many of each reaction a player received per day (no senders), for the weekly email and the admin count
+create table if not exists reaction_counts (
+  player_id uuid not null references players (id) on delete cascade,
+  day date not null,
+  kind text not null,
+  n integer not null default 0,
+  primary key (player_id, day, kind)
+);
+create table if not exists reaction_mutes (
+  player_id uuid not null references players (id) on delete cascade,
+  muted_id uuid not null references players (id) on delete cascade,
+  primary key (player_id, muted_id)
+);
 alter table wf_plays add column if not exists outcome text;            -- null while playing; solved, surrender or timeout once over
 alter table wf_plays add column if not exists last_hint_at timestamptz;
 update wf_plays set outcome = 'solved' where finished_at is not null and outcome is null;
@@ -276,7 +306,7 @@ async function profile(p, player) {
   return {
     boost,
     account: { first: player.first_name, last: player.last_name, email: player.email, screenName: player.screen_name,
-      verified: player.email_verified || !MAIL_ON, admin: isAdmin(player), emailOptIn: !!player.email_opt_in },
+      verified: player.email_verified || !MAIL_ON, admin: isAdmin(player), emailOptIn: !!player.email_opt_in, reactionsOn: player.reactions_on !== false },
     tops,
   };
 }

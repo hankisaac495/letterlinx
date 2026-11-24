@@ -17,7 +17,8 @@ module.exports = L.route(async (req, res, p) => {
           (select count(*) from players where created_at > now() - interval '7 days')::int as players_7d,
           (select count(*) from games)::int as rounds,
           (select count(*) from games where played_at > now() - interval '7 days')::int as rounds_7d,
-          (select count(*) from players where email_opt_in and email_verified)::int as subscribers`),
+          (select count(*) from players where email_opt_in and email_verified)::int as subscribers,
+          (select coalesce(sum(n), 0) from reaction_counts where day > current_date - 7)::int as reactions_7d`),
       p.query(`select pl.id, pl.screen_name, pl.first_name, pl.last_name, pl.email, pl.email_verified, pl.email_opt_in, pl.created_at,
                       count(g.id)::int as rounds, max(g.played_at) as last_played
                  from players pl left join games g on g.player_id = pl.id
