@@ -397,6 +397,9 @@ a.btn { display: inline-block; text-decoration: none; text-align: center; }
 .seg button { border: 0; background: transparent; padding: 8px 16px; border-radius: 9px; font-weight: 600; color: var(--muted); }
 .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px var(--shade); }
 .seg.center { align-self: center; }
+/* the leaderboard picker: a size larger and a weight bolder than other switches */
+#lbTabs button { font-size: 1.1em; font-weight: 700; padding-inline: 13px; }
+@media (max-width: 370px) { #lbTabs button { font-size: 1em; padding-inline: 7px; white-space: nowrap; } }   /* the smallest phones: bold, same size as before, still one line */
 .wordlist li.none { background: none; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--muted); }
 .about { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; color: var(--muted); font-size: .9rem; line-height: 1.5; }
 .about h2 { color: var(--ink); }
