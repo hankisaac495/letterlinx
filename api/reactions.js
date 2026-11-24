@@ -13,7 +13,7 @@ const L = require("./_lib.js");
 const F = require("./_wf.js");
 const W = require("../wordfinder.js");
 
-const KINDS = ["great", "fire", "well", "brainiac", "fast", "congrats", "how", "rematch"];
+const KINDS = ["great", "fire", "well", "brainiac", "fast", "congrats", "close", "how", "rematch"];
 const PER_DAY = 30;
 const KEEP = "48 hours";
 // clear out reactions older than 48 hours (cheap with the created_at index; run now and then)

@@ -2303,7 +2303,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   /* ---------- reactions ----------
      Registered players send each other one of a few preset reactions about a score: tap a name on a leaderboard.
      Received reactions show in a list on the Account screen, with a badge on the Account tab and tallies on your scores. */
-  const REACTS = [["great", "🎉"], ["fire", "🔥"], ["well", "👏"], ["brainiac", "🧠"], ["fast", "⚡"], ["congrats", "🏆"], ["how", "😮"], ["rematch", "🔁"]];
+  const REACTS = [["great", "🎉"], ["fire", "🔥"], ["well", "👏"], ["brainiac", "🧠"], ["fast", "⚡"], ["congrats", "🏆"], ["close", "😉"], ["how", "😮"], ["rematch", "🔁"]];
   const reactEmoji = Object.fromEntries(REACTS);
   let reactData = null, reactNudged = false;
   const fmtLabel = (l) => !l ? "" : l.v === "wf" ? t("react.ctxWf", { n: l.n, time: clockText(l.ms) })
@@ -2331,6 +2331,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     const can = S.account && S.account.verified !== false;
     for (const [k, e] of REACTS) {
       if (k === "congrats" && !winner) continue;                    // "Nice win!" is only for Yesterday's Winners
+      if (k === "close" && winner) continue;                        // "So close!" is for everyone else on the leaderboard
       const b = document.createElement("button"); b.type = "button"; b.disabled = !can;
       const em = document.createElement("span"); em.className = "e"; em.textContent = e; b.append(em, t("react." + k));
       b.addEventListener("click", () => sendReact(k, b));

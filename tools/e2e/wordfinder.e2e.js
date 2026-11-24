@@ -264,7 +264,8 @@ test("preset reactions: send, badge, list, tally, remove one, clear all, 48-hour
   await pa.waitForSelector("#react:not([hidden])");
   assert.match(await pa.textContent("#reactCtx"), new RegExp("Linx Daily #" + game + " · 38 pts"));
   assert.ok(!(await pa.isVisible('#reactGrid button:has-text("Nice win!")')), "Nice win! is only offered to yesterday's winners");
-  assert.strictEqual(await pa.$$eval("#reactGrid button", (b) => b.length), 7);
+  assert.ok(await pa.isVisible('#reactGrid button:has-text("So close!")'), "So close! is offered on the regular leaderboard");
+  assert.strictEqual(await pa.$$eval("#reactGrid button", (b) => b.length), 8);
   await pa.click('#reactGrid button:has-text("Brainiac!")');
   await until(pa, () => /Sent to Bobcat/.test(document.getElementById("reactMsg").textContent));
   await pa.waitForSelector("#react", { state: "hidden" });
@@ -348,6 +349,7 @@ test("Yesterday's Winners: Linx Daily and WordFinder, with Nice win! only for wi
   await pf.click("#lbWinBox .reactbtn");
   await pf.waitForSelector("#react:not([hidden])");
   assert.ok(await pf.isVisible('#reactGrid button:has-text("Nice win!")'), "Nice win! is offered to a winner");
+  assert.ok(!(await pf.isVisible('#reactGrid button:has-text("So close!")')), "So close! isn't offered to a winner");
   await pf.click('#reactGrid button:has-text("Nice win!")');
   await until(pf, () => /Sent to Champ/.test(document.getElementById("reactMsg").textContent));
   await pf.waitForSelector("#react", { state: "hidden" });

@@ -70,7 +70,7 @@ async function champions(p, mode) {
 }
 
 // reactions received in the last 7 days, and the most common one
-const REACT_EMOJI = { great: "🎉", fire: "🔥", well: "👏", brainiac: "🧠", fast: "⚡", congrats: "🏆", how: "😮", rematch: "🔁" };
+const REACT_EMOJI = { great: "🎉", fire: "🔥", well: "👏", brainiac: "🧠", fast: "⚡", congrats: "🏆", close: "😉", how: "😮", rematch: "🔁" };
 async function reactionsWeek(p, player) {
   const r = await p.query(
     `select kind, sum(n)::int as n from reaction_counts where player_id = $1 and day > (now() at time zone 'America/New_York')::date - 7
