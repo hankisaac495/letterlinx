@@ -437,8 +437,8 @@ a.btn { display: inline-block; text-decoration: none; text-align: center; }
 .scorebtn .meta { flex: 1; min-width: 0; color: var(--muted); font-size: .85rem; }
 .scorebtn .chev { color: var(--muted); }
 .winbtn .who { flex: 1; min-width: 0; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.winbtn .trophy { width: 22px; height: 22px; flex: none; fill: none; stroke: var(--accent-ink, #2B1E00); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
-  background: var(--accent); border-radius: 50%; padding: 4px; box-sizing: content-box; }
+.wingame { font-size: .85rem; font-weight: 700; color: var(--muted); }
+.winbtn .medal { width: 30px; height: 34px; flex: none; }
 .modalmeta { margin: -6px 0 0; color: var(--muted); font-weight: 600; }
 li + li > .scorebtn { border-top: 1px solid var(--line); }
 ol.plain, ul.plain { list-style: none; margin: 0; padding: 0; }
@@ -710,8 +710,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <div class="panel"><ol class="plain" id="todayBest"></ol></div>
     </div>
     <div id="lbWinBox" hidden>
-      <h2 data-t="lb.yesterday">Yesterday's Winner</h2>
-      <div class="panel"><button class="scorebtn winbtn" id="lbWin" type="button"></button></div>
+      <h2><span data-t="lb.yesterday">Yesterday's Winners</span> <span class="wingame" id="lbWinGame"></span></h2>
+      <div class="panel"><ol class="plain" id="lbWins"></ol></div>
     </div>
     <div id="lbMineBox">
       <h2 id="lbMine">Your games</h2>
@@ -1101,25 +1101,36 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     if (game < M.daily.first || (lbWinner && lbWinner.key === key)) return renderWinner();
     try {
       const r = await call("/api/leaderboard?mode=" + encodeURIComponent(modeId) + "&winner=" + game, "GET");
-      if (r.ok) lbWinner = { key, data: r.data.winner };
+      if (r.ok) lbWinner = { key, data: Array.isArray(r.data.winners) ? r.data.winners : r.data.winner ? [r.data.winner] : [] };
     } catch (e) {}
     renderWinner();
   }
+  // gold, silver and bronze medals: a ribbon and a disc with the place number
+  const MEDALS = [["#E8B923", "#9A7406", "#3A2A00"], ["#C7CFD6", "#7C8894", "#1F2A33"], ["#D08A4E", "#8A4F1E", "#2E1503"]];
+  const medal = (n) => { const [face, rim, ink] = MEDALS[n];
+    return `<svg class="medal" viewBox="0 0 30 34" aria-hidden="true"><path d="M8 0h6l4 10h-6zM22 0h-6l-4 10h6z" fill="${rim}" opacity=".85"/>`
+      + `<circle cx="15" cy="21" r="11.5" fill="${face}" stroke="${rim}" stroke-width="2"/>`
+      + `<text x="15" y="25.5" text-anchor="middle" font-size="13" font-weight="900" font-family="Nunito, sans-serif" fill="${ink}">${n + 1}</text></svg>`; };
   function renderWinner() {
-    const w = lbWinner && lbWinner.key === modeId + ":" + (gameNo - 1) ? lbWinner.data : null, box = $("lbWinBox");
-    box.hidden = lbTab !== "daily" || !w;
+    const ws = lbWinner && lbWinner.key === modeId + ":" + (gameNo - 1) ? lbWinner.data : null, box = $("lbWinBox");
+    box.hidden = lbTab !== "daily" || !ws || !ws.length;
     if (box.hidden) return;
-    const b = $("lbWin"); b.textContent = "";
-    const mk = (cls, txt) => { const s = document.createElement("span"); s.className = cls; s.textContent = txt; b.appendChild(s); };
-    b.insertAdjacentHTML("beforeend", '<svg class="trophy" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 14v4M8 20h8"/></svg>');
-    mk("gno", "#" + (gameNo - 1)); mk("who", w.screenName.slice(0, 24)); mk("num", w.score); mk("chev", "›");
-    b.setAttribute("aria-label", t("lb.yesterday") + ": " + t("lb.game", { game: gameNo - 1 }) + ", " + w.screenName + ", " + t("modal.points", { n: w.score }));
+    $("lbWinGame").textContent = "· " + t("lb.game", { game: gameNo - 1 });
+    const ol = $("lbWins"); ol.textContent = "";
+    ws.forEach((w, n) => {
+      const li = document.createElement("li"), b = document.createElement("button");
+      b.type = "button"; b.className = "scorebtn winbtn";
+      b.insertAdjacentHTML("beforeend", medal(n));
+      const mk = (cls, txt) => { const s = document.createElement("span"); s.className = cls; s.textContent = txt; b.appendChild(s); };
+      mk("who", w.screenName.slice(0, 24)); mk("num", w.score); mk("chev", "›");
+      b.setAttribute("aria-label", t("lb.place" + (n + 1)) + ": " + w.screenName + ", " + t("modal.points", { n: w.score }));
+      b.addEventListener("click", () => {
+        openModal(t("lb.game", { game: gameNo - 1 }) + " · " + t("modal.points", { n: w.score }), w.words, w.screenName + " · " + nWords(w.words.length));
+        track("winner_open", { game: gameNo - 1, place: n + 1 });
+      });
+      li.appendChild(b); ol.appendChild(li);
+    });
   }
-  $("lbWin").addEventListener("click", () => {
-    const w = lbWinner && lbWinner.data; if (!w) return;
-    openModal(t("lb.game", { game: gameNo - 1 }) + " · " + t("modal.points", { n: w.score }), w.words, w.screenName + " · " + nWords(w.words.length));
-    track("winner_open", { game: gameNo - 1 });
-  });
 
   async function loadWfPlayers() {
     const lang = mode.lang === "es" ? "es" : "en", n = viewGame();
@@ -2004,6 +2015,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     const me = S.account?.screenName;
     let list = lbState === "live" ? players : me && !wfT ? [{ screenName: me, best: daily ? bestIn(vg) : boosts()[0]?.score || 0 }] : [];
     list = (list || []).filter((p) => p.best > 0);                    // players without a score are not listed
+    if (daily) list = list.slice(0, 10);                               // Linx Daily shows the day's top 10
     const tb = $("players"); tb.textContent = "";
     if (wfT) list.forEach((p, i) => tb.appendChild(wfRow(i + 1, { name: p.screenName, ms: p.best, hints: p.hints, me: p.me })));
     else (list || []).forEach((p, i) => {
