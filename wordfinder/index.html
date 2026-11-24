@@ -1490,6 +1490,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   function end() {
     if (phase !== "playing") return;
     clearInterval(timerId); phase = "over"; roundId++; path = []; fb = null; mark.clear(); locked.clear(); pointerId = null;
+    if (S.account) setTimeout(loadReactions, 1500);                  // reactions that arrived during the round
     tone(660, .18, "triangle", .18); tone(440, .4, "triangle", .18, .16);
     const daily = roundVariant === "daily";
     const isHigh = score > 0 && score > (daily ? bestIn(roundGame) : boosts()[0]?.score || 0);
@@ -2304,7 +2305,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
      Received reactions show in a list on the Account screen, with a badge on the Account tab and tallies on your scores. */
   const REACTS = [["great", "🎉"], ["fire", "🔥"], ["well", "👏"], ["brainiac", "🧠"], ["fast", "⚡"], ["congrats", "🏆"], ["close", "😉"], ["how", "😮"], ["rematch", "🔁"]];
   const reactEmoji = Object.fromEntries(REACTS);
-  let reactData = null, reactNudged = false;
+  let reactData = null, reactNudged = 0;          // reactNudged: how many unseen reactions the last "you got reactions" message covered
   const fmtLabel = (l) => !l ? "" : l.v === "wf" ? t("react.ctxWf", { n: l.n, time: clockText(l.ms) })
     : l.v === "booster" ? t("react.ctxBooster", { score: l.score }) : t("react.ctxDaily", { n: l.n, score: l.score });
   function nameBtn(name, subject, label) {
@@ -2363,7 +2364,12 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     try { const r = await call("/api/reactions", "GET"); if (r.ok) reactData = r.data; } catch (e) {}
     renderReactions();
     if (!$("s-leaderboard").hidden) renderLeaderboard();           // tallies on your own rows
-    if (reactData && reactData.unseen && !reactNudged) { reactNudged = true; toast(t(reactData.unseen === 1 ? "react.nudge1" : "react.nudge", { n: reactData.unseen }), () => show("account")); }
+    // a message whenever more have arrived since the last one, but not in the middle of a timed round
+    const unseen = reactData ? reactData.unseen : 0;
+    if (unseen > reactNudged && !(phase === "playing" && variant !== "wordfinder") && $("s-account").hidden) {
+      reactNudged = unseen; toast(t(unseen === 1 ? "react.nudge1" : "react.nudge", { n: unseen }), () => show("account"));
+    }
+    if (!unseen) reactNudged = 0;
     if (!$("s-account").hidden) markReactionsSeen();
   }
   function renderReactions() {
@@ -2416,7 +2422,10 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     const el = $("toast"); el.textContent = text; el.hidden = false; el.onclick = () => { el.hidden = true; if (onTap) onTap(); };
     clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 5000);
   }
+  // new reactions show up without a reload: on returning to the app, and every minute while it's open
   document.addEventListener("visibilitychange", () => { if (!document.hidden && S.account) loadReactions(); });
+  window.addEventListener("focus", () => { if (S.account) loadReactions(); });
+  setInterval(() => { if (!document.hidden && S.account) loadReactions(); }, 60000);
 
   /* ---------- account ---------- */
   let acctView = "register"; // while signed out: "register" | "login" | "forgot" | "reset"
