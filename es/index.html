@@ -355,9 +355,15 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .namebtn::after { content: "＋🙂"; font-size: .72em; opacity: .55; }
 .reactsheet { gap: 12px; }
 .reactgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.reactgrid button { border: 0; background: var(--surface); border-radius: 12px; padding: 10px; font: inherit; font-weight: 700; color: var(--ink); text-align: left;
-  display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.reactgrid button { border: 0; background: var(--surface); border-radius: 12px; padding: 10px 8px; font: inherit; font-weight: 700; color: var(--ink); text-align: left;
+  display: flex; align-items: center; gap: 7px; cursor: pointer; white-space: nowrap; min-width: 0; }
 .reactgrid button .e { font-size: 1.35rem; line-height: 1; }
+@media (max-width: 370px) {                                        /* the smallest phones: every reaction still on one line */
+  .reactsheet { padding: 16px 12px; }
+  .reactgrid { gap: 6px; }
+  .reactgrid button { font-size: .86rem; padding: 9px 6px; gap: 5px; }
+  .reactgrid button .e { font-size: 1.1rem; }
+}
 .reactgrid button:disabled { opacity: .45; cursor: default; }
 #reactMsg:empty { display: none; }
 .winrow { display: flex; align-items: center; }
