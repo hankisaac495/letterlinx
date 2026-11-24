@@ -1105,6 +1105,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   const wfToday = () => Math.max(1, window.LLX_WF.numberOf(dayKey(new Date())));
   let wfLbStats = null;
   let online = false, players = null, lbState = "loading", syncFailed = false;
+  let reactViewing = false;       // reactions: the player opened the Account tab to look (signing in there doesn't count)
   async function call(path, method, body, wait) {
     const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), wait || 10000);
     try {
@@ -1118,7 +1119,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   function adopt(data) {
     const who = S.account && S.account.screenName;
     S.account = data.account;
-    if (who !== (S.account && S.account.screenName)) setTimeout(loadReactions, 0);   // signed in (or switched account): fetch their reactions
+    if (who !== (S.account && S.account.screenName)) { reactViewing = false; reactNudged = 0; setTimeout(loadReactions, 0); }   // signed in (or switched account): fetch their reactions, unseen
     const waiting = {}, waitingBoost = {};
     for (const g of S.pending) {
       const e = { game: g.game, score: g.words.reduce((s, w) => s + M.pointsFor(g.mode, w.length), 0), words: g.words, at: g.at };
@@ -2025,6 +2026,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     for (const s of ["game", "games", "settings", "leaderboard", "account", "admin"]) $("s-" + s).hidden = s !== name;
     $("toast").hidden = true;                                       // a passing message goes when the screen changes
     document.querySelectorAll("#nav button").forEach((b) => b.dataset.go === (name === "admin" ? "settings" : name) ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+    reactViewing = name === "account";                              // reactions count as seen only when the player opens this tab
     if (name === "account") { renderAccount(); renderReactions(); if (S.account) loadReactions(); }   // fresh list each visit (marks them seen)
     if (name === "leaderboard" && S.account) loadReactions();       // up-to-date tallies on your rows
     if (name === "leaderboard") { lbTab = variant; lbGame = null; players = null; wfLbStats = null; lbState = "loading"; renderLeaderboard(); loadPlayers(); if (lbTab === "booster") loadStats(); }
@@ -2292,7 +2294,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     $("noticeSettings").hidden = !withSettings; $("notice").hidden = false; $("noticePlay").focus();
   }
   $("noticeSettings").addEventListener("click", () => { closeModal(); show("settings"); });
-  $("noticePlay").addEventListener("click", () => { closeModal(); show("game"); });
+  $("noticePlay").addEventListener("click", () => { closeModal(); show("game"); if (S.account) loadReactions(); });   // e.g. "Welcome back": then any new reactions
   $("notice").addEventListener("click", (e) => { if (e.target === $("notice")) closeModal(); });
   $("modalClose").addEventListener("click", closeModal);
   $("modal").addEventListener("click", (e) => { if (e.target === $("modal")) closeModal(); });
@@ -2364,11 +2366,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     if (!$("s-leaderboard").hidden) renderLeaderboard();           // tallies on your own rows
     // a message whenever more have arrived since the last one, but not in the middle of a timed round
     const unseen = reactData ? reactData.unseen : 0;
-    if (unseen > reactNudged && !(phase === "playing" && variant !== "wordfinder") && $("s-account").hidden) {
+    if (unseen > reactNudged && !(phase === "playing" && variant !== "wordfinder") && !reactViewing && $("notice").hidden) {
       reactNudged = unseen; toast(t(unseen === 1 ? "react.nudge1" : "react.nudge", { n: unseen }), () => show("account"));
     }
     if (!unseen) reactNudged = 0;
-    if (!$("s-account").hidden) markReactionsSeen();
+    if (reactViewing && !$("s-account").hidden) markReactionsSeen();
   }
   function renderReactions() {
     const d = reactData, badge = $("acctBadge");
