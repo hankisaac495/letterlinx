@@ -239,3 +239,57 @@ test("a keyboard player types the words, in Spanish, with reduced motion", async
   assert.match(await p.textContent("#wfRank"), /Añade un apodo/);
   assert.deepStrictEqual(p.errors, []);
 });
+
+test("preset reactions: send from the leaderboard, badge, list, tally, mute and switch off", async () => {
+  const signIn = async (p, who, register) => p.evaluate(async ({ who, register }) => (await fetch("/api/auth", { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify(register ? { action: "register", email: who.email, screenName: who.name, password: "react-pass-1" } : { action: "login", email: who.email, password: "react-pass-1" }) })).status, { who, register });
+  const A = { email: "wizard@e2e.test", name: "Wizard" }, B = { email: "bobcat@e2e.test", name: "Bobcat" };
+  const game = 101 + Math.round((Date.UTC(...today.split("-").map((x, i) => i === 1 ? x - 1 : +x)) - Date.UTC(2026, 10, 16)) / 864e5);
+
+  // Bobcat plays today's Linx Daily
+  const pb = await page(); await pb.goto(U + "/");
+  assert.strictEqual(await signIn(pb, B, true), 200);
+  assert.strictEqual(await pb.evaluate(async (game) => (await fetch("/api/games", { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ mode: "classic", words: ["planets", "stone", "cat"], at: Date.now(), game }) })).status, game), 200);
+
+  // Wizard reacts from the leaderboard
+  const pa = await page(); await pa.goto(U + "/");
+  assert.strictEqual(await signIn(pa, A, true), 200);
+  await pa.goto(U + "/?r=1");
+  await pa.evaluate(() => { const s = JSON.parse(localStorage.getItem("letterlinx.v1")); s.variant = "daily"; localStorage.setItem("letterlinx.v1", JSON.stringify(s)); });
+  await pa.reload(); await until(pa, () => !!document.querySelector("#nav"));
+  await pa.click('nav button[data-go="leaderboard"]');
+  await pa.waitForSelector('#players .namebtn:has-text("Bobcat")');
+  await pa.click('#players .namebtn:has-text("Bobcat")');
+  await pa.waitForSelector("#react:not([hidden])");
+  assert.match(await pa.textContent("#reactCtx"), new RegExp("Linx Daily #" + game + " · 38 pts"));
+  await pa.click('#reactGrid button:has-text("Brainiac!")');
+  await until(pa, () => /Sent to Bobcat/.test(document.getElementById("reactMsg").textContent));
+  await pa.waitForSelector("#react", { state: "hidden" });
+  await pa.click('#players .namebtn:has-text("Bobcat")'); await pa.click('#reactGrid button:has-text("Great game!")');
+  await until(pa, () => /already reacted/.test(document.getElementById("reactMsg").textContent));
+  await pa.click("#reactClose");
+
+  // Bobcat sees the badge, the nudge, the list and the tally
+  await pb.goto(U + "/?r=2");
+  await until(pb, () => !document.getElementById("acctBadge").hidden);
+  assert.strictEqual(await pb.textContent("#acctBadge"), "1");
+  await until(pb, () => /new reaction/.test(document.getElementById("toast").textContent));
+  await pb.click('nav button[data-go="leaderboard"]');
+  await pb.evaluate(() => document.querySelector('#lbTabs [data-v="daily"]').click());
+  await until(pb, () => /🧠 1/.test(document.getElementById("players").textContent));
+  await pb.click('nav button[data-go="account"]');
+  await until(pb, () => /Wizard: Brainiac!/.test(document.getElementById("reactList").textContent));
+  assert.match(await pb.textContent("#reactList"), new RegExp("on your Linx Daily #" + game + " · 38 pts"));
+  await until(pb, () => document.getElementById("acctBadge").hidden);           // seen once the list is open
+  await pb.click('#reactList .mute');
+  await until(pb, () => /No reactions yet/.test(document.getElementById("reactList").textContent));
+  await pb.click("#reactOn");                                                     // stop receiving reactions
+  await pb.waitForTimeout(500);
+
+  // Wizard no longer gets a reaction button for Bobcat
+  await pa.click('nav button[data-go="settings"]'); await pa.click('nav button[data-go="leaderboard"]');
+  await until(pa, () => /Bobcat/.test(document.getElementById("players").textContent));
+  assert.strictEqual(await pa.$$eval('#players .namebtn', (n) => n.length), 0);
+  assert.deepStrictEqual(pa.errors, []); assert.deepStrictEqual(pb.errors, []);
+});

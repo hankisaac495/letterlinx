@@ -345,6 +345,33 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .vhow { align-self: flex-start; margin: 0 0 14px 18px; border: 1.5px solid var(--line); background: none; color: var(--brand); border-radius: 99px;
   padding: 5px 12px 5px 8px; font: inherit; font-size: .8rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .vhow svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+/* reactions */
+#nav button { position: relative; }
+.navbadge { position: absolute; top: 2px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--bad); color: #fff;
+  font-size: .7rem; font-weight: 900; line-height: 18px; text-align: center; }
+.namebtn { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.namebtn::after { content: "＋🙂"; font-size: .72em; opacity: .55; }
+.reactsheet { gap: 12px; }
+.reactgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.reactgrid button { border: 0; background: var(--surface); border-radius: 12px; padding: 10px; font: inherit; font-weight: 700; color: var(--ink); text-align: left;
+  display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.reactgrid button .e { font-size: 1.35rem; line-height: 1; }
+.reactgrid button:disabled { opacity: .45; cursor: default; }
+#reactMsg:empty { display: none; }
+.winrow { display: flex; align-items: center; }
+.winrow .scorebtn { flex: 1; min-width: 0; }
+.reactbtn { flex: none; border: 0; background: var(--surface-2); border-radius: 50%; width: 36px; height: 36px; margin-left: 8px; font-size: 1rem; cursor: pointer; }
+.tally { font-size: .78rem; color: var(--muted); white-space: nowrap; margin-left: 6px; }
+#reactBox { display: flex; flex-direction: column; gap: 12px; }
+.ritem { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; padding: 12px 0; align-items: start; }
+li + li > .ritem { border-top: 1px solid var(--line); }
+.ritem .e { grid-row: span 2; font-size: 1.6rem; line-height: 1.2; }
+.ritem .what { font-weight: 700; }
+.ritem.new .what::after { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--bad); margin-left: 6px; vertical-align: middle; }
+.ritem .ctx { color: var(--muted); font-size: .85rem; }
+.ritem .mute { grid-column: 2; justify-self: start; border: 0; background: none; padding: 2px 0; color: var(--muted); font-size: .78rem; text-decoration: underline; cursor: pointer; }
+.toast { position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; z-index: 35; background: var(--ink); color: var(--bg);
+  padding: 12px 18px; border-radius: 14px; font-weight: 800; box-shadow: 0 6px 20px var(--shade); cursor: pointer; max-width: calc(100% - 32px); text-align: center; }
 .howto { gap: 10px; }
 .howto h3 { margin: 6px 0 0; font-size: .8rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); }
 .howto p, .howto ul { margin: 0; font-size: .95rem; line-height: 1.45; }
@@ -736,6 +763,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <div class="msg" id="verifyMsg" role="status"></div>
       <button class="linkbtn" id="resendBtn" type="button" data-t="verify.resend">Send a new code</button>
     </div>
+    <div id="reactBox" hidden>
+      <h2 data-t="react.title">Reactions</h2>
+      <div class="panel"><ol class="plain" id="reactList"></ol></div>
+      <label class="check"><input type="checkbox" id="reactOn"><span data-t="react.allow">Let other players send me reactions</span></label>
+    </div>
     <form id="acctForm" novalidate>
       <div class="two" id="nameRow">
         <label><span data-t="f.first">First name</span><input type="text" id="fFirst" maxlength="40" autocomplete="given-name"></label>
@@ -780,7 +812,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     <button type="button" data-go="games"><svg viewBox="0 0 24 24"><rect x="3.500" y="3.500" width="7" height="7" rx="1.500"/><rect x="13.500" y="3.500" width="7" height="7" rx="1.500"/><rect x="3.500" y="13.500" width="7" height="7" rx="1.500"/><rect x="13.500" y="13.500" width="7" height="7" rx="1.500"/></svg><span data-t="nav.games">Games</span></button>
     <button type="button" data-go="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.1a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-t="nav.settings">Settings</span></button>
     <button type="button" data-go="leaderboard"><svg viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 14v4M8 20h8"/></svg><span data-t="nav.leaderboard">Leaderboard</span></button>
-    <button type="button" data-go="account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.500 2 8 6"/></svg><span data-t="nav.account">Account</span></button>
+    <button type="button" data-go="account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.500 2 8 6"/></svg><span data-t="nav.account">Account</span><b class="navbadge" id="acctBadge" hidden></b></button>
   </nav>
 </div>
 
@@ -870,6 +902,16 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     <button class="btn primary" id="wfHintMore" type="button"></button>
   </div>
 </div>
+
+<div class="overlay" id="react" hidden>
+  <div class="modal reactsheet" role="dialog" aria-modal="true" aria-labelledby="reactTitle">
+    <header><h2 id="reactTitle"></h2><button class="x" id="reactClose" type="button" data-t-label="modal.close" aria-label="Close">✕</button></header>
+    <p class="modalmeta" id="reactCtx"></p>
+    <div class="reactgrid" id="reactGrid"></div>
+    <p class="msg" id="reactMsg" role="status"></p>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
 
 <div class="overlay" id="howto" hidden>
   <div class="modal howto" role="dialog" aria-modal="true" aria-labelledby="howtoTitle">
@@ -1058,7 +1100,9 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   }
   /* take the server's view of the signed-in player; keep rounds not uploaded yet */
   function adopt(data) {
+    const who = S.account && S.account.screenName;
     S.account = data.account;
+    if (who !== (S.account && S.account.screenName)) setTimeout(loadReactions, 0);   // signed in (or switched account): fetch their reactions
     const waiting = {}, waitingBoost = {};
     for (const g of S.pending) {
       const e = { game: g.game, score: g.words.reduce((s, w) => s + M.pointsFor(g.mode, w.length), 0), words: g.words, at: g.at };
@@ -1131,7 +1175,14 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
         openModal(t("lb.game", { game: gameNo - 1 }) + " · " + t("modal.points", { n: w.score }), w.words, w.screenName + " · " + nWords(w.words.length));
         track("winner_open", { game: gameNo - 1, place: n + 1 });
       });
-      li.appendChild(b); ol.appendChild(li);
+      li.className = "winrow"; li.appendChild(b);
+      if (w.react && w.screenName !== S.account?.screenName) {
+        const rb = document.createElement("button"); rb.type = "button"; rb.className = "reactbtn"; rb.textContent = "🎉";
+        rb.setAttribute("aria-label", t("react.to", { name: w.screenName }));
+        rb.addEventListener("click", () => openReact(w.screenName, { type: "daily", mode: modeId, game: gameNo - 1 }, { v: "daily", n: gameNo - 1, score: w.score }));
+        li.appendChild(rb);
+      }
+      ol.appendChild(li);
     });
   }
 
@@ -1141,14 +1192,14 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       const r = await call("/api/wordfinder?lb=1&lang=" + lang + "&day=" + window.LLX_WF.dayOf(n), "GET");
       if (lbTab !== "wordfinder" || viewGame() !== n) return;
       if (!r.ok || !Array.isArray(r.data?.players)) throw 0;
-      players = r.data.players.map((x) => ({ screenName: String(x.name), best: x.ms, hints: x.hints, me: !!x.me }));
+      players = r.data.players.map((x) => ({ screenName: String(x.name), best: x.ms, hints: x.hints, me: !!x.me, react: !!x.react }));
       wfLbStats = r.data.stats || null;
       if (wfLbStats && Array.isArray(wfLbStats.days)) { S.wfDone[lang] = wfLbStats.days; saveLocal(); }
       online = true; lbState = "live";
     } catch (e) { if (lbTab === "wordfinder") lbState = "local"; }
     renderLeaderboard();
   }
-  function signedOutLocally() { S.account = null; S.tops = {}; S.boost = {}; S.bstats = {}; S.pending = []; serverStats = null; saveLocal(); renderAll(); }
+  function signedOutLocally() { S.account = null; S.tops = {}; S.boost = {}; S.bstats = {}; S.pending = []; serverStats = null; reactData = null; saveLocal(); renderAll(); renderReactions(); }
   async function initCloud() {
     try {
       const r = await call("/api/me", "GET");
@@ -1159,7 +1210,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       }
       else if (r.status === 401) { online = true; if (S.account) signedOutLocally(); }
     } catch (e) {}
-    renderAccount(); loadPlayers();
+    renderAccount(); loadPlayers(); loadReactions();
   }
 
   /* ---------- audio ---------- */
@@ -1770,7 +1821,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       : pl.guest && !pl.nickname ? t("wf.joinPrompt")
       : S.account && S.account.verified === false ? t("lb.unverified") : "";
     const tb = $("wfTop"); tb.textContent = "";
-    lb.players.slice(0, 10).forEach((x, i) => tb.appendChild(wfRow(i + 1, x)));
+    lb.players.slice(0, 10).forEach((x, i) => tb.appendChild(wfRow(i + 1, x, wf.day)));
     $("wfTopBox").hidden = !lb.players.length;
     $("wfNickForm").hidden = !(solved && pl.guest && !pl.nickname);
     $("wfNick").value = $("wfNick").value || S.wfNick || "";
@@ -1778,11 +1829,14 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     $("wfAs").textContent = pl.nickname ? t("wf.playingAs", { name: pl.nickname }) : "";
   }
   // one leaderboard row: rank, name, time (with hints used)
-  function wfRow(n, x) {
+  function wfRow(n, x, day) {
     const tr = document.createElement("tr"); if (x.me) tr.className = "me";
     const a = document.createElement("td"), b = document.createElement("td"), c = document.createElement("td");
     a.className = "rank"; a.textContent = n;
-    b.textContent = x.me ? t("lb.you", { name: String(x.name).slice(0, 24) }) : String(x.name).slice(0, 24);
+    const lang = mode.lang === "es" ? "es" : "en";
+    if (x.me) { b.textContent = t("lb.you", { name: String(x.name).slice(0, 24) }); if (day) addTally(b, "wf:" + lang + ":" + day); }
+    else if (x.react && day) b.appendChild(nameBtn(x.name, { type: "wf", lang, day }, { v: "wf", n: WF.numberOf(day), ms: x.ms }));
+    else b.textContent = String(x.name).slice(0, 24);
     c.textContent = clockText(x.ms);
     if (x.hints) { const s = document.createElement("small"); s.className = "lbhints"; s.textContent = " " + t(x.hints === 1 ? "wf.hint1" : "wf.hintsN", { n: x.hints }); c.appendChild(s); }
     tr.append(a, b, c); return tr;
@@ -1923,8 +1977,9 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   function show(name) {
     if (phase === "playing" && variant !== "wordfinder" && name !== "game") return;
     for (const s of ["game", "games", "settings", "leaderboard", "account", "admin"]) $("s-" + s).hidden = s !== name;
+    $("toast").hidden = true;                                       // a passing message goes when the screen changes
     document.querySelectorAll("#nav button").forEach((b) => b.dataset.go === (name === "admin" ? "settings" : name) ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
-    if (name === "account") renderAccount();
+    if (name === "account") { renderAccount(); renderReactions(); markReactionsSeen(); }
     if (name === "leaderboard") { lbTab = variant; lbGame = null; players = null; wfLbStats = null; lbState = "loading"; renderLeaderboard(); loadPlayers(); if (lbTab === "booster") loadStats(); }
     if (name === "games") renderVariants();
   }
@@ -2002,7 +2057,9 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       b.type = "button"; b.className = "scorebtn";
       const mk = (cls, txt) => { const s = document.createElement("span"); s.className = cls; s.textContent = txt; b.appendChild(s); };
       if (daily) mk("gno", "#" + g.game); else mk("rank", label);
-      mk("num", g.score); mk("meta", nWords(g.words.length) + " · " + dateFmt(g.at)); mk("chev", "›");
+      mk("num", g.score); mk("meta", nWords(g.words.length) + " · " + dateFmt(g.at));
+      if (daily) addTally(b.lastChild, `daily:${modeId}:${g.game}`);
+      mk("chev", "›");
       b.addEventListener("click", () => openModal((daily ? t("lb.game", { game: g.game }) + " · " : "") + t("modal.points", { n: g.score }), g.words));
       li.appendChild(b); return li;
     };
@@ -2020,11 +2077,18 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     list = (list || []).filter((p) => p.best > 0);                    // players without a score are not listed
     if (daily) list = list.slice(0, 10);                               // Linx Daily shows the day's top 10
     const tb = $("players"); tb.textContent = "";
-    if (wfT) list.forEach((p, i) => tb.appendChild(wfRow(i + 1, { name: p.screenName, ms: p.best, hints: p.hints, me: p.me })));
+    if (wfT) list.forEach((p, i) => tb.appendChild(wfRow(i + 1, { name: p.screenName, ms: p.best, hints: p.hints, me: p.me, react: p.react }, WF.dayOf(vg))));
     else (list || []).forEach((p, i) => {
-      const tr = document.createElement("tr"); if (p.screenName === me) tr.className = "me";
-      [i + 1, p.screenName === me ? t("lb.you", { name: p.screenName.slice(0, 24) }) : p.screenName.slice(0, 24), p.best].forEach((v, k) => {
-        const td = document.createElement("td"); if (k === 0) td.className = "rank"; td.textContent = v; tr.appendChild(td);
+      const tr = document.createElement("tr"), mine = p.screenName === me; if (mine) tr.className = "me";
+      const subject = daily ? { type: "daily", mode: modeId, game: vg } : { type: "booster", mode: modeId };
+      const label = daily ? { v: "daily", n: vg, score: p.best } : { v: "booster", score: p.best };
+      [i + 1, null, p.best].forEach((v, k) => {
+        const td = document.createElement("td"); if (k === 0) td.className = "rank";
+        if (k !== 1) td.textContent = v;
+        else if (mine) { td.textContent = t("lb.you", { name: p.screenName.slice(0, 24) }); addTally(td, daily ? `daily:${modeId}:${vg}` : `booster:${modeId}:${p.best}`); }
+        else if (p.react) td.appendChild(nameBtn(p.screenName, subject, label));
+        else td.textContent = p.screenName.slice(0, 24);
+        tr.appendChild(td);
       });
       tb.appendChild(tr);
     });
@@ -2187,6 +2251,108 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   $("modal").addEventListener("click", (e) => { if (e.target === $("modal")) closeModal(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
 
+  /* ---------- reactions ----------
+     Registered players send each other one of a few preset reactions about a score: tap a name on a leaderboard.
+     Received reactions show in a list on the Account screen, with a badge on the Account tab and tallies on your scores. */
+  const REACTS = [["great", "🎉"], ["fire", "🔥"], ["well", "👏"], ["brainiac", "🧠"], ["fast", "⚡"], ["congrats", "🏆"], ["how", "😮"], ["rematch", "🔁"]];
+  const reactEmoji = Object.fromEntries(REACTS);
+  let reactData = null, reactNudged = false;
+  const fmtLabel = (l) => !l ? "" : l.v === "wf" ? t("react.ctxWf", { n: l.n, time: clockText(l.ms) })
+    : l.v === "booster" ? t("react.ctxBooster", { score: l.score }) : t("react.ctxDaily", { n: l.n, score: l.score });
+  function nameBtn(name, subject, label) {
+    const b = document.createElement("button"); b.type = "button"; b.className = "namebtn"; b.textContent = String(name).slice(0, 24);
+    b.setAttribute("aria-label", t("react.to", { name }));
+    b.addEventListener("click", () => openReact(name, subject, label));
+    return b;
+  }
+  // "🎉 3 🔥 1" after one of your scores
+  function addTally(el, subject) {
+    const tl = reactData && reactData.tallies[subject]; if (!tl) return;
+    const s = document.createElement("span"); s.className = "tally";
+    s.textContent = REACTS.filter(([k]) => tl[k]).map(([k, e]) => e + " " + tl[k]).join("  ");
+    s.setAttribute("aria-label", t("react.tallyLabel", { n: Object.values(tl).reduce((a, b) => a + b, 0) }));
+    el.appendChild(s);
+  }
+  let reactTarget = null;
+  function openReact(name, subject, label) {
+    reactTarget = { name, subject };
+    $("reactTitle").textContent = t("react.to", { name });
+    $("reactCtx").textContent = fmtLabel(label);
+    const grid = $("reactGrid"); grid.textContent = "";
+    const can = S.account && S.account.verified !== false;
+    for (const [k, e] of REACTS) {
+      const b = document.createElement("button"); b.type = "button"; b.disabled = !can;
+      const em = document.createElement("span"); em.className = "e"; em.textContent = e; b.append(em, t("react." + k));
+      b.addEventListener("click", () => sendReact(k, b));
+      grid.appendChild(b);
+    }
+    const msg = $("reactMsg"); msg.className = "msg"; msg.textContent = "";
+    if (!S.account) msg.textContent = t("react.signIn");
+    else if (S.account.verified === false) msg.textContent = t("react.confirm");
+    $("react").hidden = false; $("reactClose").focus();
+  }
+  async function sendReact(kind, btn) {
+    if (!reactTarget) return;
+    const msg = $("reactMsg"); $("reactGrid").querySelectorAll("button").forEach((b) => { b.disabled = true; });
+    let r = null; try { r = await call("/api/reactions", "POST", { action: "send", to: reactTarget.name, kind, subject: reactTarget.subject }); } catch (e) {}
+    const err = r && !r.ok && r.data && r.data.error;
+    msg.className = "msg " + (r && r.ok ? "ok" : "err");
+    msg.textContent = r && r.ok ? t("react.sent", { e: reactEmoji[kind], name: reactTarget.name })
+      : err === "already" ? t("react.already") : err === "too_many" ? t("react.tooMany") : err === "unverified" ? t("react.confirm")
+      : err === "not_available" || err === "no_score" ? t("react.unavailable") : t("react.failed");
+    if (r && r.ok) { track("reaction_send", { kind }); setTimeout(() => { if ($("reactMsg").textContent === msg.textContent) closeReact(); }, 1400); }
+  }
+  function closeReact() { $("react").hidden = true; reactTarget = null; }
+  $("reactClose").addEventListener("click", closeReact);
+  $("react").addEventListener("click", (e) => { if (e.target === $("react")) closeReact(); });
+  $("react").addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); closeReact(); } });
+
+  // the signed-in player's reactions: badge, list, tallies, and a one-time "you got reactions" nudge per visit
+  async function loadReactions() {
+    if (!S.account) { reactData = null; renderReactions(); return; }
+    try { const r = await call("/api/reactions", "GET"); if (r.ok) reactData = r.data; } catch (e) {}
+    renderReactions();
+    if (reactData && reactData.unseen && !reactNudged) { reactNudged = true; toast(t(reactData.unseen === 1 ? "react.nudge1" : "react.nudge", { n: reactData.unseen }), () => show("account")); }
+    if (!$("s-account").hidden) markReactionsSeen();
+  }
+  function renderReactions() {
+    const d = reactData, badge = $("acctBadge");
+    badge.hidden = !d || !d.unseen; badge.textContent = d && d.unseen > 9 ? "9+" : d ? d.unseen : "";
+    $("reactBox").hidden = !S.account;
+    if (!S.account) return;
+    $("reactOn").checked = S.account.reactionsOn !== false;
+    const ol = $("reactList"); ol.textContent = "";
+    const list = d ? d.list : [];
+    if (!list.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = t("react.none"); ol.appendChild(li); }
+    const ago = (at) => { try { const m = Math.round((at - Date.now()) / 60000), rtf = new Intl.RelativeTimeFormat(mode.lang, { numeric: "auto" });
+      return Math.abs(m) < 60 ? rtf.format(m, "minute") : Math.abs(m) < 1440 ? rtf.format(Math.round(m / 60), "hour") : rtf.format(Math.round(m / 1440), "day"); } catch (e) { return ""; } };
+    for (const x of list) {
+      const li = document.createElement("li"), row = document.createElement("div"); row.className = "ritem" + (x.seen ? "" : " new");
+      const e = document.createElement("span"); e.className = "e"; e.textContent = reactEmoji[x.kind] || "🎉";
+      const what = document.createElement("span"); what.className = "what"; what.textContent = t("react.item", { name: x.from, text: t("react." + x.kind) });
+      const ctx = document.createElement("span"); ctx.className = "ctx"; ctx.textContent = t("react.onYour", { what: fmtLabel(x.label) }) + " · " + ago(x.at);
+      const mute = document.createElement("button"); mute.type = "button"; mute.className = "mute"; mute.textContent = t("react.mute", { name: x.from });
+      mute.addEventListener("click", async () => { try { await call("/api/reactions", "POST", { action: "mute", from: x.from }); } catch (err) {} loadReactions(); });
+      row.append(e, what, ctx, mute); li.appendChild(row); ol.appendChild(li);
+    }
+  }
+  async function markReactionsSeen() {
+    if (!reactData || !reactData.unseen) return;
+    try { await call("/api/reactions", "POST", { action: "seen" }); } catch (e) { return; }
+    reactData.unseen = 0; $("acctBadge").hidden = true;
+    setTimeout(() => { if (reactData) { reactData.list.forEach((x) => { x.seen = true; }); if (!$("s-account").hidden) renderReactions(); } }, 4000);   // the new dots stay a moment
+  }
+  $("reactOn").addEventListener("change", async () => {
+    const on = $("reactOn").checked;
+    try { const r = await call("/api/reactions", "POST", { action: "settings", on }); if (r.ok && S.account) { S.account.reactionsOn = on; saveLocal(); } } catch (e) {}
+  });
+  let toastTimer = 0;
+  function toast(text, onTap) {
+    const el = $("toast"); el.textContent = text; el.hidden = false; el.onclick = () => { el.hidden = true; if (onTap) onTap(); };
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 5000);
+  }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && S.account) loadReactions(); });
+
   /* ---------- account ---------- */
   let acctView = "register"; // while signed out: "register" | "login" | "forgot" | "reset"
   const msg = (text, cls) => { const m = $("acctMsg"); m.textContent = text; m.className = "msg " + (cls || ""); };
@@ -2314,7 +2480,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       leaders.appendChild(card);
     }
     const t = d.totals;
-    for (const [n, label] of [[t.players, "players"], [t.confirmed, "confirmed"], [t.players_7d, "new in 7 days"], [t.rounds, "rounds played"], [t.rounds_7d, "rounds in 7 days"], [t.subscribers, "get weekly email"]]) {
+    for (const [n, label] of [[t.players, "players"], [t.confirmed, "confirmed"], [t.players_7d, "new in 7 days"], [t.rounds, "rounds played"], [t.rounds_7d, "rounds in 7 days"], [t.subscribers, "get weekly email"], [t.reactions_7d || 0, "reactions in 7 days"]]) {
       const tile = el("div"); tile.appendChild(el("b", null, n)); tile.appendChild(el("span", null, label)); totals.appendChild(tile);
     }
     const q = $("adminSearch").value.trim().toLowerCase();
