@@ -116,10 +116,7 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
   .linx span { width: 80px; height: 80px; font-size: 2.4rem; border-radius: 16px; }
   .linx::before { left: 40px; right: 40px; }
   .tagline { font-size: 1.45rem; }
-  .herologo { font-size: 2.1rem; }
-  .herologo .mark { grid-template-columns: repeat(2, 24px); }
-  .herologo .mark i { width: 24px; height: 24px; font-size: 15px; border-radius: 6px; }
-  .demo.hero { --hs: clamp(26px, calc((100svh - 530px) / 6), 64px); }
+  #tour .slide.first { --hs: clamp(26px, calc((100svh - 560px) / 6), 64px); }
   .demo { grid-template-columns: repeat(4, 76px); grid-template-rows: repeat(3, 76px); }
   .points div { padding: 9px 16px; }
   .ways { max-width: 460px; }
@@ -580,18 +577,19 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 60%, #000); }
 .linx span:nth-child(even) { transform: translateY(8px); }
 /* tour slide 1: the header logo, and a 6 × 6 board where a long word links up tile by tile */
-.herologo { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; font-family: var(--display); font-weight: 900; font-size: 1.6rem; letter-spacing: .01em; }
-.herologo .mark { display: grid; grid-template-columns: repeat(2, 19px); gap: 2px; flex: none; }
-.herologo .mark i { display: grid; place-items: center; width: 19px; height: 19px; border-radius: 5px; background: var(--accent); color: var(--accent-ink);
-  font-style: normal; font-size: 12px; font-weight: 900; line-height: 1; }
+.herologo { display: flex; align-items: center; gap: .39em; margin: 0 0 10px; font-family: var(--display); font-weight: 900; font-size: 1.6rem; letter-spacing: .01em; }
+.herologo .mark { display: grid; grid-template-columns: repeat(2, .74em); gap: .08em; flex: none; }
+.herologo .mark i { display: grid; place-items: center; width: 1.58em; height: 1.58em; border-radius: .42em; background: var(--accent); color: var(--accent-ink);
+  font-style: normal; font-size: .47em; font-weight: 900; line-height: 1; }   /* tiles .74 of the logo size, letters .47 */
+/* on the tour's first screen the logo is exactly as wide as the board below it: both follow --hs */
+.slide.first .herologo { font-size: calc(var(--hs) * 6 / 7.03); margin: 0 0 10px; line-height: 1.1; }
 /* the board takes what height is left after the logo, text, language picker and buttons */
-.slide.first { gap: 12px; }
-.demo.hero { --hs: clamp(26px, calc((100svh - 460px) / 6), 46px); grid-template-columns: repeat(6, var(--hs)); grid-template-rows: repeat(6, var(--hs)); cursor: pointer; }
+.slide.first { gap: 12px; --hs: clamp(26px, calc((100svh - 460px) / 6), 46px); }
+.demo.hero { grid-template-columns: repeat(6, var(--hs)); grid-template-rows: repeat(6, var(--hs)); cursor: pointer; }
 .demo.hero polyline { stroke-width: .11; stroke-opacity: .8; }
 @media (max-height: 640px) {
   .slide.first .heroIntro { display: none; }               /* short screens: the board says it instead */
-  .demo.hero { --hs: clamp(26px, calc((100svh - 380px) / 6), 46px); }
-  .herologo { font-size: 1.3rem; }
+  #tour .slide.first { --hs: clamp(26px, calc((100svh - 400px) / 6), 46px); }
 }
 .tagline { font-family: var(--display); font-weight: 800; font-size: 1.15rem; color: var(--brand); }
 .demo { position: relative; display: grid; grid-template-columns: repeat(4, 54px); grid-template-rows: repeat(3, 54px); isolation: isolate; }
