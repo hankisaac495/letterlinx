@@ -96,8 +96,28 @@ create table if not exists wf_plays (
   flagged boolean not null default false  -- solved faster than a person could; kept off the leaderboard
 );
 alter table wf_plays add column if not exists flagged boolean not null default false;
+-- Brain Booster monthly prize: the prize shown for each month (title and image), and winner review
+create table if not exists prizes (
+  month text primary key,             -- YYYY-MM (US Eastern)
+  title text not null default '',
+  image text,                         -- a small image as a data: URL, uploaded in the admin dashboard
+  updated_at timestamptz not null default now()
+);
+create table if not exists prize_results (
+  month text not null,
+  mode text not null,                 -- classic (English) or es (Spanish): each language has its own winner
+  player_id uuid not null references players (id) on delete cascade,
+  status text not null,               -- winner (locked in once the month ends), notified (winner email sent), claimed, or disqualified
+  updated_at timestamptz not null default now(),
+  primary key (month, mode, player_id)
+);
+alter table prize_results add column if not exists game_id bigint;       -- the winning round
+alter table prize_results add column if not exists address text;         -- the winner's mailing address, deleted two months after the prize month
+create unique index if not exists prize_results_one_winner on prize_results (month, mode) where status <> 'disqualified';
 -- preset reactions between registered players: one per sender, receiver and score; deleted after 48 hours
 alter table players add column if not exists reactions_on boolean not null default true;
+-- optional US mailing address: only needed to receive a Brain Booster prize
+alter table players add column if not exists address jsonb;
 create table if not exists reactions (
   id bigserial primary key,
   from_id uuid not null references players (id) on delete cascade,
@@ -306,7 +326,7 @@ async function profile(p, player) {
   return {
     boost,
     account: { first: player.first_name, last: player.last_name, email: player.email, screenName: player.screen_name,
-      verified: player.email_verified || !MAIL_ON, admin: isAdmin(player), emailOptIn: !!player.email_opt_in, reactionsOn: player.reactions_on !== false },
+      verified: player.email_verified || !MAIL_ON, admin: isAdmin(player), address: player.address || null, emailOptIn: !!player.email_opt_in, reactionsOn: player.reactions_on !== false },
     tops,
   };
 }
@@ -337,5 +357,16 @@ async function saveGames(p, playerId, list) {
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const clean = (s, n) => String(s == null ? "" : s).trim().slice(0, n);
+// The optional US mailing address from a form: { street, line2, city, state, zip }. Returns { address } (null when every field
+// is blank) or { error: "bad_address" } when it's only partly filled in or the state or ZIP code isn't valid.
+const STATES = "AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY".split(" ");
+function readAddress(a) {
+  a = a && typeof a === "object" ? a : {};
+  const x = { street: clean(a.street, 100), line2: clean(a.line2, 60), city: clean(a.city, 60), state: clean(a.state, 2).toUpperCase(), zip: clean(a.zip, 10) };
+  if (!x.street && !x.line2 && !x.city && !a.zip) return { address: null };     // the state menu alone doesn't count
+  if (!x.street || !x.city || !STATES.includes(x.state) || !/^\d{5}(-?\d{4})?$/.test(x.zip)) return { error: "bad_address" };
+  return { address: x };
+}
+const addressText = (a) => a ? [a.street, a.line2, a.city + ", " + a.state + " " + a.zip].filter(Boolean).join("\n") : "";
 
-module.exports = { route, body, sha, token, hashPassword, checkPassword, startSession, endSession, currentPlayer, profile, saveGames, EMAIL, clean, modes, gameNumberUTC, MAIL_ON, sendMail, sendBatch, langOf, sendCode, useCode, notifySignup, isAdmin, isAdminEmail, adminProblem };
+module.exports = { route, body, sha, token, hashPassword, checkPassword, startSession, endSession, currentPlayer, profile, saveGames, EMAIL, clean, readAddress, addressText, STATES, modes, gameNumberUTC, MAIL_ON, sendMail, sendBatch, langOf, sendCode, useCode, notifySignup, isAdmin, isAdminEmail, adminProblem };

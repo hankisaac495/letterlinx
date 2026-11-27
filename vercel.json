@@ -29,6 +29,11 @@
       "source": "/es/wordfinder",
       "destination": "/es/wordfinder/",
       "permanent": true
+    },
+    {
+      "source": "/prizes",
+      "destination": "/prizes/",
+      "permanent": true
     }
   ],
   "crons": [

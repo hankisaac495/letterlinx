@@ -47,12 +47,15 @@ module.exports = L.route(async (req, res, p) => {
     if (!L.EMAIL.test(email)) return res.status(400).json({ error: "bad_email" });
     if (!/^[A-Za-z0-9_.-]{3,16}$/.test(screenName)) return res.status(400).json({ error: "bad_name" });
     if (password.length < 8 || password.length > 200) return res.status(400).json({ error: "bad_password" });
+    const addr = L.readAddress(b.address);
+    if (addr.error) return res.status(400).json({ error: addr.error });
     let player;
     try {
       const r = await p.query(
-        `insert into players (first_name, last_name, email, screen_name, password_hash, email_opt_in, opt_in_at, lang, unsub_token)
-         values ($1, $2, $3, $4, $5, $6, case when $6 then now() end, $7, replace(gen_random_uuid()::text, '-', '')) returning *`,
-        [L.clean(b.first, 40), L.clean(b.last, 40), email, screenName, await L.hashPassword(password), b.optIn === true, L.langOf(b.lang)]);
+        `insert into players (first_name, last_name, email, screen_name, password_hash, email_opt_in, opt_in_at, lang, unsub_token, address)
+         values ($1, $2, $3, $4, $5, $6, case when $6 then now() end, $7, replace(gen_random_uuid()::text, '-', ''), $8) returning *`,
+        [L.clean(b.first, 40), L.clean(b.last, 40), email, screenName, await L.hashPassword(password), b.optIn === true, L.langOf(b.lang),
+         addr.address && JSON.stringify(addr.address)]);
       player = r.rows[0];
     } catch (e) {
       if (e.code === "23505") return res.status(409).json({ error: /screen_name/.test(e.constraint || "") ? "name_taken" : "email_taken" });
