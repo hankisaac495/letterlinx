@@ -1,7 +1,8 @@
 // GET /api/leaderboard?mode=classic&game=101        -> Linx Daily: confirmed players' best scores in that day's game
-// GET /api/leaderboard?mode=classic&variant=booster -> Brain Booster: confirmed players' best scores on random boards
+// GET /api/leaderboard?mode=classic&variant=booster -> Brain Booster: confirmed players' best scores this month (US Eastern)
 // GET /api/leaderboard?mode=classic&winner=106      -> the top 3 of Linx Daily game 106: screen names, scores and words
 const L = require("./_lib.js");
+const P = require("./_prize.js");
 
 module.exports = L.route(async (req, res, p) => {
   if (req.method !== "GET") return res.status(405).json({ error: "method_not_allowed" });
@@ -28,9 +29,9 @@ module.exports = L.route(async (req, res, p) => {
     const r = await p.query(
       `select pl.screen_name, pl.reactions_on, max(g.score)::int as best
          from games g join players pl on pl.id = g.player_id
-        where g.mode = $1 and g.game is null and g.score > 0 and (pl.email_verified or not $2)
-        group by pl.id order by best desc, min(g.played_at) limit 10`, [mode, L.MAIL_ON]);   // all-time top 10
-    return res.status(200).json({ mode, variant: "booster", players: list(r.rows) });
+        where g.mode = $1 and g.game is null and g.score > 0 and (pl.email_verified or not $2) and ${P.inMonth("g.played_at", "$3")}
+        group by pl.id order by best desc, min(g.played_at) limit 10`, [mode, L.MAIL_ON, P.monthOf()]);   // this month's top 10: it starts over on the 1st
+    return res.status(200).json({ mode, variant: "booster", month: P.monthOf(), players: list(r.rows) });
   }
 
   const game = /^\d{1,6}$/.test(q.game || "") ? Number(q.game) : L.gameNumberUTC(Date.now());

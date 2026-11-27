@@ -114,10 +114,7 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
   .linx span { width: 80px; height: 80px; font-size: 2.4rem; border-radius: 16px; }
   .linx::before { left: 40px; right: 40px; }
   .tagline { font-size: 1.45rem; }
-  .herologo { font-size: 2.1rem; }
-  .herologo .mark { grid-template-columns: repeat(2, 24px); }
-  .herologo .mark i { width: 24px; height: 24px; font-size: 15px; border-radius: 6px; }
-  .demo.hero { --hs: clamp(26px, calc((100svh - 530px) / 6), 64px); }
+  #tour .slide.first { --hs: clamp(26px, calc((100svh - 560px) / 6), 64px); }
   .demo { grid-template-columns: repeat(4, 76px); grid-template-rows: repeat(3, 76px); }
   .points div { padding: 9px 16px; }
   .ways { max-width: 460px; }
@@ -345,6 +342,33 @@ h2 { font-family: var(--display); font-size: 1.3rem; font-weight: 800; text-wrap
 .vhow { align-self: flex-start; margin: 0 0 14px 18px; border: 1.5px solid var(--line); background: none; color: var(--brand); border-radius: 99px;
   padding: 5px 12px 5px 8px; font: inherit; font-size: .8rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .vhow svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+/* Brain Booster monthly prize */
+.prizebtn { border: 0; display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 99px; background: var(--brand); color: var(--surface);
+  font: inherit; font-weight: 800; font-size: .9rem; cursor: pointer; pointer-events: auto; }
+.prizebtn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.prizebtn.small { align-self: flex-start; font-size: .82rem; padding: 6px 12px; }
+.vbtns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 0 0 14px 18px; }
+.vbtns .vhow { margin: 0; }
+.vbtns .prizebtn { font-size: .8rem; padding: 6px 12px 6px 9px; }
+.modal.prizemodal { text-align: center; align-items: center; gap: 10px; max-height: 92%; overflow-y: auto; overscroll-behavior: contain; }
+/* everything stays inside the card: the image shrinks to make room, and only a very short screen scrolls */
+.prizemodal > * { flex-shrink: 0; }
+.prizemodal > .prizeimg { flex: 0 1 auto; min-height: 140px; display: flex; justify-content: center; }
+.modal.prizemodal header { width: 100%; display: grid; grid-template-columns: 40px 1fr 40px; gap: 6px; }   /* title centered, close button on the right */
+.modal.prizemodal header h2 { grid-column: 2; text-align: center; }
+.modal.prizemodal header .x { grid-column: 3; justify-self: end; }
+.prizemonth { margin: -6px 0 0; font-weight: 800; font-size: 1.1rem; color: var(--brand); }
+.prizestart { margin: 0; color: var(--muted); font-size: .9rem; }
+.prizeimg img { display: block; max-width: 100%; max-height: min(100%, 46vh); object-fit: contain; border-radius: 12px; margin: 0 auto; }
+.prizeimg p { margin: 12px 0; color: var(--muted); font-weight: 700; }
+.prizehow { margin: 0; color: var(--muted); font-size: .9rem; }
+#lbMonthBox { display: flex; flex-direction: column; gap: 14px; }
+.monthbtn .mname { min-width: 0; color: var(--muted); font-weight: 700; font-size: .82rem; }
+.prizeadmin { display: flex; flex-direction: column; gap: 10px; }
+.prizeadmin .pa-row { background: var(--surface); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.prizeadmin .pa-img { max-width: 220px; border-radius: 8px; }
+.prizeadmin .pa-win { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: .9rem; }
+.prizeadmin .pa-win .acts { display: flex; gap: 6px; flex-wrap: wrap; }
 /* reactions */
 #nav button { position: relative; }
 .navbadge { position: absolute; top: 2px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--bad); color: #fff;
@@ -492,12 +516,20 @@ form { display: flex; flex-direction: column; gap: 14px; }
 label.check { flex-direction: row; align-items: flex-start; gap: 10px; color: var(--ink); font-size: .92rem; font-weight: 600; line-height: 1.4; cursor: pointer; }
 label.check input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--brand); }
 label { display: flex; flex-direction: column; gap: 6px; font-size: .85rem; font-weight: 600; color: var(--muted); }
-input[type="text"], input[type="email"], input[type="password"] { background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; font-size: 1rem; color: var(--ink); width: 100%; }
+input[type="text"], input[type="email"], input[type="password"], #fState { background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; font-size: 1rem; color: var(--ink); width: 100%; }
 input:read-only { background: var(--surface-2); color: var(--muted); }
 .msg { font-size: .9rem; font-weight: 500; min-height: 1.2em; }
 .msg.err { color: var(--bad); } .msg.ok { color: var(--good); }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .two > * { min-width: 0; }
+.pa-addr { flex-basis: 100%; white-space: pre-line; font-size: .85rem; color: var(--ink); }
+.pa-addr.none { color: var(--bad); }
+fieldset.addr { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+fieldset.addr legend { padding: 0; font-size: .95rem; font-weight: 700; color: var(--ink); }
+fieldset.addr .note { margin: -4px 0 0; }
+.addr3 { display: grid; grid-template-columns: 1fr 76px 96px; gap: 10px; }
+.addr3 > * { min-width: 0; }
+#fState { appearance: none; -webkit-appearance: none; text-align: center; padding: 12px 6px; }
 .box { background: var(--surface); border: 2px solid var(--brand); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 .rowform { flex-direction: row; gap: 10px; }
 .rowform input { flex: 1; min-width: 0; letter-spacing: .25em; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -543,18 +575,19 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 60%, #000); }
 .linx span:nth-child(even) { transform: translateY(8px); }
 /* tour slide 1: the header logo, and a 6 × 6 board where a long word links up tile by tile */
-.herologo { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; font-family: var(--display); font-weight: 900; font-size: 1.6rem; letter-spacing: .01em; }
-.herologo .mark { display: grid; grid-template-columns: repeat(2, 19px); gap: 2px; flex: none; }
-.herologo .mark i { display: grid; place-items: center; width: 19px; height: 19px; border-radius: 5px; background: var(--accent); color: var(--accent-ink);
-  font-style: normal; font-size: 12px; font-weight: 900; line-height: 1; }
+.herologo { display: flex; align-items: center; gap: .39em; margin: 0 0 10px; font-family: var(--display); font-weight: 900; font-size: 1.6rem; letter-spacing: .01em; }
+.herologo .mark { display: grid; grid-template-columns: repeat(2, .74em); gap: .08em; flex: none; }
+.herologo .mark i { display: grid; place-items: center; width: 1.58em; height: 1.58em; border-radius: .42em; background: var(--accent); color: var(--accent-ink);
+  font-style: normal; font-size: .47em; font-weight: 900; line-height: 1; }   /* tiles .74 of the logo size, letters .47 */
+/* on the tour's first screen the logo is exactly as wide as the board below it: both follow --hs */
+.slide.first .herologo { font-size: calc(var(--hs) * 6 / 7.03); margin: 0 0 10px; line-height: 1.1; }
 /* the board takes what height is left after the logo, text, language picker and buttons */
-.slide.first { gap: 12px; }
-.demo.hero { --hs: clamp(26px, calc((100svh - 460px) / 6), 46px); grid-template-columns: repeat(6, var(--hs)); grid-template-rows: repeat(6, var(--hs)); cursor: pointer; }
+.slide.first { gap: 12px; --hs: clamp(26px, calc((100svh - 460px) / 6), 46px); }
+.demo.hero { grid-template-columns: repeat(6, var(--hs)); grid-template-rows: repeat(6, var(--hs)); cursor: pointer; }
 .demo.hero polyline { stroke-width: .11; stroke-opacity: .8; }
 @media (max-height: 640px) {
   .slide.first .heroIntro { display: none; }               /* short screens: the board says it instead */
-  .demo.hero { --hs: clamp(26px, calc((100svh - 380px) / 6), 46px); }
-  .herologo { font-size: 1.3rem; }
+  #tour .slide.first { --hs: clamp(26px, calc((100svh - 400px) / 6), 46px); }
 }
 .tagline { font-family: var(--display); font-weight: 800; font-size: 1.15rem; color: var(--brand); }
 .demo { position: relative; display: grid; grid-template-columns: repeat(4, 54px); grid-template-rows: repeat(3, 54px); isolation: isolate; }
@@ -623,6 +656,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
           <span id="wfStreak"></span><span id="wfNext"></span>
           <div class="seg langSeg" data-t-label="set.lang" aria-label="Language"></div>
         </div>
+        <div class="gobelow" id="prizeBelow" hidden><button class="prizebtn" id="goPrize" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 14v4M8 20h8"/></svg><span data-t="prize.button">This Month's Prize</span></button></div>
         <button id="go" type="button" data-t="go">GO</button>
       </div>
     </div>
@@ -754,6 +788,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <h2><span data-t="lb.yesterday">Yesterday's Winners</span> <span class="wingame" id="lbWinGame"></span></h2>
       <div class="panel"><ol class="plain" id="lbWins"></ol></div>
     </div>
+    <div id="lbMonthBox" hidden>
+      <h2 data-t="prize.winners">Monthly Winners</h2>
+      <div class="panel"><ol class="plain" id="lbMonths"></ol></div>
+      <button class="prizebtn small" id="lbPrize" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 14v4M8 20h8"/></svg><span data-t="prize.button">This Month's Prize</span></button>
+    </div>
     <div id="lbMineBox">
       <h2 id="lbMine">Your games</h2>
       <div class="panel"><ol class="plain" id="top5"></ol></div>
@@ -793,6 +832,17 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <label id="screenRow"><span data-t="f.screen">Screen name</span><input type="text" id="fScreen" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
       <label id="codeRow" hidden><span data-t="f.code">Code from the email</span><input type="text" id="fReset" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>
       <label id="passRow"><span id="passLabel">Password</span><input type="password" id="fPass" maxlength="200" autocomplete="new-password"></label>
+      <fieldset class="addr" id="addrRow">
+        <legend data-t="f.addr">Mailing address (optional)</legend>
+        <p class="note" data-t="f.addrNote">Only needed to receive a Brain Booster prize. US addresses only.</p>
+        <label><span data-t="f.street">Street address</span><input type="text" id="fStreet" maxlength="100" autocomplete="address-line1"></label>
+        <label><span data-t="f.line2">Apt, suite or unit</span><input type="text" id="fLine2" maxlength="60" autocomplete="address-line2"></label>
+        <div class="addr3">
+          <label><span data-t="f.city">City</span><input type="text" id="fCity" maxlength="60" autocomplete="address-level2"></label>
+          <label><span data-t="f.state">State</span><select id="fState" autocomplete="address-level1"><option value=""></option><option>AL</option><option>AK</option><option>AZ</option><option>AR</option><option>CA</option><option>CO</option><option>CT</option><option>DE</option><option>DC</option><option>FL</option><option>GA</option><option>HI</option><option>ID</option><option>IL</option><option>IN</option><option>IA</option><option>KS</option><option>KY</option><option>LA</option><option>ME</option><option>MD</option><option>MA</option><option>MI</option><option>MN</option><option>MS</option><option>MO</option><option>MT</option><option>NE</option><option>NV</option><option>NH</option><option>NJ</option><option>NM</option><option>NY</option><option>NC</option><option>ND</option><option>OH</option><option>OK</option><option>OR</option><option>PA</option><option>RI</option><option>SC</option><option>SD</option><option>TN</option><option>TX</option><option>UT</option><option>VT</option><option>VA</option><option>WA</option><option>WV</option><option>WI</option><option>WY</option></select></label>
+          <label><span data-t="f.zip">ZIP code</span><input type="text" id="fZip" maxlength="10" inputmode="numeric" autocomplete="postal-code"></label>
+        </div>
+      </fieldset>
       <label class="check" id="optRow"><input type="checkbox" id="fOptIn"><span data-t="f.optIn">Email me my weekly stats and occasional special offers. You can unsubscribe any time.</span></label>
       <div class="msg" id="acctMsg" role="status"></div>
       <button class="btn primary" type="submit" id="acctSave">Create account</button>
@@ -817,6 +867,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <div class="sharetext"><strong>Weekly stats email</strong><span id="weeklyMsg">Sent on Mondays to players who opted in. Preview yours or send yourself a test.</span></div>
       <div class="donatebtns"><a class="btn" id="weeklyPreview" href="/api/weekly-email?preview=1" target="_blank" rel="noopener">Preview</a><button class="btn" id="weeklyTest" type="button">Send me a test</button></div>
     </div>
+    <div id="prizeAdmin" class="prizeadmin"></div>
     <div id="wfAdmin"></div>
     <div class="adminhead"><h2>Players</h2><span class="note" id="adminCount"></span></div>
     <input type="text" id="adminSearch" placeholder="Search name, screen name or email" aria-label="Search players" autocomplete="off">
@@ -856,7 +907,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       <h2 data-t="tour.waysTitle">Three ways to play</h2>
       <div class="ways">
         <div class="way"><strong data-t="v.daily.name">Linx Daily</strong><span data-t="tour.dailyText">The same letters for every player, with a new numbered game each day at midnight. Compare scores on the day's leaderboard.</span></div>
-        <div class="way"><strong data-t="v.booster.name">Brain Booster</strong><span data-t="tour.boosterText">A fresh random board every time you play. Chase your all-time best.</span></div>
+        <div class="way"><strong data-t="v.booster.name">Brain Booster</strong><span data-t="tour.boosterText">A fresh random board every time you play. The top score each month wins a prize.</span></div>
         <div class="way"><strong data-t="v.wordfinder.name">Linx WordFinder</strong><span data-t="tour.wfWay">Six hidden words on one topic, the same puzzle for everyone each day. Find them all as fast as you can.</span></div>
       </div>
       <p data-t="tour.waysText">Switch between them any time on the Games tab.</p>
@@ -916,6 +967,18 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     <header><h2 id="wfHintsTitle"></h2><button class="x" id="wfHintsClose" type="button" data-t-label="modal.close" aria-label="Close">✕</button></header>
     <ol class="wfhintlist" id="wfHintList"></ol>
     <button class="btn primary" id="wfHintMore" type="button"></button>
+  </div>
+</div>
+
+<div class="overlay" id="prize" hidden>
+  <div class="modal prizemodal" role="dialog" aria-modal="true" aria-labelledby="prizeTitle">
+    <header><h2 id="prizeTitle" data-t="prize.title">Brain Booster Prize</h2><button class="x" id="prizeClose" type="button" data-t-label="modal.close" aria-label="Close">✕</button></header>
+    <p class="prizemonth" id="prizeMonth"></p>
+    <p class="prizestart" id="prizeStart" hidden></p>
+    <p class="prizestart" id="prizeCount" hidden></p>
+    <div class="prizeimg" id="prizeImg"></div>
+    <p class="prizehow" data-t="prize.how">The member with the highest Brain Booster score this month wins, if at least 10 members play. Scores reset on the 1st. Winners need a US mailing address in their account.</p>
+    <a class="btn" id="prizeTerms" href="/prizes/" data-t="prize.terms">Terms and Conditions</a>
   </div>
 </div>
 
@@ -984,7 +1047,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   /* interface text follows the word language */
   const t = (key, vars) => {
     let str = (window.LLX_I18N[mode.lang] || {})[key] ?? window.LLX_I18N.en[key] ?? key;
-    for (const k in vars || {}) str = str.replace("{" + k + "}", vars[k]);
+    for (const k in vars || {}) str = str.split("{" + k + "}").join(vars[k]);
     return str;
   };
   const nWords = (n) => n === 1 ? t("words.one") : t("words.many", { n });
@@ -1150,6 +1213,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   async function loadPlayers() {
     if (lbTab === "wordfinder") { loadWinner(); return loadWfPlayers(); }
     if (lbTab === "daily" || lbTab === "wordfinder") loadWinner();
+    if (lbTab === "booster") loadMonthWinners();
     try {
       const r = await call("/api/leaderboard?mode=" + encodeURIComponent(modeId) + (lbTab === "daily" ? "&game=" + viewGame() : "&variant=booster"), "GET");
       if (!r.ok || !Array.isArray(r.data?.players)) throw 0;
@@ -1978,6 +2042,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     const on = variant === "wordfinder" && !!wf, pl = on ? wf.play : null, playing = on && phase === "playing";
     document.querySelector(".hud .stat.right").hidden = on;
     $("goBelow").hidden = !on || !$("go") || $("go").hidden;
+    $("prizeBelow").hidden = variant !== "booster" || $("go").hidden;
     $("goTopic").hidden = !on || !wf.topic;
     $("wfRow").hidden = !playing;
     $("wfHintBtn").hidden = !playing;
@@ -2096,7 +2161,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       $("stPlayed").textContent = st.played; $("stTop").textContent = st.top; $("stStreak").textContent = st.current; $("stMax").textContent = st.max;
       $("stLongest").textContent = st.longest || "—";
     }
-    renderWinner();
+    renderWinner(); renderMonthWinners();
     // Linx Daily: the player's five best games (highest score first; a tie goes to the newer game)
     const mine = daily ? [...games()].sort((a, b) => b.score - a.score || b.game - a.game).slice(0, 5) : boosts(), ol = $("top5"); ol.textContent = "";
     if (!mine.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = t("lb.noScores"); ol.appendChild(li); }
@@ -2235,7 +2300,13 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
       how.append(t("games.instructions"));
       how.setAttribute("aria-label", t("games.instructions") + ": " + t("v." + v + ".name"));
       how.addEventListener("click", () => openHowto(v, how));
-      card.append(b, how);
+      const btns = document.createElement("div"); btns.className = "vbtns"; btns.appendChild(how);
+      if (v === "booster") {
+        const pz = document.createElement("button"); pz.type = "button"; pz.className = "prizebtn";
+        pz.innerHTML = $("goPrize").innerHTML; pz.querySelector("span").textContent = t("prize.button");
+        pz.addEventListener("click", () => openPrize(pz)); btns.appendChild(pz);
+      }
+      card.append(b, btns);
       box.appendChild(card);
     }
   }
@@ -2299,6 +2370,74 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
   $("modalClose").addEventListener("click", closeModal);
   $("modal").addEventListener("click", (e) => { if (e.target === $("modal")) closeModal(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+
+  /* ---------- Brain Booster monthly prize ----------
+     Brain Booster runs month by month (US Eastern time). The prize for each month is set in the admin dashboard. */
+  const PRIZE_FIRST = "2026-12";                                    // the first month with a prize (matches api/_prize.js)
+  const easternMonth = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit" }).format(new Date()).slice(0, 7);
+  const monthLabel = (m) => new Date(+m.slice(0, 4), +m.slice(5, 7) - 1, 1).toLocaleDateString(mode.lang, { month: "long", year: "numeric" });
+  const prizeCache = {};
+  let prizeFrom = null;
+  function prizeHead(month, now) {
+    $("prizeMonth").textContent = monthLabel(month);
+    $("prizeStart").hidden = now >= month;
+    if (now < month) $("prizeStart").textContent = t("prize.starts", { date: new Date(+month.slice(0, 4), +month.slice(5, 7) - 1, 1).toLocaleDateString(mode.lang, { month: "long", day: "numeric", year: "numeric" }) });
+  }
+  async function openPrize(from) {
+    prizeFrom = from || null;
+    const now = easternMonth();
+    prizeHead(now < PRIZE_FIRST ? PRIZE_FIRST : now, now);         // a first guess until the server answers
+    $("prizeTerms").href = "/prizes/";
+    const box = $("prizeImg"); box.textContent = "";
+    $("prize").hidden = false; $("prizeClose").focus();
+    track("prize_open", {});
+    const key = now + "/" + mode.id;
+    let pz = prizeCache[key];
+    if (!pz) { try { const r = await call("/api/prize?mode=" + mode.id, "GET"); if (r.ok) pz = prizeCache[key] = r.data; } catch (e) {} }
+    if (pz && pz.month) prizeHead(pz.month, pz.current || now);
+    const short = !!pz && pz.month === pz.current && pz.players < pz.minPlayers;     // too few players so far for a prize
+    $("prizeCount").hidden = !short;
+    if (short) $("prizeCount").textContent = t("prize.count", { n: pz.players, min: pz.minPlayers });
+    box.textContent = "";
+    if (pz && pz.image) { const img = document.createElement("img"); img.src = pz.image; img.alt = pz.title || t("prize.title"); box.appendChild(img); }
+    else { const p = document.createElement("p"); p.textContent = pz && pz.title ? pz.title : t("prize.soon"); box.appendChild(p); }
+  }
+  function closePrize() { if ($("prize").hidden) return; $("prize").hidden = true; if (prizeFrom && document.body.contains(prizeFrom)) prizeFrom.focus(); }
+  $("goPrize").addEventListener("click", () => openPrize($("goPrize")));
+  $("lbPrize").addEventListener("click", () => openPrize($("lbPrize")));
+  $("prizeClose").addEventListener("click", closePrize);
+  $("prize").addEventListener("click", (e) => { if (e.target === $("prize")) closePrize(); });
+  $("prize").addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); closePrize(); } });
+
+  // Monthly Winners on the Brain Booster leaderboard: one per finished month, tap to see their words
+  let monthWinners = null;
+  async function loadMonthWinners() {
+    const key = modeId;
+    if (!monthWinners || monthWinners.key !== key) {
+      try { const r = await call("/api/prize?winners=1&mode=" + encodeURIComponent(modeId), "GET"); if (r.ok) monthWinners = { key, list: r.data.winners || [] }; } catch (e) {}
+    }
+    renderMonthWinners();
+  }
+  function renderMonthWinners() {
+    const box = $("lbMonthBox"); box.hidden = lbTab !== "booster";
+    if (box.hidden) return;
+    const ol = $("lbMonths"); ol.textContent = "";
+    const list = monthWinners && monthWinners.key === modeId ? monthWinners.list : [];
+    if (!list.length) {
+      const li = document.createElement("li"); li.className = "empty";
+      const first = easternMonth() < PRIZE_FIRST ? PRIZE_FIRST : easternMonth();
+      li.textContent = t("prize.noWinners", { month: monthLabel(first) }); ol.appendChild(li);
+    }
+    for (const w of list) {
+      const li = document.createElement("li"), b = document.createElement("button"); b.type = "button"; b.className = "scorebtn winbtn monthbtn";
+      b.insertAdjacentHTML("beforeend", medal(0));
+      const mk = (cls, txt) => { const s = document.createElement("span"); s.className = cls; s.textContent = txt; b.appendChild(s); return s; };
+      const who = mk("who", w.screenName.slice(0, 24)); const mn = document.createElement("span"); mn.className = "mname"; mn.textContent = " · " + monthLabel(w.month); who.appendChild(mn);
+      mk("num", w.score); mk("chev", "›");
+      b.addEventListener("click", () => openModal(monthLabel(w.month) + " · " + t("modal.points", { n: w.score }), w.words, w.screenName + " · " + nWords(w.words.length)));
+      li.appendChild(b); ol.appendChild(li);
+    }
+  }
 
   /* ---------- reactions ----------
      Registered players send each other one of a few preset reactions about a score: tap a name on a leaderboard.
@@ -2440,7 +2579,8 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     const intro = !!v && v !== "login"; $("acctIntro").hidden = !intro; $("acctIntro").textContent = intro ? t("acct.intro." + v) : "";
     $("nameRow").hidden = !!v && v !== "register"; $("screenRow").hidden = !!v && v !== "register";
     $("passRow").hidden = !!a || v === "forgot";
-    $("optRow").hidden = !a && v !== "register"; if (a) $("fOptIn").checked = !!a.emailOptIn; $("codeRow").hidden = v !== "reset";
+    $("optRow").hidden = !a && v !== "register"; $("addrRow").hidden = !a && v !== "register";
+    if (a || v === "register") { const ad = (a && a.address) || {}; if (a || !$("fStreet").value) { $("fStreet").value = ad.street || ""; $("fLine2").value = ad.line2 || ""; $("fCity").value = ad.city || ""; $("fState").value = ad.state || ""; $("fZip").value = ad.zip || ""; } } if (a) $("fOptIn").checked = !!a.emailOptIn; $("codeRow").hidden = v !== "reset";
     $("passLabel").textContent = v === "reset" ? t("f.newpass") : t("f.pass");
     $("fPass").autocomplete = v === "login" ? "current-password" : "new-password";
     $("fFirst").value = a?.first || ""; $("fLast").value = a?.last || ""; $("fEmail").value = a?.email || $("fEmail").value;
@@ -2461,8 +2601,11 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     const first = $("fFirst").value.trim(), last = $("fLast").value.trim(), email = $("fEmail").value.trim();
     const password = $("fPass").value, screenName = $("fScreen").value.trim(), v = S.account ? "save" : acctView;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return msg(t("err.bad_email"), "err");
+    const address = { street: $("fStreet").value.trim(), line2: $("fLine2").value.trim(), city: $("fCity").value.trim(), state: $("fState").value, zip: $("fZip").value.trim() };
+    if ((v === "save" || v === "register") && (address.street || address.line2 || address.city || address.zip) &&
+        (!address.street || !address.city || !address.state || !/^\d{5}(-?\d{4})?$/.test(address.zip))) return msg(t("err.bad_address"), "err");
     let url = "/api/auth", method = "POST", body;
-    if (v === "save") { url = "/api/me"; method = "PATCH"; body = { first, last, email, lang: mode.lang, optIn: $("fOptIn").checked }; }
+    if (v === "save") { url = "/api/me"; method = "PATCH"; body = { first, last, email, lang: mode.lang, optIn: $("fOptIn").checked, address }; }
     else if (v === "login") { if (!password) return msg(t("msg.enterPassword"), "err"); body = { action: "login", email, password, games: localGames(), lang: mode.lang }; }
     else if (v === "forgot") body = { action: "forgot", email, lang: mode.lang };
     else if (v === "reset") {
@@ -2472,7 +2615,7 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     } else {
       if (!/^[A-Za-z0-9_.-]{3,16}$/.test(screenName)) return msg(t("err.bad_name"), "err");
       if (password.length < 8) return msg(t("err.bad_password"), "err");
-      body = { action: "register", first, last, email, screenName, password, games: localGames(), lang: mode.lang, optIn: $("fOptIn").checked };
+      body = { action: "register", first, last, email, screenName, password, games: localGames(), lang: mode.lang, optIn: $("fOptIn").checked, address };
     }
     $("acctSave").disabled = true; msg(t("msg.working"));
     try {
@@ -2603,7 +2746,95 @@ nav.locked button:not([aria-current="page"]) { opacity: .35; }
     }).then(() => { wfAdmin = window.LLX_WF_ADMIN($("wfAdmin"), { call }); })
       .catch(() => { wfAdminLoading = null; $("wfAdmin").textContent = "The WordFinder puzzle tools couldn't load. Reload the page to try again."; });
   }
-  const openAdmin = (e) => { if (e) e.preventDefault(); amsg(""); adminAsk = null; show("admin"); loadAdmin(); openWfAdmin(); };
+  /* Brain Booster prizes in the admin dashboard: set this and next month's prize, review winners, email them */
+  let prizeAdm = null;
+  async function loadPrizeAdmin() {
+    try { const r = await call("/api/prize?admin=1", "GET"); prizeAdm = r.ok ? r.data : null; } catch (e) { prizeAdm = null; }
+    renderPrizeAdmin();
+  }
+  // a picked image, shrunk to at most 600 px wide, as a JPEG data: URL
+  const shrinkImage = (file) => new Promise((ok, no) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => { const w = Math.min(600, img.naturalWidth), h = Math.round(img.naturalHeight * w / img.naturalWidth), c = document.createElement("canvas");
+      c.width = w; c.height = h; const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url); ok(c.toDataURL("image/jpeg", 0.86)); };
+    img.onerror = () => { URL.revokeObjectURL(url); no(new Error("bad image")); };
+    img.src = url;
+  });
+  function renderPrizeAdmin() {
+    const box = $("prizeAdmin"); box.textContent = "";
+    const head = el("div", "adminhead"); head.appendChild(el("h2", null, "Brain Booster prizes")); box.appendChild(head);
+    const d = prizeAdm; if (!d) { box.appendChild(el("p", "note", "The prize tools couldn't load.")); return; }
+    box.appendChild(el("p", "note", "Each month's top Brain Booster score in each language wins (confirmed members only; months run on US Eastern time). Nobody, and no household, wins two months in a row; those players are skipped automatically. Winners need a US mailing address in their account. A language's prize is awarded only if at least " + d.minPlayers + " confirmed members played that month. Prizes start " + monthLabel(d.firstMonth) + "."));
+    for (const m of [d.current, d.next]) {
+      const pz = d.prizes.find((x) => x.month === m) || { title: "", image: null }, row = el("div", "pa-row");
+      row.appendChild(el("strong", null, (m === d.current ? "This month: " : "Next month: ") + monthLabel(m)));
+      const title = el("input"); title.type = "text"; title.maxLength = 120; title.placeholder = "Prize, e.g. $25 Starbucks eGift Card"; title.value = pz.title || "";
+      title.setAttribute("aria-label", "Prize for " + monthLabel(m));
+      const prev = el("div"); let image = null;
+      const showImg = (src) => { prev.textContent = ""; if (src) { const i = el("img", "pa-img"); i.src = src; i.alt = ""; prev.appendChild(i); } };
+      showImg(pz.image);
+      const file = el("input"); file.type = "file"; file.accept = "image/png,image/jpeg,image/webp"; file.setAttribute("aria-label", "Prize image for " + monthLabel(m));
+      file.addEventListener("change", async () => { if (!file.files[0]) return; try { image = await shrinkImage(file.files[0]); showImg(image); } catch (e) { amsg("That image couldn't be read.", "err"); } });
+      const msg = el("span", "note");
+      const save = el("button", "btn small", "Save prize"); save.type = "button";
+      save.addEventListener("click", async () => {
+        save.disabled = true; msg.textContent = "Saving…";
+        try { const r = await call("/api/prize", "POST", { action: "save", month: m, title: title.value, image }, 20000);
+          msg.textContent = r.ok ? "Saved." : (r.data && r.data.message) || "Couldn't save."; if (r.ok) { for (const k in prizeCache) delete prizeCache[k]; image = null; } }
+        catch (e) { msg.textContent = "Can't reach the server."; }
+        save.disabled = false;
+      });
+      const acts = el("div", "acts"); acts.append(save, msg);
+      row.append(title, file, prev, acts); box.appendChild(row);
+    }
+    box.appendChild(el("h3", null, "Winners"));
+    if (!d.months.length) box.appendChild(el("p", "note", "No finished prize months yet. The first winners are the top scorers of " + monthLabel(d.firstMonth) + "."));
+    for (const mo of d.months) {
+      const row = el("div", "pa-row"); row.appendChild(el("strong", null, monthLabel(mo.month)));
+      for (const md of d.modes) {
+        const info = mo[md.id], w = info.winner, line = el("div", "pa-win");
+        line.appendChild(el("b", null, md.name + ":"));
+        if (!w) line.appendChild(el("span", "note", info.players < d.minPlayers ? "no prize: only " + info.players + " of the " + d.minPlayers + " players needed" : "no eligible player"));
+        else {
+          line.appendChild(el("span", null, w.screenName + " · " + w.email + " · " + w.score + " pts · " + ({ notified: "emailed ✓", claimed: "claimed ✓" }[w.status] || "not emailed yet")));
+          const ad = el("div", "pa-addr" + (w.address ? "" : " none"), w.address || "No mailing address in their account yet");
+          line.appendChild(ad);
+          if (w.household) line.appendChild(el("div", "pa-addr none", "⚠ Same address as " + w.household.screenName + ", the " + monthLabel(w.household.month) + " winner. Disqualify this winner (no back-to-back household wins)."));
+          const acts = el("div", "acts");
+          const b = (label, cls, fn) => { const x = el("button", "btn small " + cls, label); x.type = "button"; x.addEventListener("click", fn); acts.appendChild(x); };
+          b("View words", "", () => openModal(monthLabel(mo.month) + " · " + w.score + " points", w.words, w.screenName + " · " + w.words.length + " words"));
+          b(w.status === "winner" ? "Send winner email" : "Email again", "", async () => {
+            if (!confirm("Email " + w.screenName + " (" + w.email + ") that they won " + monthLabel(mo.month) + "?")) return;
+            try { const r = await call("/api/prize", "POST", { action: "notify", month: mo.month, mode: md.id }, 20000);
+              amsg(r.ok ? "Winner email sent to " + r.data.to + "." : (r.data && r.data.message) || "The email couldn't be sent.", r.ok ? "ok" : "err"); } catch (e) { amsg("Can't reach the server.", "err"); }
+            loadPrizeAdmin();
+          });
+          if (w.status !== "claimed") b("Mark claimed", "", async () => {
+            if (!confirm("Mark " + w.screenName + "'s " + monthLabel(mo.month) + " prize as claimed? Do this once they've confirmed they're 18 or older and added a US mailing address.")) return;
+            try { const r = await call("/api/prize", "POST", { action: "claim", month: mo.month, mode: md.id });
+              amsg(r.ok ? "Marked claimed. Send the prize to " + w.screenName + "." : (r.data && r.data.message) || "Couldn't mark it claimed.", r.ok ? "ok" : "err"); } catch (e) { amsg("Can't reach the server.", "err"); }
+            loadPrizeAdmin();
+          });
+          b("Disqualify", "danger", async () => {
+            if (!confirm("Disqualify " + w.screenName + " for " + monthLabel(mo.month) + "? The next eligible player becomes the winner.")) return;
+            try { await call("/api/prize", "POST", { action: "disqualify", month: mo.month, mode: md.id, playerId: w.playerId }); } catch (e) {}
+            loadPrizeAdmin();
+          });
+          line.appendChild(acts);
+        }
+        for (const x of info.disqualified) {
+          const dq = el("div", "pa-win"); dq.appendChild(el("span", "note", "Disqualified: " + x.screenName));
+          const r = el("button", "btn small", "Reinstate"); r.type = "button";
+          r.addEventListener("click", async () => { try { await call("/api/prize", "POST", { action: "reinstate", month: mo.month, mode: md.id, playerId: x.playerId }); } catch (e) {} loadPrizeAdmin(); });
+          dq.appendChild(r); line.appendChild(dq);
+        }
+        row.appendChild(line);
+      }
+      box.appendChild(row);
+    }
+  }
+  const openAdmin = (e) => { if (e) e.preventDefault(); amsg(""); adminAsk = null; show("admin"); loadAdmin(); openWfAdmin(); loadPrizeAdmin(); };
   $("adminOpen").addEventListener("click", openAdmin);
   $("adminLink").addEventListener("click", openAdmin);
   $("adminBack").addEventListener("click", () => show("settings"));
